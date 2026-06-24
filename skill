@@ -1,0 +1,363 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  SOURCE_DIR="$(cd -P -- "$(dirname -- "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  case "$SOURCE" in
+    /*) ;;
+    *) SOURCE="${SOURCE_DIR}/${SOURCE}" ;;
+  esac
+done
+
+REPO_ROOT="$(cd -P -- "$(dirname -- "$SOURCE")" && pwd)"
+SKILLS_DIR="${REPO_ROOT}/skills"
+INSTALL_DIR="${YUZURU_SKILLS_DIR:-${HOME}/.agents/skills}"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  skill                 Open interactive skill installer
+  skill list            List repository skills and install status
+  skill install         Open interactive skill installer
+  skill install all     Install all repository skills
+  skill install NAME    Install one or more skills
+  skill uninstall NAME  Uninstall one or more repository-installed skills
+  skill update          Pull latest repository changes
+  skill doctor          Show paths and status
+
+Environment:
+  YUZURU_SKILLS_DIR     Override Codex skills directory (default: ~/.agents/skills)
+EOF
+}
+
+die() {
+  printf 'error: %s\n' "$*" >&2
+  exit 1
+}
+
+skill_names() {
+  find "${SKILLS_DIR}" -mindepth 1 -maxdepth 1 -type d -exec sh -c '
+    for dir do
+      [ -f "$dir/SKILL.md" ] && basename "$dir"
+    done
+  ' sh {} + | sort
+}
+
+skill_path() {
+  printf '%s/%s' "${SKILLS_DIR}" "$1"
+}
+
+skill_exists() {
+  [ -f "$(skill_path "$1")/SKILL.md" ]
+}
+
+skill_description() {
+  awk '
+    /^description:/ {
+      sub(/^description:[[:space:]]*/, "")
+      print
+      exit
+    }
+  ' "$(skill_path "$1")/SKILL.md"
+}
+
+install_target() {
+  printf '%s/%s' "${INSTALL_DIR}" "$1"
+}
+
+link_target() {
+  if [ -L "$1" ]; then
+    readlink "$1"
+  fi
+}
+
+status_for() {
+  local name="$1"
+  local src dest target
+  src="$(skill_path "$name")"
+  dest="$(install_target "$name")"
+
+  if [ -L "$dest" ]; then
+    target="$(link_target "$dest")"
+    if [ "$target" = "$src" ]; then
+      printf 'installed'
+    else
+      printf 'conflict'
+    fi
+  elif [ -e "$dest" ]; then
+    printf 'conflict'
+  else
+    printf 'available'
+  fi
+}
+
+install_one() {
+  local name="$1"
+  local src dest status
+
+  skill_exists "$name" || die "unknown skill: $name"
+  src="$(skill_path "$name")"
+  dest="$(install_target "$name")"
+  status="$(status_for "$name")"
+
+  mkdir -p "$INSTALL_DIR"
+
+  case "$status" in
+    installed)
+      printf 'already installed: %s\n' "$name"
+      ;;
+    available)
+      ln -s "$src" "$dest"
+      printf 'installed: %s -> %s\n' "$name" "$src"
+      ;;
+    conflict)
+      printf 'conflict: %s already exists and is not managed by this repo\n' "$dest" >&2
+      return 1
+      ;;
+  esac
+}
+
+uninstall_one() {
+  local name="$1"
+  local dest status
+
+  skill_exists "$name" || die "unknown skill: $name"
+  dest="$(install_target "$name")"
+  status="$(status_for "$name")"
+
+  case "$status" in
+    installed)
+      rm "$dest"
+      printf 'uninstalled: %s\n' "$name"
+      ;;
+    available)
+      printf 'not installed: %s\n' "$name"
+      ;;
+    conflict)
+      printf 'refusing to remove unmanaged path: %s\n' "$dest" >&2
+      return 1
+      ;;
+  esac
+}
+
+cmd_list() {
+  local name status desc
+  printf '%-11s %-28s %s\n' 'STATUS' 'SKILL' 'DESCRIPTION'
+  printf '%-11s %-28s %s\n' '------' '-----' '-----------'
+  while IFS= read -r name; do
+    status="$(status_for "$name")"
+    desc="$(skill_description "$name")"
+    printf '%-11s %-28s %s\n' "$status" "$name" "$desc"
+  done < <(skill_names)
+}
+
+cmd_install() {
+  local arg failed
+  failed=0
+
+  if [ "$#" -eq 0 ]; then
+    interactive_install
+    return
+  fi
+
+  if [ "$1" = "all" ]; then
+    while IFS= read -r arg; do
+      install_one "$arg" || failed=1
+    done < <(skill_names)
+    return "$failed"
+  fi
+
+  for arg in "$@"; do
+    install_one "$arg" || failed=1
+  done
+  return "$failed"
+}
+
+cmd_uninstall() {
+  local arg failed
+  [ "$#" -gt 0 ] || die "uninstall requires at least one skill name"
+  failed=0
+  for arg in "$@"; do
+    uninstall_one "$arg" || failed=1
+  done
+  return "$failed"
+}
+
+cmd_update() {
+  command -v git >/dev/null 2>&1 || die "git is required"
+  git -C "$REPO_ROOT" pull --ff-only
+  printf 'updated repository: %s\n' "$REPO_ROOT"
+  printf 'installed skills are symlinks, so no reinstall is needed.\n'
+}
+
+cmd_doctor() {
+  printf 'repo:        %s\n' "$REPO_ROOT"
+  printf 'skills dir:  %s\n' "$SKILLS_DIR"
+  printf 'install dir: %s\n' "$INSTALL_DIR"
+  printf 'command:     %s\n' "${BASH_SOURCE[0]}"
+  printf '\n'
+  cmd_list
+}
+
+interactive_install() {
+  [ -t 0 ] && [ -t 1 ] || die "interactive install requires a terminal"
+  command -v tput >/dev/null 2>&1 || die "interactive install requires tput"
+
+  local names selected conflicts count i key cursor apply quit status marker pointer desc
+  names=()
+  selected=()
+  conflicts=()
+  cursor=0
+  apply=0
+  quit=0
+
+  while IFS= read -r key; do
+    names+=("$key")
+    status="$(status_for "$key")"
+    if [ "$status" = "installed" ]; then
+      selected+=("1")
+    else
+      selected+=("0")
+    fi
+    if [ "$status" = "conflict" ]; then
+      conflicts+=("1")
+    else
+      conflicts+=("0")
+    fi
+  done < <(skill_names)
+
+  count="${#names[@]}"
+  [ "$count" -gt 0 ] || die "no skills found in $SKILLS_DIR"
+
+  tput civis || true
+  trap 'tput cnorm || true' EXIT
+
+  while [ "$quit" -eq 0 ]; do
+    tput clear
+    printf 'Yuzuru Codex Skills\n'
+    printf 'Install dir: %s\n\n' "$INSTALL_DIR"
+    printf 'Use arrows to move, Space to toggle, a=all, n=none, Enter=apply, q=quit.\n'
+    printf 'Conflicts are shown as [!] and are not modified.\n\n'
+
+    i=0
+    while [ "$i" -lt "$count" ]; do
+      pointer=' '
+      [ "$i" -eq "$cursor" ] && pointer='>'
+
+      if [ "${conflicts[$i]}" = "1" ]; then
+        marker='[!]'
+      elif [ "${selected[$i]}" = "1" ]; then
+        marker='[x]'
+      else
+        marker='[ ]'
+      fi
+
+      desc="$(skill_description "${names[$i]}")"
+      printf '%s %s %-28s %s\n' "$pointer" "$marker" "${names[$i]}" "$desc"
+      i=$((i + 1))
+    done
+
+    IFS= read -rsn1 key || break
+    case "$key" in
+      $'\x1b')
+        IFS= read -rsn2 key || true
+        case "$key" in
+          '[A')
+            cursor=$((cursor - 1))
+            [ "$cursor" -lt 0 ] && cursor=$((count - 1))
+            ;;
+          '[B')
+            cursor=$((cursor + 1))
+            [ "$cursor" -ge "$count" ] && cursor=0
+            ;;
+        esac
+        ;;
+      ' ')
+        if [ "${conflicts[$cursor]}" = "0" ]; then
+          if [ "${selected[$cursor]}" = "1" ]; then
+            selected[$cursor]="0"
+          else
+            selected[$cursor]="1"
+          fi
+        fi
+        ;;
+      a)
+        i=0
+        while [ "$i" -lt "$count" ]; do
+          [ "${conflicts[$i]}" = "0" ] && selected[$i]="1"
+          i=$((i + 1))
+        done
+        ;;
+      n)
+        i=0
+        while [ "$i" -lt "$count" ]; do
+          [ "${conflicts[$i]}" = "0" ] && selected[$i]="0"
+          i=$((i + 1))
+        done
+        ;;
+      q)
+        quit=1
+        ;;
+      ''|$'\n'|$'\r')
+        apply=1
+        quit=1
+        ;;
+    esac
+  done
+
+  tput cnorm || true
+  trap - EXIT
+
+  if [ "$apply" -ne 1 ]; then
+    printf 'cancelled\n'
+    return 0
+  fi
+
+  printf 'applying selection...\n'
+  i=0
+  while [ "$i" -lt "$count" ]; do
+    if [ "${conflicts[$i]}" = "0" ]; then
+      if [ "${selected[$i]}" = "1" ]; then
+        install_one "${names[$i]}"
+      else
+        uninstall_one "${names[$i]}"
+      fi
+    fi
+    i=$((i + 1))
+  done
+}
+
+main() {
+  local command
+  command="${1:-install}"
+  [ "$#" -gt 0 ] && shift || true
+
+  case "$command" in
+    help|-h|--help)
+      usage
+      ;;
+    list|ls)
+      cmd_list
+      ;;
+    install|add)
+      cmd_install "$@"
+      ;;
+    uninstall|remove|rm)
+      cmd_uninstall "$@"
+      ;;
+    update|upgrade)
+      cmd_update
+      ;;
+    doctor|status)
+      cmd_doctor
+      ;;
+    *)
+      usage >&2
+      die "unknown command: $command"
+      ;;
+  esac
+}
+
+main "$@"

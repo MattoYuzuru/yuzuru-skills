@@ -6,6 +6,54 @@ Maintainer: `matto user <MattoYuzuru@users.noreply.github.com>`
 
 This repository contains reusable instructions, scripts, and future plugins that let Codex work with external systems in a controlled way.
 
+## Quick Start
+
+Clone the repository and install the local CLI command:
+
+```bash
+git clone git@github.com:MattoYuzuru/yuzuru-codex-skills.git
+cd yuzuru-codex-skills
+./install.sh
+```
+
+The installer creates a symlink:
+
+```text
+~/.local/bin/skill -> ./skill
+```
+
+If `~/.local/bin` is not in `PATH`, add it to your shell config:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Then install skills into Codex's user skill directory:
+
+```bash
+skill list          # show all skills and status
+skill install       # interactive menu
+skill install all   # install everything
+skill install gitlab-workflow google-ai-search
+skill uninstall google-ai-search
+skill update        # git pull --ff-only in this repository
+skill doctor        # show paths and current status
+```
+
+By default, installed skills are symlinks in:
+
+```text
+~/.agents/skills
+```
+
+Override this only when needed:
+
+```bash
+YUZURU_SKILLS_DIR=/custom/path skill install all
+```
+
+Restart Codex or start a new thread after installing skills.
+
 ## How To Think About Codex
 
 Skill is the right shape when Codex needs:
