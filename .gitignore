@@ -1,0 +1,21 @@
+.DS_Store
+
+# Local secrets and sessions
+.env
+.env.*
+*.env
+*.token
+*.cookie
+*.cookies
+secrets/
+.local/
+
+# Runtime artifacts
+__pycache__/
+*.pyc
+node_modules/
+dist/
+build/
+.cache/
+tmp/
+

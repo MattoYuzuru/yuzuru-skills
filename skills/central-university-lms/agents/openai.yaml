@@ -1,0 +1,4 @@
+interface:
+  display_name: "Central University LMS"
+  short_description: "Read courses, homework and deadlines"
+  default_prompt: "Use $central-university-lms to list current LMS homework deadlines."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Google AI Search"
+  short_description: "Token-efficient Google AI web search"
+  default_prompt: "Use $google-ai-search to run a compact web research query."

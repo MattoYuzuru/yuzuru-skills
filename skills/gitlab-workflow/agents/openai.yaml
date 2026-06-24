@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitLab Workflow"
+  short_description: "GitLab repository and MR workflow"
+  default_prompt: "Use $gitlab-workflow to inspect a GitLab repository or merge request."
