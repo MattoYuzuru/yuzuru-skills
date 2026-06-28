@@ -42,6 +42,7 @@ def parse_sources(items: list[dict[str, str]]) -> list[dict[str, str]]:
 
 def run(args: argparse.Namespace) -> dict[str, object]:
     try:
+        from playwright.sync_api import Error as PlaywrightError
         from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
         from playwright.sync_api import sync_playwright
     except ImportError:
@@ -49,7 +50,7 @@ def run(args: argparse.Namespace) -> dict[str, object]:
             "query": args.query,
             "answer": "",
             "sources": [],
-            "error": "Playwright is not installed. Run: python3 -m pip install playwright && python3 -m playwright install chromium",
+            "error": "Playwright is not installed. Run scripts/bootstrap.py check, then install after user consent.",
         }
 
     url = "https://www.google.com/search?" + urllib.parse.urlencode(
@@ -57,9 +58,11 @@ def run(args: argparse.Namespace) -> dict[str, object]:
     )
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=args.headless)
-        page = browser.new_page()
+        browser = None
+        page = None
         try:
+            browser = p.chromium.launch(headless=args.headless)
+            page = browser.new_page()
             page.goto(url, wait_until="domcontentloaded", timeout=args.timeout)
             page.wait_for_timeout(args.settle_ms)
             body_text = page.locator("body").inner_text(timeout=args.timeout)
@@ -71,12 +74,21 @@ def run(args: argparse.Namespace) -> dict[str, object]:
                 }))""",
             )
         except PlaywrightTimeoutError as exc:
-            browser.close()
             return {"query": args.query, "answer": "", "sources": [], "error": f"Google page timeout: {exc}"}
+        except PlaywrightError as exc:
+            error = clean_text(str(exc), 1200)
+            return {"query": args.query, "answer": "", "sources": [], "error": f"Browser error: {error}"}
         finally:
-            if not page.is_closed():
-                page.close()
-            browser.close()
+            if page is not None and not page.is_closed():
+                try:
+                    page.close()
+                except PlaywrightError:
+                    pass
+            if browser is not None:
+                try:
+                    browser.close()
+                except PlaywrightError:
+                    pass
 
     answer = clean_text(body_text, args.max_chars)
     result: dict[str, object] = {"query": args.query, "answer": answer}
@@ -92,7 +104,9 @@ def main() -> int:
     parser.add_argument("--lang", "-l", default="en")
     parser.add_argument("--max-chars", type=int, default=4000)
     parser.add_argument("--include-sources", "-s", action="store_true")
-    parser.add_argument("--headless", action="store_true")
+    browser_mode = parser.add_mutually_exclusive_group()
+    browser_mode.add_argument("--headless", dest="headless", action="store_true", default=True)
+    browser_mode.add_argument("--headed", dest="headless", action="store_false")
     parser.add_argument("--timeout", type=int, default=25000)
     parser.add_argument("--settle-ms", type=int, default=3000)
     args = parser.parse_args()
@@ -104,4 +118,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

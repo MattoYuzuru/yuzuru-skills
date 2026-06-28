@@ -16,13 +16,34 @@ Use this skill to run a compact Google AI Mode search through Playwright and ret
    - use English for broad technical topics;
    - use Russian for Russia-specific or Russian-language topics;
    - use the user's language when the target source language matters.
-3. Run `scripts/search.py`.
-4. Summarize the result, cite source URLs from the JSON, and mention uncertainty when the script falls back to raw page text.
+3. Follow the bootstrap workflow below.
+4. Run the search through `scripts/bootstrap.py run` or the installed `google-ai-search` launcher.
+5. Summarize the result, cite source URLs from the JSON, and mention uncertainty when the script falls back to raw page text.
+
+## Bootstrap Workflow
+
+Before each search, resolve this skill directory and run:
+
+```bash
+python3 scripts/bootstrap.py check
+```
+
+On Windows, use `py -3 scripts\bootstrap.py check`. Parse the JSON result:
+
+- If `ready` is `true`, continue without prompting.
+- If `ready` is `false`, explain the missing items and ask the user for explicit
+  consent to create the config venv and download Playwright/Chromium.
+- After consent, run `scripts/bootstrap.py install` yourself. Do not ask the
+  user to open another terminal when agent tools can perform the installation.
+- If execution or permissions prevent installation, give the matching command
+  from [references/setup.md](references/setup.md).
+
+Never install into the system Python and never use `--break-system-packages`.
 
 ## Usage
 
 ```bash
-python3 skills/google-ai-search/scripts/search.py \
+google-ai-search \
   --query "OpenAI latest model announcements 2026" \
   --include-sources \
   --lang en
@@ -34,17 +55,23 @@ Options:
 - `--lang`: Google UI language, default `en`.
 - `--max-chars`: maximum answer length, default `4000`.
 - `--include-sources`: include source links.
-- `--headless`: run Chromium headless.
+- `--headless`: run Chromium headless (the default).
+- `--headed`: open a visible Chromium window for troubleshooting.
 - `--timeout`: page timeout in milliseconds.
 
 ## Dependencies
 
-The script needs Playwright and Chromium:
+`scripts/bootstrap.py` detects the operating system, venv, Playwright package,
+Chromium binary, and POSIX launcher. With user consent, install everything with:
 
 ```bash
-python3 -m pip install playwright
-python3 -m playwright install chromium
+python3 scripts/bootstrap.py install
 ```
+
+The default venv is `~/.config/yuzuru-codex-skills/google-ai-search/venv` on
+macOS/Linux and `%LOCALAPPDATA%\yuzuru-codex-skills\google-ai-search\venv` on
+Windows. Read [references/setup.md](references/setup.md) only when Python/venv
+prerequisites are missing or the user asks for OS-specific setup details.
 
 ## Guardrails
 
@@ -53,4 +80,3 @@ python3 -m playwright install chromium
 - If Google shows CAPTCHA or returns no AI answer, report that clearly and use another search path.
 - Do not paste raw full HTML into the conversation.
 - When the user explicitly asks not to search the web, do not use this skill.
-
