@@ -1,114 +1,137 @@
 #!/usr/bin/env python3
-"""Run a compact Google AI Mode search through Playwright."""
+"""Run grounded web research through the Gemini API."""
 
 from __future__ import annotations
 
 import argparse
 import json
-import re
+import os
+import urllib.error
 import urllib.parse
+import urllib.request
+from typing import Any
+
+from api_config import AI_STUDIO_KEY_URL, DEFAULT_MODEL, key_path, load_api_key
+
+
+API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models"
 
 
 def clean_text(text: str, max_chars: int) -> str:
-    text = re.sub(r"\n{3,}", "\n\n", text)
-    text = re.sub(r"[ \t]{2,}", " ", text)
     text = text.strip()
     if len(text) <= max_chars:
         return text
     return text[:max_chars].rstrip() + "..."
 
 
-def parse_sources(items: list[dict[str, str]]) -> list[dict[str, str]]:
+def parse_sources(metadata: dict[str, Any]) -> list[dict[str, str]]:
     sources: list[dict[str, str]] = []
     seen: set[str] = set()
-    blocked_hosts = ("google.", "gstatic.", "googleusercontent.", "accounts.google.")
-
-    for item in items:
-        href = item.get("href", "")
-        title = clean_text(item.get("title", ""), 160)
-        if not href.startswith("http"):
+    for chunk in metadata.get("groundingChunks", []):
+        web = chunk.get("web", {})
+        url = web.get("uri", "")
+        if not url or url in seen:
             continue
-        host = urllib.parse.urlparse(href).netloc.lower()
-        if any(part in host for part in blocked_hosts):
-            continue
-        if href in seen:
-            continue
-        seen.add(href)
-        sources.append({"title": title or href, "url": href})
-        if len(sources) >= 10:
-            break
+        seen.add(url)
+        sources.append({"title": web.get("title") or url, "url": url})
     return sources
 
 
-def run(args: argparse.Namespace) -> dict[str, object]:
-    try:
-        from playwright.sync_api import Error as PlaywrightError
-        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-        from playwright.sync_api import sync_playwright
-    except ImportError:
+def parse_response(payload: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
+    candidates = payload.get("candidates", [])
+    if not candidates:
+        feedback = payload.get("promptFeedback", {})
         return {
             "query": args.query,
             "answer": "",
             "sources": [],
-            "error": "Playwright is not installed. Run scripts/bootstrap.py check, then install after user consent.",
+            "error": f"Gemini returned no candidates: {feedback or 'unknown reason'}",
         }
 
-    url = "https://www.google.com/search?" + urllib.parse.urlencode(
-        {"q": args.query, "udm": "50", "hl": args.lang}
-    )
-
-    with sync_playwright() as p:
-        browser = None
-        page = None
-        try:
-            browser = p.chromium.launch(headless=args.headless)
-            page = browser.new_page()
-            page.goto(url, wait_until="domcontentloaded", timeout=args.timeout)
-            page.wait_for_timeout(args.settle_ms)
-            body_text = page.locator("body").inner_text(timeout=args.timeout)
-            anchors = page.eval_on_selector_all(
-                "a[href]",
-                """els => els.map(a => ({
-                    title: (a.innerText || a.getAttribute('aria-label') || '').trim(),
-                    href: a.href
-                }))""",
-            )
-        except PlaywrightTimeoutError as exc:
-            return {"query": args.query, "answer": "", "sources": [], "error": f"Google page timeout: {exc}"}
-        except PlaywrightError as exc:
-            error = clean_text(str(exc), 1200)
-            return {"query": args.query, "answer": "", "sources": [], "error": f"Browser error: {error}"}
-        finally:
-            if page is not None and not page.is_closed():
-                try:
-                    page.close()
-                except PlaywrightError:
-                    pass
-            if browser is not None:
-                try:
-                    browser.close()
-                except PlaywrightError:
-                    pass
-
-    answer = clean_text(body_text, args.max_chars)
-    result: dict[str, object] = {"query": args.query, "answer": answer}
-    result["sources"] = parse_sources(anchors) if args.include_sources else []
-    if "captcha" in answer.lower() or "unusual traffic" in answer.lower():
-        result["error"] = "Google may have blocked the request with CAPTCHA or unusual-traffic protection."
+    candidate = candidates[0]
+    parts = candidate.get("content", {}).get("parts", [])
+    answer = "\n".join(part.get("text", "") for part in parts if part.get("text")).strip()
+    metadata = candidate.get("groundingMetadata", {})
+    result: dict[str, Any] = {
+        "query": args.query,
+        "answer": clean_text(answer, args.max_chars),
+        "model": args.model,
+        "search_queries": metadata.get("webSearchQueries", []),
+        "sources": parse_sources(metadata) if args.include_sources else [],
+    }
+    if payload.get("usageMetadata"):
+        result["usage"] = payload["usageMetadata"]
+    if not answer:
+        result["error"] = "Gemini returned an empty answer."
     return result
 
 
+def api_error_message(error: urllib.error.HTTPError) -> str:
+    try:
+        payload = json.loads(error.read().decode("utf-8"))
+        return payload.get("error", {}).get("message") or str(error)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return str(error)
+
+
+def run(args: argparse.Namespace) -> dict[str, Any]:
+    api_key, _ = load_api_key()
+    if not api_key:
+        return {
+            "query": args.query,
+            "answer": "",
+            "sources": [],
+            "error": "Gemini API key is not configured.",
+            "setup_url": AI_STUDIO_KEY_URL,
+            "config_path": str(key_path()),
+        }
+
+    prompt = (
+        f"Research the following query with Google Search. Answer concisely in language code {args.lang}. "
+        "Prefer primary and authoritative sources, distinguish facts from inference, and do not invent citations.\n\n"
+        f"Query: {args.query}"
+    )
+    request_body = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "tools": [{"google_search": {}}],
+        "generationConfig": {"temperature": 0.2, "maxOutputTokens": args.max_output_tokens},
+    }
+    url = f"{API_ROOT}/{urllib.parse.quote(args.model, safe='')}:generateContent"
+    request = urllib.request.Request(
+        url,
+        data=json.dumps(request_body).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "yuzuru-google-ai-search/2",
+            "x-goog-api-key": api_key,
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=args.timeout) as response:
+            payload = json.load(response)
+    except urllib.error.HTTPError as exc:
+        message = api_error_message(exc)
+        if exc.code == 429:
+            message = f"Free-tier quota or rate limit reached: {message}"
+        return {"query": args.query, "answer": "", "sources": [], "error": message}
+    except urllib.error.URLError as exc:
+        return {"query": args.query, "answer": "", "sources": [], "error": str(exc.reason)}
+    except (TimeoutError, json.JSONDecodeError) as exc:
+        return {"query": args.query, "answer": "", "sources": [], "error": str(exc)}
+
+    return parse_response(payload, args)
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Token-efficient Google AI Mode search")
+    parser = argparse.ArgumentParser(description="Grounded Google web research through Gemini API")
     parser.add_argument("--query", "-q", required=True)
     parser.add_argument("--lang", "-l", default="en")
-    parser.add_argument("--max-chars", type=int, default=4000)
+    parser.add_argument("--model", default=os.environ.get("GOOGLE_AI_SEARCH_MODEL", DEFAULT_MODEL))
+    parser.add_argument("--max-chars", type=int, default=5000)
+    parser.add_argument("--max-output-tokens", type=int, default=2048)
     parser.add_argument("--include-sources", "-s", action="store_true")
-    browser_mode = parser.add_mutually_exclusive_group()
-    browser_mode.add_argument("--headless", dest="headless", action="store_true", default=True)
-    browser_mode.add_argument("--headed", dest="headless", action="store_false")
-    parser.add_argument("--timeout", type=int, default=25000)
-    parser.add_argument("--settle-ms", type=int, default=3000)
+    parser.add_argument("--timeout", type=float, default=60.0)
     args = parser.parse_args()
 
     result = run(args)

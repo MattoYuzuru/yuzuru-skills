@@ -1,82 +1,51 @@
 ---
 name: google-ai-search
-description: Token-efficient web research through Google AI Mode. Use when the user asks to search the web, google something, check current public information, compare options, or get a compact research summary with sources while avoiding large raw HTML pages in context.
+description: Token-efficient public-web research through Gemini API with Google Search grounding and source links. Use when the user asks to search the web, google something, verify current public information, compare options, or get a compact research summary with citations.
 ---
 
 # Google AI Search
 
-## Overview
+## Workflow
 
-Use this skill to run a compact Google AI Mode search through Playwright and return JSON with an answer, query, and source links when available.
-
-## Query Workflow
-
-1. Rewrite the user's request into a precise search query.
-2. Pick the search language:
-   - use English for broad technical topics;
-   - use Russian for Russia-specific or Russian-language topics;
-   - use the user's language when the target source language matters.
-3. Follow the bootstrap workflow below.
-4. Run the search through `scripts/bootstrap.py run` or the installed `google-ai-search` launcher.
-5. Summarize the result, cite source URLs from the JSON, and mention uncertainty when the script falls back to raw page text.
-
-## Bootstrap Workflow
-
-Before each search, resolve this skill directory and run:
+1. Rewrite the request into a precise search query.
+2. Pick the answer language: English for broad technical topics, Russian for
+   Russia-specific topics, or the user's requested source language.
+3. Resolve this skill directory and run the configuration check:
 
 ```bash
-python3 scripts/bootstrap.py check
+python3 scripts/setup.py check
 ```
 
-On Windows, use `py -3 scripts\bootstrap.py check`. Parse the JSON result:
+On Windows, use `py -3 scripts\setup.py check`.
 
-- If `ready` is `true`, continue without prompting.
-- If `ready` is `false`, explain the missing items and ask the user for explicit
-  consent to create the config venv and download Playwright/Chromium.
-- After consent, run `scripts/bootstrap.py install` yourself. Do not ask the
-  user to open another terminal when agent tools can perform the installation.
-- If execution or permissions prevent installation, give the matching command
-  from [references/setup.md](references/setup.md).
-
-Never install into the system Python and never use `--break-system-packages`.
-
-## Usage
+4. If `ready` is `false`, tell the user to:
+   - create a key at <https://aistudio.google.com/apikey>;
+   - run the `next_action` command in their own terminal;
+   - paste the key into the hidden prompt and confirm when complete.
+5. Never ask the user to paste an API key into chat, and never pass it as a
+   command-line argument or print it in logs.
+6. After confirmation, rerun `setup.py check`. If ready, run:
 
 ```bash
-google-ai-search \
+python3 scripts/search.py \
   --query "OpenAI latest model announcements 2026" \
   --include-sources \
   --lang en
 ```
 
-Options:
+Use the installed `google-ai-search` launcher when available. The default model
+is `gemini-2.5-flash-lite`, selected for free-tier availability and low cost.
 
-- `--query`: required search query.
-- `--lang`: Google UI language, default `en`.
-- `--max-chars`: maximum answer length, default `4000`.
-- `--include-sources`: include source links.
-- `--headless`: run Chromium headless (the default).
-- `--headed`: open a visible Chromium window for troubleshooting.
-- `--timeout`: page timeout in milliseconds.
+## Result Handling
 
-## Dependencies
-
-`scripts/bootstrap.py` detects the operating system, venv, Playwright package,
-Chromium binary, and POSIX launcher. With user consent, install everything with:
-
-```bash
-python3 scripts/bootstrap.py install
-```
-
-The default venv is `~/.config/yuzuru-codex-skills/google-ai-search/venv` on
-macOS/Linux and `%LOCALAPPDATA%\yuzuru-codex-skills\google-ai-search\venv` on
-Windows. Read [references/setup.md](references/setup.md) only when Python/venv
-prerequisites are missing or the user asks for OS-specific setup details.
-
-## Guardrails
-
-- Use this for ordinary public-web research, not as the only source for medical, legal, financial, or other high-stakes answers.
-- Prefer primary sources when the task needs exact documentation, policy, pricing, legal text, or API behavior.
-- If Google shows CAPTCHA or returns no AI answer, report that clearly and use another search path.
-- Do not paste raw full HTML into the conversation.
+- Summarize the JSON `answer` rather than pasting it blindly.
+- Cite URLs from `sources` near the claims they support.
+- Mention uncertainty when sources are weak or missing.
+- If authentication, quota, regional access, or API availability blocks the
+  request, report it clearly and use another search path.
+- Prefer primary sources for documentation, policy, pricing, legal text, and API behavior.
+- Do not use this as the only source for medical, legal, financial, or other high-stakes answers.
 - When the user explicitly asks not to search the web, do not use this skill.
+
+Read [references/setup.md](references/setup.md) only for OS-specific setup,
+configuration overrides, or free-tier details.

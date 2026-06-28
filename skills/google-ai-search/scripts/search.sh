@@ -14,4 +14,4 @@ done
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)
 
-exec "$PYTHON_BIN" "$SCRIPT_DIR/bootstrap.py" run "$@"
+exec "$PYTHON_BIN" "$SCRIPT_DIR/search.py" "$@"
