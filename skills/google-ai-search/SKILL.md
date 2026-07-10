@@ -1,6 +1,7 @@
 ---
 name: google-ai-search
 description: Token-efficient public-web research through Gemini API with Google Search grounding and source links. Use when the user asks to search the web, google something, verify current public information, compare options, or get a compact research summary with citations.
+agents: [codex, claude]
 ---
 
 # Google AI Search

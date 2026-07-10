@@ -1,6 +1,7 @@
 ---
 name: central-university-lms
-description: Read-only workflow for Central University LMS at my.centraluniversity.ru. Use when the user asks Codex to inspect their current courses, homework, assignments, deadlines, LMS course pages, or study workload using an authenticated local browser session.
+description: Read-only workflow for Central University LMS at my.centraluniversity.ru. Use when the user asks to inspect their current courses, homework, assignments, deadlines, LMS course pages, or study workload using an authenticated local browser session.
+agents: [codex, claude]
 ---
 
 # Central University LMS
