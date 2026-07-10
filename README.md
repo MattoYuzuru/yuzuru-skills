@@ -1,18 +1,21 @@
-# yuzuru-codex-skills
+# yuzuru-skills
 
-Personal Codex skills and plugin experiments for matto user.
+Personal agent skills and plugin experiments for matto user, shared between **Codex** and
+**Claude Code** (and future agents that adopt the same format).
 
 Maintainer: `matto user <MattoYuzuru@users.noreply.github.com>`
 
-This repository contains reusable instructions, scripts, and future plugins that let Codex work with external systems in a controlled way.
+This repository contains reusable instructions, scripts, and future plugins that let coding
+agents work with external systems in a controlled way. Each skill is one folder used by
+every agent that supports it — see [AGENTS.md](AGENTS.md) for the authoring standard.
 
 ## Quick Start
 
 Clone the repository and install the local CLI command:
 
 ```bash
-git clone git@github.com:MattoYuzuru/yuzuru-codex-skills.git
-cd yuzuru-codex-skills
+git clone git@github.com:MattoYuzuru/yuzuru-skills.git
+cd yuzuru-skills
 ./install.sh
 ```
 
@@ -28,35 +31,41 @@ If `~/.local/bin` is not in `PATH`, add it to your shell config:
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-Then install skills into Codex's user skill directory:
+Then install skills into each agent's user skill directory:
 
 ```bash
-skill list          # show all skills and status
-skill install       # interactive menu
-skill install all   # install everything
-skill install gitlab-workflow google-ai-search
-skill uninstall google-ai-search
-skill update        # git pull --ff-only in this repository
-skill doctor        # show paths and current status
+skill list                          # show all skills and per-agent status
+skill install                       # interactive menu
+skill install all                   # install everything, for every agent it targets
+skill install gitlab-workflow       # install one skill, for every agent it targets
+skill install --agent claude NAME   # install for one agent only (codex or claude)
+skill uninstall NAME                # uninstall (add --agent to target one agent)
+skill update                        # git pull --ff-only in this repository
+skill doctor                        # show paths and current status
 ```
+
+Which agent(s) a skill installs for is declared in its `SKILL.md` (`agents:` frontmatter,
+see AGENTS.md); a skill without that field installs for both.
 
 By default, installed skills are symlinks in:
 
 ```text
-~/.agents/skills
+~/.agents/skills    # Codex
+~/.claude/skills    # Claude Code
 ```
 
-Override this only when needed:
+Override either only when needed:
 
 ```bash
-YUZURU_SKILLS_DIR=/custom/path skill install all
+YUZURU_CODEX_SKILLS_DIR=/custom/path skill install all
+YUZURU_CLAUDE_SKILLS_DIR=/custom/path skill install all
 ```
 
-Restart Codex or start a new thread after installing skills.
+Restart the agent or start a new session/thread after installing skills.
 
-## How To Think About Codex
+## Skill Vs. Plugin
 
-Skill is the right shape when Codex needs:
+Skill is the right shape when an agent needs:
 
 - a domain workflow;
 - a repeatable command sequence;
@@ -71,6 +80,8 @@ Plugin is the right shape when an integration should be installable and more sta
 - it should be reused across projects.
 
 ## Current Skills
+
+All current skills target both Codex and Claude Code.
 
 ### `gitlab-workflow`
 
@@ -107,7 +118,9 @@ Read-only Central University LMS workflow:
 
 ## Security
 
-- Do not commit secrets. Store them in `~/.config/yuzuru-codex-skills/`, keychain, or separate `~/.service.env` files with `chmod 600`.
+- Do not commit secrets. Store them in `~/.config/yuzuru-codex-skills/` (the existing
+  per-skill config namespace — kept as-is so already-installed API keys/sessions/venvs
+  keep working), keychain, or separate `~/.service.env` files with `chmod 600`.
 - Prefer official APIs and scoped tokens.
 - Use browser cookies/session tokens only when no API is available and the user explicitly agrees.
 - Do not bypass 2FA, CAPTCHA, access restrictions, or service rules.
@@ -116,7 +129,8 @@ Read-only Central University LMS workflow:
 ## Structure
 
 ```text
-skills/   # Codex skills
-plugins/  # future Codex plugins
-scripts/  # shared helper scripts
+skills/     # shared skills, one folder per skill, used by every agent it targets
+plugins/    # future plugins
+scripts/    # shared helper scripts
+AGENTS.md   # skill-authoring standard: frontmatter, agents: field, conventions
 ```
