@@ -13,22 +13,34 @@ done
 
 REPO_ROOT="$(cd -P -- "$(dirname -- "$SOURCE")" && pwd)"
 SKILLS_DIR="${REPO_ROOT}/skills"
-INSTALL_DIR="${YUZURU_SKILLS_DIR:-${HOME}/.agents/skills}"
+CODEX_DIR="${YUZURU_CODEX_SKILLS_DIR:-${YUZURU_SKILLS_DIR:-${HOME}/.agents/skills}}"
+CLAUDE_DIR="${YUZURU_CLAUDE_SKILLS_DIR:-${HOME}/.claude/skills}"
 
 usage() {
   cat <<'EOF'
 Usage:
-  skill                 Open interactive skill installer
-  skill list            List repository skills and install status
-  skill install         Open interactive skill installer
-  skill install all     Install all repository skills
-  skill install NAME    Install one or more skills
-  skill uninstall NAME  Uninstall one or more repository-installed skills
-  skill update          Pull latest repository changes
-  skill doctor          Show paths and status
+  skill                        Open interactive skill installer
+  skill list                   List repository skills and install status
+  skill install                Open interactive skill installer
+  skill install all            Install all repository skills, all their agents
+  skill install NAME           Install one or more skills, all their agents
+  skill install --agent AGENT NAME [NAME...]
+                                Install one or more skills for one agent only
+  skill uninstall NAME         Uninstall one or more repository-installed skills
+  skill uninstall --agent AGENT NAME [NAME...]
+                                Uninstall one or more skills for one agent only
+  skill update                 Pull latest repository changes
+  skill doctor                 Show paths and status
+
+AGENT is one of: codex, claude
+
+A skill installs for the agents listed in its SKILL.md `agents:` frontmatter
+field (default: both codex and claude when the field is absent).
 
 Environment:
-  YUZURU_SKILLS_DIR     Override Codex skills directory (default: ~/.agents/skills)
+  YUZURU_CODEX_SKILLS_DIR   Override Codex skills directory (default: ~/.agents/skills)
+  YUZURU_CLAUDE_SKILLS_DIR  Override Claude Code skills directory (default: ~/.claude/skills)
+  YUZURU_SKILLS_DIR         Deprecated alias for YUZURU_CODEX_SKILLS_DIR
 EOF
 }
 
@@ -63,8 +75,48 @@ skill_description() {
   ' "$(skill_path "$1")/SKILL.md"
 }
 
+# Prints the space-separated agent list from a skill's `agents:` frontmatter
+# line (e.g. "agents: [codex, claude]"). Defaults to both agents when the
+# field is absent, so untagged skills keep working for everyone.
+skill_agents() {
+  local raw
+  raw="$(awk '
+    /^agents:/ {
+      sub(/^agents:[[:space:]]*/, "")
+      print
+      exit
+    }
+  ' "$(skill_path "$1")/SKILL.md")"
+
+  if [ -z "$raw" ]; then
+    printf 'codex claude'
+    return
+  fi
+
+  raw="${raw#\[}"
+  raw="${raw%\]}"
+  raw="${raw//,/ }"
+  printf '%s' "$raw"
+}
+
+skill_targets_agent() {
+  local name="$1" agent="$2" a
+  for a in $(skill_agents "$name"); do
+    [ "$a" = "$agent" ] && return 0
+  done
+  return 1
+}
+
+agent_dir() {
+  case "$1" in
+    codex) printf '%s' "$CODEX_DIR" ;;
+    claude) printf '%s' "$CLAUDE_DIR" ;;
+    *) die "unknown agent: $1 (expected codex or claude)" ;;
+  esac
+}
+
 install_target() {
-  printf '%s/%s' "${INSTALL_DIR}" "$1"
+  printf '%s/%s' "$(agent_dir "$1")" "$2"
 }
 
 link_target() {
@@ -73,11 +125,12 @@ link_target() {
   fi
 }
 
+# $1 = agent, $2 = skill name
 status_for() {
-  local name="$1"
+  local agent="$1" name="$2"
   local src dest target
   src="$(skill_path "$name")"
-  dest="$(install_target "$name")"
+  dest="$(install_target "$agent" "$name")"
 
   if [ -L "$dest" ]; then
     target="$(link_target "$dest")"
@@ -93,69 +146,152 @@ status_for() {
   fi
 }
 
+# Summarizes a skill's status across all agents it targets, for the
+# interactive installer's single toggle per skill.
+skill_status_summary() {
+  local name="$1" agent status any_installed any_available any_conflict
+  any_installed=0
+  any_available=0
+  any_conflict=0
+
+  for agent in $(skill_agents "$name"); do
+    status="$(status_for "$agent" "$name")"
+    case "$status" in
+      installed) any_installed=1 ;;
+      available) any_available=1 ;;
+      conflict) any_conflict=1 ;;
+    esac
+  done
+
+  if [ "$any_conflict" -eq 1 ]; then
+    printf 'conflict'
+  elif [ "$any_installed" -eq 1 ] && [ "$any_available" -eq 1 ]; then
+    printf 'partial'
+  elif [ "$any_installed" -eq 1 ]; then
+    printf 'installed'
+  else
+    printf 'available'
+  fi
+}
+
+# $1 = agent, $2 = skill name
 install_one() {
-  local name="$1"
-  local src dest status
+  local agent="$1" name="$2"
+  local src dest status dir
 
   skill_exists "$name" || die "unknown skill: $name"
   src="$(skill_path "$name")"
-  dest="$(install_target "$name")"
-  status="$(status_for "$name")"
+  dir="$(agent_dir "$agent")"
+  dest="$(install_target "$agent" "$name")"
+  status="$(status_for "$agent" "$name")"
 
-  mkdir -p "$INSTALL_DIR"
+  mkdir -p "$dir"
 
   case "$status" in
     installed)
-      printf 'already installed: %s\n' "$name"
+      printf 'already installed: %s (%s)\n' "$name" "$agent"
       ;;
     available)
       ln -s "$src" "$dest"
-      printf 'installed: %s -> %s\n' "$name" "$src"
+      printf 'installed: %s (%s) -> %s\n' "$name" "$agent" "$src"
       ;;
     conflict)
-      printf 'conflict: %s already exists and is not managed by this repo\n' "$dest" >&2
+      printf 'conflict: %s already exists and is not managed by this repo (%s)\n' "$dest" "$agent" >&2
       return 1
       ;;
   esac
 }
 
+# $1 = agent, $2 = skill name
 uninstall_one() {
-  local name="$1"
+  local agent="$1" name="$2"
   local dest status
 
   skill_exists "$name" || die "unknown skill: $name"
-  dest="$(install_target "$name")"
-  status="$(status_for "$name")"
+  dest="$(install_target "$agent" "$name")"
+  status="$(status_for "$agent" "$name")"
 
   case "$status" in
     installed)
       rm "$dest"
-      printf 'uninstalled: %s\n' "$name"
+      printf 'uninstalled: %s (%s)\n' "$name" "$agent"
       ;;
     available)
-      printf 'not installed: %s\n' "$name"
+      printf 'not installed: %s (%s)\n' "$name" "$agent"
       ;;
     conflict)
-      printf 'refusing to remove unmanaged path: %s\n' "$dest" >&2
+      printf 'refusing to remove unmanaged path: %s (%s)\n' "$dest" "$agent" >&2
       return 1
       ;;
   esac
 }
 
+# Installs/uninstalls a skill across the agent(s) it targets, or a single
+# explicit agent when $2 is non-empty. $3 selects install_one/uninstall_one.
+apply_for_name() {
+  local name="$1" agent_filter="$2" action="$3" agent rc
+  rc=0
+  skill_exists "$name" || die "unknown skill: $name"
+
+  if [ -n "$agent_filter" ]; then
+    skill_targets_agent "$name" "$agent_filter" \
+      || die "skill '$name' does not target agent '$agent_filter'"
+    "$action" "$agent_filter" "$name" || rc=1
+    return "$rc"
+  fi
+
+  for agent in $(skill_agents "$name"); do
+    "$action" "$agent" "$name" || rc=1
+  done
+  return "$rc"
+}
+
+install_for_name() {
+  apply_for_name "$1" "$2" install_one
+}
+
+uninstall_for_name() {
+  apply_for_name "$1" "$2" uninstall_one
+}
+
+agent_status_or_dash() {
+  local name="$1" agent="$2"
+  if skill_targets_agent "$name" "$agent"; then
+    status_for "$agent" "$name"
+  else
+    printf -- '-'
+  fi
+}
+
 cmd_list() {
-  local name status desc
-  printf '%-11s %-28s %s\n' 'STATUS' 'SKILL' 'DESCRIPTION'
-  printf '%-11s %-28s %s\n' '------' '-----' '-----------'
+  local name desc
+  printf '%-11s %-11s %-28s %s\n' 'CODEX' 'CLAUDE' 'SKILL' 'DESCRIPTION'
+  printf '%-11s %-11s %-28s %s\n' '-----' '------' '-----' '-----------'
   while IFS= read -r name; do
-    status="$(status_for "$name")"
     desc="$(skill_description "$name")"
-    printf '%-11s %-28s %s\n' "$status" "$name" "$desc"
+    printf '%-11s %-11s %-28s %s\n' \
+      "$(agent_status_or_dash "$name" codex)" \
+      "$(agent_status_or_dash "$name" claude)" \
+      "$name" "$desc"
   done < <(skill_names)
 }
 
+# Parses a leading "--agent AGENT" pair off "$@" if present, validates it,
+# and prints it (empty when absent). Caller re-reads $# after shifting.
+parse_agent_flag() {
+  if [ "$#" -ge 2 ] && [ "$1" = "--agent" ]; then
+    case "$2" in
+      codex|claude) printf '%s' "$2" ;;
+      *) die "unknown agent: $2 (expected codex or claude)" ;;
+    esac
+  fi
+}
+
 cmd_install() {
-  local arg failed
+  local agent_filter arg failed
   failed=0
+  agent_filter="$(parse_agent_flag "$@")"
+  [ -n "$agent_filter" ] && shift 2
 
   if [ "$#" -eq 0 ]; then
     interactive_install
@@ -164,23 +300,26 @@ cmd_install() {
 
   if [ "$1" = "all" ]; then
     while IFS= read -r arg; do
-      install_one "$arg" || failed=1
+      install_for_name "$arg" "$agent_filter" || failed=1
     done < <(skill_names)
     return "$failed"
   fi
 
   for arg in "$@"; do
-    install_one "$arg" || failed=1
+    install_for_name "$arg" "$agent_filter" || failed=1
   done
   return "$failed"
 }
 
 cmd_uninstall() {
-  local arg failed
-  [ "$#" -gt 0 ] || die "uninstall requires at least one skill name"
+  local agent_filter arg failed
   failed=0
+  agent_filter="$(parse_agent_flag "$@")"
+  [ -n "$agent_filter" ] && shift 2
+
+  [ "$#" -gt 0 ] || die "uninstall requires at least one skill name"
   for arg in "$@"; do
-    uninstall_one "$arg" || failed=1
+    uninstall_for_name "$arg" "$agent_filter" || failed=1
   done
   return "$failed"
 }
@@ -193,10 +332,11 @@ cmd_update() {
 }
 
 cmd_doctor() {
-  printf 'repo:        %s\n' "$REPO_ROOT"
-  printf 'skills dir:  %s\n' "$SKILLS_DIR"
-  printf 'install dir: %s\n' "$INSTALL_DIR"
-  printf 'command:     %s\n' "${BASH_SOURCE[0]}"
+  printf 'repo:           %s\n' "$REPO_ROOT"
+  printf 'skills dir:     %s\n' "$SKILLS_DIR"
+  printf 'codex install:  %s\n' "$CODEX_DIR"
+  printf 'claude install: %s\n' "$CLAUDE_DIR"
+  printf 'command:        %s\n' "${BASH_SOURCE[0]}"
   printf '\n'
   cmd_list
 }
@@ -215,7 +355,7 @@ interactive_install() {
 
   while IFS= read -r key; do
     names+=("$key")
-    status="$(status_for "$key")"
+    status="$(skill_status_summary "$key")"
     if [ "$status" = "installed" ]; then
       selected+=("1")
     else
@@ -236,10 +376,12 @@ interactive_install() {
 
   while [ "$quit" -eq 0 ]; do
     tput clear
-    printf 'Yuzuru Codex Skills\n'
-    printf 'Install dir: %s\n\n' "$INSTALL_DIR"
+    printf 'Yuzuru Skills\n'
+    printf 'Codex install:  %s\n' "$CODEX_DIR"
+    printf 'Claude install: %s\n\n' "$CLAUDE_DIR"
     printf 'Use arrows to move, Space to toggle, a=all, n=none, Enter=apply, q=quit.\n'
-    printf 'Conflicts are shown as [!] and are not modified.\n\n'
+    printf 'Conflicts are shown as [!] and are not modified. A toggle applies to every\n'
+    printf 'agent the skill targets; use `skill install --agent AGENT NAME` for one agent only.\n\n'
 
     i=0
     while [ "$i" -lt "$count" ]; do
@@ -320,9 +462,9 @@ interactive_install() {
   while [ "$i" -lt "$count" ]; do
     if [ "${conflicts[$i]}" = "0" ]; then
       if [ "${selected[$i]}" = "1" ]; then
-        install_one "${names[$i]}"
+        install_for_name "${names[$i]}" ""
       else
-        uninstall_one "${names[$i]}"
+        uninstall_for_name "${names[$i]}" ""
       fi
     fi
     i=$((i + 1))
