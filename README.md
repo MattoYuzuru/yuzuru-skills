@@ -83,6 +83,17 @@ Plugin is the right shape when an integration should be installable and more sta
 
 All current skills target both Codex and Claude Code.
 
+### `github-workflow`
+
+GitHub repository, issue, pull request, Projects, and Actions workflow without MCP:
+
+- token-safe REST and GraphQL helper with compact JSON;
+- repository About, topics, languages, and local Git context;
+- issue search/create/update/close plus labels, assignees, milestones, and Projects V2;
+- pull request detection, creation, metadata, checks, close, and guarded merge;
+- Actions workflow/run/job inspection, bounded logs, watch, rerun, dispatch, and cancel;
+- bounded read retries, no automatic write retries, and explicit effect confirmations.
+
 ### `gitlab-workflow`
 
 GitLab repository and merge request workflow:
