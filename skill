@@ -374,7 +374,8 @@ cmd_new() {
 }
 
 cmd_validate() {
-  python3 "${REPO_ROOT}/scripts/validate_skills.py" --skills-dir "$SKILLS_DIR" "$@"
+  python3 "${REPO_ROOT}/scripts/validate_skills.py" \
+    --skills-dir "$SKILLS_DIR" --evals-dir "${REPO_ROOT}/evals" "$@"
 }
 
 interactive_install() {

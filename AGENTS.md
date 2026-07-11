@@ -10,6 +10,9 @@ Read `docs/skill-authoring.md` before creating or substantially restructuring a 
 It defines the repository's context budgets, routing pattern, script contract, effect
 classification, eval expectations, and review checklist.
 
+Repository-only trigger and effect contracts live in `evals/<skill-name>.json`; they are not
+installed or loaded when a skill activates.
+
 ## The Agent Skills format
 
 A skill is a directory under `skills/<name>/` containing:
@@ -135,7 +138,8 @@ Claude Code ignores this file entirely. Do not add it to a Claude-only skill.
    one target at a time) and confirm the symlink lands where expected
    (`~/.agents/skills` for Codex, `~/.claude/skills` for Claude Code, both overridable via
    `YUZURU_CODEX_SKILLS_DIR` / `YUZURU_CLAUDE_SKILLS_DIR`).
-7. Update the "Current Skills" list in `README.md`.
+7. Add `evals/<name>.json` when triggering is ambiguous or the skill has side effects.
+8. Update the "Current Skills" list in `README.md`.
 
 ### Minimal template
 

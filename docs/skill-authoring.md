@@ -147,6 +147,29 @@ Classify every capability:
 Instructions are not a security boundary. Enforce read-only behavior with credentials, API scopes,
 database roles, sandboxing, and server-side validation.
 
+## Evaluation Contract
+
+Store model-facing evaluation data outside the installed skill at `evals/<skill-name>.json`.
+Add a contract when triggering is ambiguous or the skill can cause side effects:
+
+```json
+{
+  "version": 1,
+  "should_trigger": ["Inspect this GitLab merge request", "Why did this GitLab job fail?"],
+  "should_not_trigger": ["Explain Git branches", "Inspect my GitHub pull request"],
+  "capabilities": [
+    {"name": "mr-read", "effect": "read", "confirmation": "none"},
+    {"name": "mr-create", "effect": "write", "confirmation": "explicit"},
+    {"name": "force-push", "effect": "destructive", "confirmation": "exact"}
+  ]
+}
+```
+
+Use at least two realistic positive and negative trigger examples. Keep capability names stable and
+kebab-cased. Confirmation must be `none` for reads, `explicit` for writes, and `exact` for
+destructive actions. `./skill validate` checks this contract; behavioral runners may consume it
+later without changing the installed skill format.
+
 ## Writing Style
 
 Write machine-facing instructions and references in concise English. Preserve official domain and

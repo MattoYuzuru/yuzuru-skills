@@ -130,6 +130,7 @@ Read-only Central University LMS workflow:
 
 ```text
 skills/     # shared skills, one folder per skill, used by every agent it targets
+evals/      # repository-only trigger and side-effect contracts
 plugins/    # future plugins
 scripts/    # shared helper scripts
 AGENTS.md   # skill-authoring standard: frontmatter, metadata, conventions

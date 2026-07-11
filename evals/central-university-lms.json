@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Покажи мои ближайшие дедлайны в Central University",
+    "Какие домашние задания сейчас есть в моем LMS?",
+    "Summarize my current Central University courses from the LMS"
+  ],
+  "should_not_trigger": [
+    "Найди публичное расписание Центрального университета в интернете",
+    "Спроектируй универсальную LMS для онлайн-школы",
+    "Explain how learning management systems work"
+  ],
+  "capabilities": [
+    {"name": "inspect-courses", "effect": "read", "confirmation": "none"},
+    {"name": "inspect-homework", "effect": "read", "confirmation": "none"},
+    {"name": "inspect-deadlines", "effect": "read", "confirmation": "none"}
+  ]
+}

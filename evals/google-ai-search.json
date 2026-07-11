@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Погугли свежие изменения в Kotlin 2.3",
+    "Сравни актуальные цены этих сервисов со ссылками на источники",
+    "Verify this current public claim on the web"
+  ],
+  "should_not_trigger": [
+    "Найди класс LaunchOrderService в локальном репозитории",
+    "Переведи этот абзац на английский",
+    "Show me the official OpenAI API documentation"
+  ],
+  "capabilities": [
+    {"name": "search-web", "effect": "read", "confirmation": "none"},
+    {"name": "check-configuration", "effect": "read", "confirmation": "none"},
+    {"name": "configure-api-key", "effect": "write", "confirmation": "explicit"},
+    {"name": "remove-api-key", "effect": "destructive", "confirmation": "exact"}
+  ]
+}

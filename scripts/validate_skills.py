@@ -18,6 +18,7 @@ RESOURCE_RE = re.compile(r"`((?:references|scripts|assets)/[^`]+)`")
 ABSOLUTE_PATH_RE = re.compile(r"(?:/Users/|/home/)[^\s`]+")
 RUNTIME_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", "node_modules"}
 ALLOWED_TARGETS = {"codex", "claude"}
+EFFECT_CONFIRMATION = {"read": "none", "write": "explicit", "destructive": "exact"}
 TEMPLATE_MARKERS = {
     "Describe the capability and its scope in one short paragraph.",
     "Select the relevant route and load only its required reference.",
@@ -135,7 +136,65 @@ def validate_target_metadata(skill_dir: Path, frontmatter: dict[str, str], resul
     parse_target_list(entries[0].split(":", 1)[1].strip(), "skill.yaml targets", result)
 
 
-def validate_skill(skill_dir: Path) -> Result:
+def validate_eval_contract(evals_dir: Path, name: str, result: Result) -> None:
+    path = evals_dir / f"{name}.json"
+    if not path.exists():
+        return
+    try:
+        contract = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        result.errors.append(f"invalid eval contract: {exc}")
+        return
+    if not isinstance(contract, dict):
+        result.errors.append("eval contract must be a JSON object")
+        return
+    if contract.get("version") != 1:
+        result.errors.append("eval contract version must be 1")
+
+    examples: dict[str, list[str]] = {}
+    for key in ("should_trigger", "should_not_trigger"):
+        value = contract.get(key)
+        if not isinstance(value, list) or len(value) < 2:
+            result.errors.append(f"eval contract {key} must contain at least two examples")
+            continue
+        if not all(isinstance(item, str) and item.strip() for item in value):
+            result.errors.append(f"eval contract {key} examples must be non-empty strings")
+            continue
+        normalized = [item.strip().casefold() for item in value]
+        if len(normalized) != len(set(normalized)):
+            result.errors.append(f"eval contract {key} examples must be unique")
+        examples[key] = normalized
+    if set(examples.get("should_trigger", [])) & set(examples.get("should_not_trigger", [])):
+        result.errors.append("eval contract trigger and non-trigger examples must not overlap")
+
+    capabilities = contract.get("capabilities")
+    if not isinstance(capabilities, list) or not capabilities:
+        result.errors.append("eval contract capabilities must be a non-empty list")
+        return
+    names: list[str] = []
+    for index, capability in enumerate(capabilities, start=1):
+        label = f"eval capability {index}"
+        if not isinstance(capability, dict):
+            result.errors.append(f"{label} must be an object")
+            continue
+        capability_name = capability.get("name")
+        effect = capability.get("effect")
+        confirmation = capability.get("confirmation")
+        if not isinstance(capability_name, str) or not NAME_RE.fullmatch(capability_name):
+            result.errors.append(f"{label} name must be kebab-case")
+        else:
+            names.append(capability_name)
+        if effect not in EFFECT_CONFIRMATION:
+            result.errors.append(f"{label} effect must be read, write, or destructive")
+        elif confirmation != EFFECT_CONFIRMATION[effect]:
+            result.errors.append(
+                f"{label} with effect {effect} must use confirmation {EFFECT_CONFIRMATION[effect]}"
+            )
+    if len(names) != len(set(names)):
+        result.errors.append("eval capability names must be unique")
+
+
+def validate_skill(skill_dir: Path, evals_dir: Path) -> Result:
     result = Result(skill=skill_dir.name)
     skill_file = skill_dir / "SKILL.md"
     if not skill_file.is_file():
@@ -146,6 +205,7 @@ def validate_skill(skill_dir: Path) -> Result:
     name = frontmatter.get("name", "")
     description = frontmatter.get("description", "")
     validate_target_metadata(skill_dir, frontmatter, result)
+    validate_eval_contract(evals_dir, skill_dir.name, result)
 
     if not name:
         result.errors.append("frontmatter is missing name")
@@ -221,13 +281,15 @@ def main() -> int:
     parser.add_argument("names", nargs="*", help="skill names or 'all' (default: all)")
     parser.add_argument("--json", action="store_true", help="emit machine-readable results")
     parser.add_argument("--skills-dir", type=Path, required=True, help=argparse.SUPPRESS)
+    parser.add_argument("--evals-dir", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     try:
         paths = discover_skills(args.skills_dir, args.names)
     except ValueError as exc:
         parser.error(str(exc))
-    results = [validate_skill(path) for path in paths]
+    evals_dir = args.evals_dir or args.skills_dir.parent / "evals"
+    results = [validate_skill(path, evals_dir) for path in paths]
 
     if args.json:
         print(
