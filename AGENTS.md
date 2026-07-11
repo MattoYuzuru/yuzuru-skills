@@ -6,6 +6,10 @@ it — there is no `skills/codex/` vs `skills/claude/` split. This file is the s
 to follow when writing a new skill or editing an existing one, by hand or by asking an
 agent to generate one.
 
+Read `docs/skill-authoring.md` before creating or substantially restructuring a skill.
+It defines the repository's context budgets, routing pattern, script contract, effect
+classification, eval expectations, and review checklist.
+
 ## The Agent Skills format
 
 A skill is a directory under `skills/<name>/` containing:
@@ -15,7 +19,7 @@ skills/<name>/
   SKILL.md            required — frontmatter + instructions
   scripts/             optional — deterministic code the skill runs
   references/          optional — detail loaded on demand, not at activation
-  assets/               optional — templates, schemas, static files
+  assets/               optional — output templates and static files
   agents/openai.yaml    optional — Codex-only UI metadata, see below
 ```
 
@@ -66,6 +70,18 @@ belongs in `references/*.md` and should only be pointed to from the body ("Read
 deterministic, credential-sensitive, or repeated (see `skills/gitlab-workflow/scripts/gitlab_api.py`
 for the pattern this repo follows: read a token from env/file, never print it, emit
 compact JSON for the agent to summarize).
+
+Target 200 lines for `SKILL.md`; 500 lines is a hard limit. For multi-capability skills,
+add an `Intent -> reference -> script -> effect` routing table and read only the selected
+reference. Keep references one level below `SKILL.md`. Put schemas in `references/` when
+the model must reason about them; reserve `assets/` for files used in generated output.
+
+Resolve the installed skill directory before running helpers. Never assume the current
+working directory is this repository, and never commit maintainer-specific absolute paths.
+
+Scripts must provide credential-free `--help`, compact machine-readable stdout, diagnostics
+on stderr, bounded collection output, non-zero failure exits, and explicit write/destructive
+commands. See `docs/skill-authoring.md` for the full contract.
 
 ### Codex extension: `agents/openai.yaml`
 
