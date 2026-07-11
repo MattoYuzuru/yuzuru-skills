@@ -17,6 +17,7 @@ LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 RESOURCE_RE = re.compile(r"`((?:references|scripts|assets)/[^`]+)`")
 ABSOLUTE_PATH_RE = re.compile(r"(?:/Users/|/home/)[^\s`]+")
 RUNTIME_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", "node_modules"}
+ALLOWED_TARGETS = {"codex", "claude"}
 TEMPLATE_MARKERS = {
     "Describe the capability and its scope in one short paragraph.",
     "Select the relevant route and load only its required reference.",
@@ -95,6 +96,45 @@ def validate_openai_metadata(skill_dir: Path, name: str, result: Result) -> None
         result.errors.append(f"agents/openai.yaml default_prompt must mention ${name}")
 
 
+def parse_target_list(value: str, source: str, result: Result) -> list[str]:
+    if not value.startswith("[") or not value.endswith("]"):
+        result.errors.append(f"{source} must use an inline list such as [codex, claude]")
+        return []
+    targets = [item.strip() for item in value[1:-1].split(",") if item.strip()]
+    if not targets:
+        result.errors.append(f"{source} must not be empty")
+        return []
+    unknown = sorted(set(targets) - ALLOWED_TARGETS)
+    if unknown:
+        result.errors.append(f"{source} has unknown targets: {', '.join(unknown)}")
+    if len(targets) != len(set(targets)):
+        result.errors.append(f"{source} must not contain duplicate targets")
+    return targets
+
+
+def validate_target_metadata(skill_dir: Path, frontmatter: dict[str, str], result: Result) -> None:
+    sidecar = skill_dir / "skill.yaml"
+    legacy = frontmatter.get("agents")
+    if sidecar.exists() and legacy:
+        result.errors.append("use skill.yaml targets or legacy agents frontmatter, not both")
+        return
+    if legacy:
+        parse_target_list(legacy, "legacy agents frontmatter", result)
+        return
+    if not sidecar.exists():
+        return
+    try:
+        lines = sidecar.read_text(encoding="utf-8").splitlines()
+    except UnicodeDecodeError as exc:
+        result.errors.append(f"skill.yaml must be UTF-8: {exc}")
+        return
+    entries = [line for line in lines if line.strip() and not line.lstrip().startswith("#")]
+    if len(entries) != 1 or not entries[0].startswith("targets:"):
+        result.errors.append("skill.yaml must contain only targets: [codex, claude]")
+        return
+    parse_target_list(entries[0].split(":", 1)[1].strip(), "skill.yaml targets", result)
+
+
 def validate_skill(skill_dir: Path) -> Result:
     result = Result(skill=skill_dir.name)
     skill_file = skill_dir / "SKILL.md"
@@ -105,6 +145,7 @@ def validate_skill(skill_dir: Path) -> Result:
     frontmatter, body = parse_frontmatter(skill_file, result)
     name = frontmatter.get("name", "")
     description = frontmatter.get("description", "")
+    validate_target_metadata(skill_dir, frontmatter, result)
 
     if not name:
         result.errors.append("frontmatter is missing name")

@@ -1,7 +1,6 @@
 ---
 name: gitlab-workflow
 description: GitLab repository and merge request workflow. Use when the user asks to inspect a GitLab project, read merge requests, check pipelines, search code, create a fork workflow, push a branch, or prepare a merge request through GitLab REST API using a local Personal Access Token.
-agents: [codex, claude]
 ---
 
 # GitLab Workflow

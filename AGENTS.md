@@ -17,6 +17,7 @@ A skill is a directory under `skills/<name>/` containing:
 ```text
 skills/<name>/
   SKILL.md            required — frontmatter + instructions
+  skill.yaml          optional — repository target-agent metadata
   scripts/             optional — deterministic code the skill runs
   references/          optional — detail loaded on demand, not at activation
   assets/               optional — output templates and static files
@@ -33,7 +34,6 @@ is required; everything else is convention.
 ---
 name: skill-name
 description: What this does and when to use it, one or two sentences.
-agents: [codex, claude]
 ---
 ```
 
@@ -44,11 +44,17 @@ agents: [codex, claude]
   git things") are the most common reason a skill never gets used. Don't restrict wording
   to one agent ("Use when the user asks Codex to...") — write it so it reads naturally for
   any agent.
-- `agents` — this repo's own convention (not part of the open standard, but safely
-  ignored by tools that don't know it). A list of `codex`, `claude`, or both. **Omit it
-  only if the skill is genuinely useful to both agents unchanged** — the `skill` CLI
-  treats a missing field as `[codex, claude]`. If a skill only makes sense for one agent
-  (e.g. it wraps something Codex-specific), tag it explicitly with just that one.
+
+Keep portable Agent Skills frontmatter limited to `name` and `description`. Put repository
+target metadata in `skill.yaml` when a skill supports only a subset of agents:
+
+```yaml
+targets: [codex]
+```
+
+Omit `skill.yaml` when both Codex and Claude are supported. The CLI still accepts legacy
+`agents: [codex, claude]` frontmatter for backward compatibility, but new and migrated skills
+must use the sidecar.
 
 Other optional frontmatter is agent-specific and safely ignored by agents that don't
 recognize it:
@@ -94,8 +100,7 @@ interface:
   default_prompt: "Use $skill-name to ..."
 ```
 
-Claude Code ignores this file entirely; it's safe to leave in a skill tagged
-`agents: [claude]` only, though there's no reason to add it in that case.
+Claude Code ignores this file entirely. Do not add it to a Claude-only skill.
 
 ## Writing a good description
 
@@ -103,7 +108,7 @@ Claude Code ignores this file entirely; it's safe to leave in a skill tagged
 - Be specific, not generic: "Refactor Python functions to async/await" beats "help with
   Python."
 - Don't hardcode one agent's name into the description or body unless the skill is
-  genuinely agent-specific (and tagged accordingly in `agents:`).
+  genuinely agent-specific (and targeted accordingly in `skill.yaml`).
 - If the skill has a "gotchas" section, prioritize real problems you've hit over
   hypothetical ones — that's the highest-value content in the whole file.
 
@@ -120,8 +125,8 @@ Claude Code ignores this file entirely; it's safe to leave in a skill tagged
 ## Adding a new skill: checklist
 
 1. `mkdir -p skills/<name>/scripts` (and `references/`, `assets/` if needed).
-2. Write `SKILL.md` with `name`, `description`, and `agents:` frontmatter, following the
-   template below.
+2. Write `SKILL.md` with portable `name` and `description` frontmatter, following the
+   template below. Add `skill.yaml` only for a restricted target set.
 3. Put any deterministic/credential-handling logic in `scripts/`, called from the body.
 4. Add `agents/openai.yaml` only if the skill should target Codex's UI.
 5. Run `./skill list` — confirm the new skill shows up with the right per-agent status
@@ -138,7 +143,6 @@ Claude Code ignores this file entirely; it's safe to leave in a skill tagged
 ---
 name: my-new-skill
 description: What it does. Use when the user asks to <trigger condition>.
-agents: [codex, claude]
 ---
 
 # My New Skill

@@ -44,8 +44,8 @@ skill update                        # git pull --ff-only in this repository
 skill doctor                        # show paths and current status
 ```
 
-Which agent(s) a skill installs for is declared in its `SKILL.md` (`agents:` frontmatter,
-see AGENTS.md); a skill without that field installs for both.
+Which agent(s) a skill installs for is declared in optional `skill.yaml` target metadata;
+a skill without that file installs for both. Legacy `agents:` frontmatter remains supported.
 
 By default, installed skills are symlinks in:
 
@@ -132,5 +132,5 @@ Read-only Central University LMS workflow:
 skills/     # shared skills, one folder per skill, used by every agent it targets
 plugins/    # future plugins
 scripts/    # shared helper scripts
-AGENTS.md   # skill-authoring standard: frontmatter, agents: field, conventions
+AGENTS.md   # skill-authoring standard: frontmatter, metadata, conventions
 ```

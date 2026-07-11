@@ -11,6 +11,7 @@ from pathlib import Path
 
 NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 ALLOWED_RESOURCES = {"scripts", "references", "assets"}
+ALLOWED_TARGETS = {"codex", "claude"}
 
 
 def parse_resources(value: str) -> list[str]:
@@ -21,6 +22,16 @@ def parse_resources(value: str) -> list[str]:
             f"unknown resources: {', '.join(unknown)}; expected scripts,references,assets"
         )
     return resources
+
+
+def parse_targets(value: str) -> list[str]:
+    targets = [item.strip() for item in value.split(",") if item.strip()]
+    unknown = sorted(set(targets) - ALLOWED_TARGETS)
+    if unknown or not targets:
+        expected = "codex,claude"
+        detail = f"unknown targets: {', '.join(unknown)}; " if unknown else ""
+        raise argparse.ArgumentTypeError(f"{detail}expected a non-empty subset of {expected}")
+    return list(dict.fromkeys(targets))
 
 
 def title_from_name(name: str) -> str:
@@ -36,6 +47,12 @@ def main() -> int:
         type=parse_resources,
         default=[],
         help="comma-separated optional directories: scripts,references,assets",
+    )
+    parser.add_argument(
+        "--targets",
+        type=parse_targets,
+        default=["codex", "claude"],
+        help="comma-separated target agents: codex,claude (default: both)",
     )
     parser.add_argument("--skills-dir", type=Path, required=True, help=argparse.SUPPRESS)
     args = parser.parse_args()
@@ -80,6 +97,9 @@ Describe the capability and its scope in one short paragraph.
 - Require explicit authorization before write or destructive operations.
 """
     (skill_dir / "SKILL.md").write_text(body, encoding="utf-8")
+    if set(args.targets) != ALLOWED_TARGETS:
+        targets = ", ".join(args.targets)
+        (skill_dir / "skill.yaml").write_text(f"targets: [{targets}]\n", encoding="utf-8")
 
     print(f"created: {skill_dir}")
     print("next: replace the template text, add only required resources, then run:")
