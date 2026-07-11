@@ -6,7 +6,14 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from github_workflow.client import Response
-from github_workflow.commands import issue_command, mutation, normalize_pr, project_command, repository_command
+from github_workflow.commands import (
+    actions_command,
+    issue_command,
+    mutation,
+    normalize_pr,
+    project_command,
+    repository_command,
+)
 from github_workflow.errors import GitHubError
 from github_workflow.targets import RepositoryTarget
 
@@ -104,6 +111,26 @@ class CommandTests(unittest.TestCase):
         projects, _ = project_command("project-list", args, client, TARGET)
         self.assertEqual(projects[0]["title"], "Roadmap")
         self.assertIn("organization", client.calls[0][1])
+
+    def test_actions_mutation_dry_runs_do_not_read_unrelated_ids(self) -> None:
+        cases = [
+            ("run-rerun", {"run_id": 1}, "/actions/runs/1/rerun"),
+            ("run-rerun-failed", {"run_id": 2}, "/actions/runs/2/rerun-failed-jobs"),
+            ("job-rerun", {"job_id": 3}, "/actions/jobs/3/rerun"),
+            ("run-cancel", {"run_id": 4}, "/actions/runs/4/cancel"),
+        ]
+        for command, identifiers, endpoint in cases:
+            with self.subTest(command=command):
+                args = SimpleNamespace(
+                    dry_run=True,
+                    confirm_write=False,
+                    confirm_destructive=False,
+                    confirm_target=None,
+                    **identifiers,
+                )
+                data, response = actions_command(command, args, FakeClient(), TARGET)
+                self.assertEqual(data["endpoint"], "/repos/octo/repo" + endpoint)
+                self.assertIsNone(response)
 
 
 if __name__ == "__main__":

@@ -318,6 +318,9 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         emit_error(GitHubError("operation interrupted", kind="network", retryable=True))
         return 130
+    except Exception as exc:
+        emit_error(GitHubError(f"unexpected internal error: {exc.__class__.__name__}", kind="internal"))
+        return 2
 
 
 if __name__ == "__main__":

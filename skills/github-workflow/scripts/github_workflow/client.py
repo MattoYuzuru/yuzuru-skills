@@ -28,7 +28,7 @@ class SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
         if redirected is None:
             return None
         source = urllib.parse.urlparse(request.full_url).netloc.casefold()
-        destination = urllib.parse.urlparse(newurl).netloc.casefold()
+        destination = urllib.parse.urlparse(urllib.parse.urljoin(request.full_url, newurl)).netloc.casefold()
         if source != destination:
             redirected.remove_header("Authorization")
         return redirected
@@ -118,7 +118,7 @@ def _next_link(header: str | None) -> str | None:
         return None
     for part in header.split(","):
         segments = [segment.strip() for segment in part.split(";")]
-        if len(segments) < 2 or segments[1] != 'rel="next"':
+        if len(segments) < 2 or not any(segment == 'rel="next"' for segment in segments[1:]):
             continue
         if segments[0].startswith("<") and segments[0].endswith(">"):
             return segments[0][1:-1]

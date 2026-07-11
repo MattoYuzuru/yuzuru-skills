@@ -222,6 +222,24 @@ def normalize_topic(value: str) -> str:
     return re.sub(r"-+", "-", topic).strip("-")
 
 
+def validate_pr_head(client: GitHubClient, target: RepositoryTarget, head: str) -> tuple[str, str]:
+    if ":" in head:
+        owner, branch = head.split(":", 1)
+    else:
+        owner, branch = target.owner, head
+    if not owner or not branch:
+        raise GitHubError("pull request head must be branch or owner:branch", kind="validation")
+    source = RepositoryTarget(target.host, owner, target.repo)
+    encoded = urllib.parse.quote(branch, safe="")
+    try:
+        client.request("GET", _repo_path(source, f"/branches/{encoded}"))
+    except GitHubError as exc:
+        if exc.kind == "not-found":
+            raise GitHubError(f"pull request head branch is not pushed: {head}", kind="validation") from None
+        raise
+    return owner, branch
+
+
 def repository_command(command: str, args: Any, client: GitHubClient, target: RepositoryTarget) -> tuple[Any, Response | None]:
     if command == "repo-info":
         response = client.request("GET", _repo_path(target))
@@ -447,9 +465,12 @@ def pr_command(command: str, args: Any, client: GitHubClient, target: Repository
         return _collect_checks(client, target, sha)
     if command == "pr-create":
         body = read_body(args)
+        head_owner, head_branch = validate_pr_head(client, target, args.head)
         base = args.base
         if not base:
             base = client.request("GET", _repo_path(target)).data.get("default_branch")
+        if head_owner.casefold() == target.owner.casefold() and head_branch == base:
+            raise GitHubError("pull request head and base must differ", kind="validation")
         existing, _ = client.paginate(_repo_path(target, "/pulls"), query={"state": "open", "head": args.head, "base": base}, limit=10)
         if existing:
             raise GitHubError(f"an open pull request already exists: {existing[0].get('html_url')}", kind="validation")
@@ -610,18 +631,30 @@ def actions_command(command: str, args: Any, client: GitHubClient, target: Repos
             delay = min(remaining, base_delay + random.uniform(0.0, min(1.0, base_delay * 0.1)))
             time.sleep(delay)
             interval = min(args.max_interval, interval * 1.5)
-    action_paths = {
-        "run-rerun": (f"/actions/runs/{args.run_id}/rerun", "write", f"{target.full_name}:run:{args.run_id}"),
-        "run-rerun-failed": (f"/actions/runs/{args.run_id}/rerun-failed-jobs", "write", f"{target.full_name}:run:{args.run_id}"),
-        "job-rerun": (f"/actions/jobs/{args.job_id}/rerun", "write", f"{target.full_name}:job:{args.job_id}"),
-        "run-cancel": (f"/actions/runs/{args.run_id}/cancel", "destructive", f"{target.full_name}:run:{args.run_id}"),
-    }
-    if command in action_paths:
-        suffix, effect, exact = action_paths[command]
+    if command in {"run-rerun", "run-rerun-failed", "job-rerun", "run-cancel"}:
+        if command == "job-rerun":
+            object_id = args.job_id
+            suffix, effect = f"/actions/jobs/{object_id}/rerun", "write"
+            exact = f"{target.full_name}:job:{object_id}"
+        else:
+            object_id = args.run_id
+            suffixes = {
+                "run-rerun": ("rerun", "write"),
+                "run-rerun-failed": ("rerun-failed-jobs", "write"),
+                "run-cancel": ("cancel", "destructive"),
+            }
+            tail, effect = suffixes[command]
+            suffix = f"/actions/runs/{object_id}/{tail}"
+            exact = f"{target.full_name}:run:{object_id}"
         data, response = mutation(client, args, target, "POST", _repo_path(target, suffix), {}, effect=effect, exact_target=exact)
         if response:
-            verified = client.request("GET", _repo_path(target, f"/actions/runs/{args.run_id}")) if hasattr(args, "run_id") else client.request("GET", _repo_path(target, f"/actions/jobs/{args.job_id}"))
-            return {"accepted": response.status in {201, 202, 204}, "current": normalize_run(verified.data) if hasattr(args, "run_id") else normalize_job(verified.data)}, verified
+            if command == "job-rerun":
+                verified = client.request("GET", _repo_path(target, f"/actions/jobs/{object_id}"))
+                current = normalize_job(verified.data)
+            else:
+                verified = client.request("GET", _repo_path(target, f"/actions/runs/{object_id}"))
+                current = normalize_run(verified.data)
+            return {"accepted": response.status in {201, 202, 204}, "current": current}, verified
         return data, response
     if command == "workflow-dispatch":
         payload: dict[str, Any] = {"ref": args.ref}
