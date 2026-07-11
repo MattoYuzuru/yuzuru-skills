@@ -29,6 +29,9 @@ Usage:
   skill uninstall NAME         Uninstall one or more repository-installed skills
   skill uninstall --agent AGENT NAME [NAME...]
                                 Uninstall one or more skills for one agent only
+  skill new NAME --description TEXT [--resources LIST]
+                                Create a repository skill skeleton
+  skill validate [NAME...|all] Validate skill structure and authoring rules
   skill update                 Pull latest repository changes
   skill doctor                 Show paths and status
 
@@ -341,6 +344,14 @@ cmd_doctor() {
   cmd_list
 }
 
+cmd_new() {
+  python3 "${REPO_ROOT}/scripts/new_skill.py" --skills-dir "$SKILLS_DIR" "$@"
+}
+
+cmd_validate() {
+  python3 "${REPO_ROOT}/scripts/validate_skills.py" --skills-dir "$SKILLS_DIR" "$@"
+}
+
 interactive_install() {
   [ -t 0 ] && [ -t 1 ] || die "interactive install requires a terminal"
   command -v tput >/dev/null 2>&1 || die "interactive install requires tput"
@@ -488,6 +499,12 @@ main() {
       ;;
     uninstall|remove|rm)
       cmd_uninstall "$@"
+      ;;
+    new|init)
+      cmd_new "$@"
+      ;;
+    validate|check)
+      cmd_validate "$@"
       ;;
     update|upgrade)
       cmd_update
