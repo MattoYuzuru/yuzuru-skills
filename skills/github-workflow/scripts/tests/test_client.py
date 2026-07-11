@@ -4,8 +4,9 @@ import io
 import json
 import unittest
 import urllib.error
+import urllib.request
 
-from github_workflow.client import GitHubClient
+from github_workflow.client import GitHubClient, SafeRedirectHandler
 from github_workflow.errors import GitHubError
 
 
@@ -116,12 +117,32 @@ class ClientTests(unittest.TestCase):
             GitHubClient(urlopen=lambda *args, **kwargs: fatal).graphql("query X { viewer { login } }", {})
         self.assertEqual(caught.exception.kind, "graphql")
 
+        permission_errors = [
+            {"type": "INSUFFICIENT_SCOPES", "message": f"missing scope {index}"} for index in range(8)
+        ]
+        denied = FakeResponse({"data": None, "errors": permission_errors})
+        with self.assertRaises(GitHubError) as denied_error:
+            GitHubClient(urlopen=lambda *args, **kwargs: denied).graphql("query X { viewer { login } }", {})
+        self.assertEqual(denied_error.exception.kind, "permission")
+        self.assertEqual(len(denied_error.exception.details), 5)
+
     def test_response_is_bounded(self) -> None:
         response = GitHubClient(
             urlopen=lambda *args, **kwargs: FakeResponse(b"abcdefgh")
         ).request("GET", "/raw", raw=True, max_bytes=4)
         self.assertEqual(response.data, b"abcd")
         self.assertTrue(response.truncated)
+
+    def test_cross_host_redirect_drops_authorization(self) -> None:
+        request = urllib.request.Request(
+            "https://api.github.com/repos/o/r/actions/jobs/1/logs",
+            headers={"Authorization": "Bearer secret"},
+        )
+        handler = SafeRedirectHandler()
+        redirected = handler.redirect_request(
+            request, None, 302, "Found", {}, "https://results.example.net/signed-log"
+        )
+        self.assertIsNone(redirected.get_header("Authorization"))
 
 
 if __name__ == "__main__":

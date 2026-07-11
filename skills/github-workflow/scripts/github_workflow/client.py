@@ -20,6 +20,27 @@ RETRY_STATUSES = {408, 429, 502, 503, 504}
 DEFAULT_API_VERSION = "2022-11-28"
 
 
+class SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Drop authorization when a GitHub download redirects to another host."""
+
+    def redirect_request(self, request: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Any:
+        redirected = super().redirect_request(request, fp, code, msg, headers, newurl)
+        if redirected is None:
+            return None
+        source = urllib.parse.urlparse(request.full_url).netloc.casefold()
+        destination = urllib.parse.urlparse(newurl).netloc.casefold()
+        if source != destination:
+            redirected.remove_header("Authorization")
+        return redirected
+
+
+_SAFE_OPENER = urllib.request.build_opener(SafeRedirectHandler())
+
+
+def safe_urlopen(request: Any, *, timeout: float) -> Any:
+    return _SAFE_OPENER.open(request, timeout=timeout)
+
+
 @dataclass
 class Response:
     data: Any
@@ -78,6 +99,20 @@ def _api_message(data: Any, fallback: str) -> tuple[str, Any]:
     return fallback, None
 
 
+def _graphql_errors(errors: Any, limit: int = 5) -> list[dict[str, Any]]:
+    if not isinstance(errors, list):
+        return []
+    normalized: list[dict[str, Any]] = []
+    for error in errors[:limit]:
+        if not isinstance(error, dict):
+            normalized.append({"message": str(error)[:1000]})
+            continue
+        normalized.append({
+            key: error.get(key) for key in ("type", "message", "path", "locations") if error.get(key) is not None
+        })
+    return normalized
+
+
 def _next_link(header: str | None) -> str | None:
     if not header:
         return None
@@ -102,7 +137,7 @@ class GitHubClient:
         retries: int = 4,
         max_wait: float = 60.0,
         max_response_bytes: int = 4 * 1024 * 1024,
-        urlopen: Callable[..., Any] = urllib.request.urlopen,
+        urlopen: Callable[..., Any] = safe_urlopen,
         sleeper: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.time,
         jitter: Callable[[], float] = random.random,
@@ -293,9 +328,13 @@ class GitHubClient:
         data = response.data.get("data")
         if errors and data is None:
             message = str(errors[0].get("message", "GraphQL request failed")) if isinstance(errors, list) and errors else "GraphQL request failed"
-            raise GitHubError(message, kind="graphql", details=errors)
+            permission = any(
+                isinstance(item, dict) and item.get("type") in {"INSUFFICIENT_SCOPES", "FORBIDDEN"}
+                for item in errors
+            )
+            raise GitHubError(message, kind="permission" if permission else "graphql", details=_graphql_errors(errors))
         if errors:
-            response.data = {"data": data, "errors": errors, "partial": True}
+            response.data = {"data": data, "errors": _graphql_errors(errors), "partial": True}
         else:
             response.data = data
         return response
