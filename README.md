@@ -116,6 +116,24 @@ Read-only Central University LMS workflow:
 - compact Markdown/JSON summaries;
 - no secrets in this repository.
 
+## Authoring
+
+Read [AGENTS.md](AGENTS.md) and [docs/skill-authoring.md](docs/skill-authoring.md), then use the
+repository CLI for the mechanical steps:
+
+```bash
+./skill new my-skill \
+  --description "What it does. Use when the user asks for a concrete task." \
+  --resources scripts,references
+./skill validate my-skill
+./skill validate all
+```
+
+Keep `SKILL.md` as a short router, put deterministic behavior in `scripts/`, and load detailed
+knowledge from `references/` only when needed. Add `evals/<skill-name>.json` for ambiguous
+triggering or side effects. Use `--targets codex` or `--targets claude` only for a restricted skill;
+the default targets both agents without creating `skill.yaml`.
+
 ## Security
 
 - Do not commit secrets. Store them in `~/.config/yuzuru-codex-skills/` (the existing
