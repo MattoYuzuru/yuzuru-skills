@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Workflow"
+  short_description: "GitHub repository, PR, issue, and Actions workflow"
+  default_prompt: "Use $github-workflow to carry a local change through a safe GitHub workflow."
