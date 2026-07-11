@@ -110,7 +110,9 @@ class ClientTests(unittest.TestCase):
         partial = FakeResponse({"data": {"viewer": None}, "errors": [{"message": "hidden"}]})
         client = GitHubClient(urlopen=lambda *args, **kwargs: partial)
         response = client.graphql("query X { viewer { login } }", {})
-        self.assertTrue(response.data["partial"])
+        self.assertTrue(response.partial)
+        self.assertEqual(response.data, {"viewer": None})
+        self.assertEqual(response.errors[0]["message"], "hidden")
 
         fatal = FakeResponse({"data": None, "errors": [{"message": "denied"}]})
         with self.assertRaises(GitHubError) as caught:

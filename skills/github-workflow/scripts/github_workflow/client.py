@@ -48,6 +48,8 @@ class Response:
     headers: dict[str, str]
     url: str
     truncated: bool = False
+    partial: bool = False
+    errors: list[dict[str, Any]] | None = None
 
     @property
     def rate_limit(self) -> dict[str, Any] | None:
@@ -334,7 +336,9 @@ class GitHubClient:
             )
             raise GitHubError(message, kind="permission" if permission else "graphql", details=_graphql_errors(errors))
         if errors:
-            response.data = {"data": data, "errors": _graphql_errors(errors), "partial": True}
+            response.data = data
+            response.partial = True
+            response.errors = _graphql_errors(errors)
         else:
             response.data = data
         return response

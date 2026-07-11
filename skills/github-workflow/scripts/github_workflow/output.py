@@ -26,6 +26,8 @@ def emit_success(
         "data": data,
         "pagination": pagination,
         "rate_limit": response.rate_limit if response else None,
+        "partial": response.partial if response else False,
+        "warnings": response.errors if response and response.errors else None,
     }
     print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
 
