@@ -3,7 +3,10 @@
   "should_trigger": [
     "Посмотри pipeline этого GitLab merge request",
     "Почему упала GitLab job?",
-    "Создай draft MR из моего форка"
+    "Создай draft MR из моего форка",
+    "Прочитай треды обсуждений в этом MR",
+    "Покажи последние коммиты в этом репозитории",
+    "Дай лог этой упавшей job"
   ],
   "should_not_trigger": [
     "Объясни, как работают git branches",
@@ -16,9 +19,15 @@
     {"name": "mr-read", "effect": "read", "confirmation": "none"},
     {"name": "pipeline-jobs", "effect": "read", "confirmation": "none"},
     {"name": "code-search", "effect": "read", "confirmation": "none"},
+    {"name": "commit-list", "effect": "read", "confirmation": "none"},
+    {"name": "commit-read", "effect": "read", "confirmation": "none"},
+    {"name": "job-trace", "effect": "read", "confirmation": "none"},
     {"name": "fork-create", "effect": "write", "confirmation": "explicit"},
     {"name": "mr-create", "effect": "write", "confirmation": "explicit"},
+    {"name": "mr-note-create", "effect": "write", "confirmation": "explicit"},
+    {"name": "mr-discussion-reply", "effect": "write", "confirmation": "explicit"},
     {"name": "upstream-push", "effect": "write", "confirmation": "explicit"},
-    {"name": "force-push", "effect": "destructive", "confirmation": "exact"}
+    {"name": "force-push", "effect": "destructive", "confirmation": "exact"},
+    {"name": "mr-discussion-resolve", "effect": "destructive", "confirmation": "exact"}
   ]
 }
