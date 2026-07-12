@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Прочитай задачу LP-1234 в Jira",
+    "Найди мои открытые задачи в Jira",
+    "Создай Engineering Task в Jira по этому описанию",
+    "Разбей этот Epic на sub-tasks",
+    "Свяжи эти два тикета в Jira",
+    "Переведи задачу LP-1234 в статус Review"
+  ],
+  "should_not_trigger": [
+    "Создай merge request в GitLab",
+    "Объясни, как работает JQL в целом",
+    "Заведи задачу в GitHub Issues"
+  ],
+  "capabilities": [
+    {"name": "auth-check", "effect": "read", "confirmation": "none"},
+    {"name": "read", "effect": "read", "confirmation": "none"},
+    {"name": "search", "effect": "read", "confirmation": "none"},
+    {"name": "createmeta", "effect": "read", "confirmation": "none"},
+    {"name": "link-types", "effect": "read", "confirmation": "none"},
+    {"name": "transitions", "effect": "read", "confirmation": "none"},
+    {"name": "epics-open", "effect": "read", "confirmation": "none"},
+    {"name": "create", "effect": "write", "confirmation": "explicit"},
+    {"name": "link", "effect": "write", "confirmation": "explicit"},
+    {"name": "move-status", "effect": "write", "confirmation": "explicit"}
+  ]
+}
