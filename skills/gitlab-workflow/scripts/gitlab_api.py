@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -13,7 +14,7 @@ import urllib.request
 from pathlib import Path
 
 
-DEFAULT_HOST = "https://gitlab.com"
+DEFAULT_HOST = "https://gitlab.tcsbank.ru"
 
 
 class GitLabError(RuntimeError):
@@ -34,6 +35,10 @@ def load_token(token_file: str | None) -> str:
 
 
 def project_id(path: str) -> str:
+    return urllib.parse.quote(path, safe="")
+
+
+def file_id(path: str) -> str:
     return urllib.parse.quote(path, safe="")
 
 
@@ -61,8 +66,35 @@ def request_json(host: str, token: str, method: str, path: str, data: dict | Non
     return json.loads(raw)
 
 
+def request_text(host: str, token: str, method: str, path: str) -> str:
+    host = host.rstrip("/")
+    headers = {"PRIVATE-TOKEN": token, "Accept": "text/plain"}
+
+    req = urllib.request.Request(f"{host}/api/v4{path}", headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        message = exc.read().decode("utf-8", errors="replace")
+        raise GitLabError(f"GitLab API error {exc.code}: {message}") from exc
+    except urllib.error.URLError as exc:
+        raise GitLabError(f"GitLab API connection error: {exc.reason}") from exc
+
+
 def pretty(data: object) -> None:
     print(json.dumps(data, ensure_ascii=False, indent=2))
+
+
+def markdown_outline(text: str, max_level: int) -> list[dict[str, object]]:
+    outline = []
+    for line in text.splitlines():
+        match = re.match(r"^(#{1,6})\s+(.+?)\s*$", line)
+        if not match:
+            continue
+        level = len(match.group(1))
+        if level <= max_level:
+            outline.append({"level": level, "title": match.group(2)})
+    return outline
 
 
 def add_common(parser: argparse.ArgumentParser) -> None:
@@ -79,6 +111,24 @@ def main() -> int:
 
     repo = sub.add_parser("repo-info")
     repo.add_argument("project")
+
+    tree = sub.add_parser("tree")
+    tree.add_argument("project")
+    tree.add_argument("--path", default="")
+    tree.add_argument("--ref", default="main")
+    tree.add_argument("--recursive", action="store_true")
+    tree.add_argument("--per-page", type=int, default=100)
+
+    raw = sub.add_parser("file-raw")
+    raw.add_argument("project")
+    raw.add_argument("file_path")
+    raw.add_argument("--ref", default="main")
+
+    outline = sub.add_parser("file-outline")
+    outline.add_argument("project")
+    outline.add_argument("file_paths", nargs="+")
+    outline.add_argument("--ref", default="main")
+    outline.add_argument("--max-level", type=int, default=2)
 
     mr_list = sub.add_parser("mr-list")
     mr_list.add_argument("project")
@@ -106,10 +156,23 @@ def main() -> int:
     jobs.add_argument("pipeline_id")
     jobs.add_argument("--per-page", type=int, default=50)
 
+    trace = sub.add_parser("job-trace")
+    trace.add_argument("project")
+    trace.add_argument("job_id")
+
     search = sub.add_parser("code-search")
     search.add_argument("project")
     search.add_argument("query")
     search.add_argument("--per-page", type=int, default=20)
+
+    commit_list = sub.add_parser("commit-list")
+    commit_list.add_argument("project")
+    commit_list.add_argument("--ref", default=None)
+    commit_list.add_argument("--per-page", type=int, default=20)
+
+    commit_read = sub.add_parser("commit-read")
+    commit_read.add_argument("project")
+    commit_read.add_argument("sha")
 
     fork = sub.add_parser("fork-create")
     fork.add_argument("project")
@@ -123,6 +186,23 @@ def main() -> int:
     mr_create.add_argument("--target-project-id", type=int)
     mr_create.add_argument("--remove-source-branch", action="store_true")
 
+    mr_note = sub.add_parser("mr-note-create")
+    mr_note.add_argument("project")
+    mr_note.add_argument("iid")
+    mr_note.add_argument("--body", required=True)
+
+    discussion_reply = sub.add_parser("mr-discussion-reply")
+    discussion_reply.add_argument("project")
+    discussion_reply.add_argument("iid")
+    discussion_reply.add_argument("discussion_id")
+    discussion_reply.add_argument("--body", required=True)
+
+    discussion_resolve = sub.add_parser("mr-discussion-resolve")
+    discussion_resolve.add_argument("project")
+    discussion_resolve.add_argument("iid")
+    discussion_resolve.add_argument("discussion_id")
+    discussion_resolve.add_argument("--unresolve", action="store_true")
+
     args = parser.parse_args()
 
     try:
@@ -132,6 +212,24 @@ def main() -> int:
             pretty(request_json(args.host, token, "GET", "/user"))
         elif args.command == "repo-info":
             pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}"))
+        elif args.command == "tree":
+            query = urllib.parse.urlencode({
+                "path": args.path,
+                "ref": args.ref,
+                "recursive": str(args.recursive).lower(),
+                "per_page": args.per_page,
+            })
+            pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/repository/tree?{query}"))
+        elif args.command == "file-raw":
+            query = urllib.parse.urlencode({"ref": args.ref})
+            print(request_text(args.host, token, "GET", f"/projects/{project_id(args.project)}/repository/files/{file_id(args.file_path)}/raw?{query}"), end="")
+        elif args.command == "file-outline":
+            outlines = {}
+            query = urllib.parse.urlencode({"ref": args.ref})
+            for path in args.file_paths:
+                text = request_text(args.host, token, "GET", f"/projects/{project_id(args.project)}/repository/files/{file_id(path)}/raw?{query}")
+                outlines[path] = markdown_outline(text, args.max_level)
+            pretty(outlines)
         elif args.command == "mr-list":
             query = urllib.parse.urlencode({"state": args.state, "per_page": args.per_page})
             pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/merge_requests?{query}"))
@@ -145,9 +243,19 @@ def main() -> int:
             pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/pipelines?per_page={args.per_page}"))
         elif args.command == "pipeline-jobs":
             pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/pipelines/{args.pipeline_id}/jobs?per_page={args.per_page}"))
+        elif args.command == "job-trace":
+            print(request_text(args.host, token, "GET", f"/projects/{project_id(args.project)}/jobs/{args.job_id}/trace"), end="")
         elif args.command == "code-search":
             query = urllib.parse.urlencode({"scope": "blobs", "search": args.query, "per_page": args.per_page})
             pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/search?{query}"))
+        elif args.command == "commit-list":
+            params = {"per_page": args.per_page}
+            if args.ref:
+                params["ref_name"] = args.ref
+            query = urllib.parse.urlencode(params)
+            pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/repository/commits?{query}"))
+        elif args.command == "commit-read":
+            pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/repository/commits/{args.sha}"))
         elif args.command == "fork-create":
             pretty(request_json(args.host, token, "POST", f"/projects/{project_id(args.project)}/fork", {}))
         elif args.command == "mr-create":
@@ -161,6 +269,24 @@ def main() -> int:
             if args.target_project_id is not None:
                 payload["target_project_id"] = args.target_project_id
             pretty(request_json(args.host, token, "POST", f"/projects/{project_id(args.project)}/merge_requests", payload))
+        elif args.command == "mr-note-create":
+            pretty(request_json(
+                args.host, token, "POST",
+                f"/projects/{project_id(args.project)}/merge_requests/{args.iid}/notes",
+                {"body": args.body},
+            ))
+        elif args.command == "mr-discussion-reply":
+            pretty(request_json(
+                args.host, token, "POST",
+                f"/projects/{project_id(args.project)}/merge_requests/{args.iid}/discussions/{args.discussion_id}/notes",
+                {"body": args.body},
+            ))
+        elif args.command == "mr-discussion-resolve":
+            pretty(request_json(
+                args.host, token, "PUT",
+                f"/projects/{project_id(args.project)}/merge_requests/{args.iid}/discussions/{args.discussion_id}",
+                {"resolved": not args.unresolve},
+            ))
         else:
             raise GitLabError(f"Unsupported command: {args.command}")
     except GitLabError as exc:
@@ -172,4 +298,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

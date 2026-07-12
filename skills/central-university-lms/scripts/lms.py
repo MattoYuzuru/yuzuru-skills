@@ -163,6 +163,85 @@ def discover_api(args: argparse.Namespace) -> int:
     return 0
 
 
+def api_get(args: argparse.Namespace) -> int:
+    sync_playwright = ensure_playwright()
+    url = args.endpoint
+    if url.startswith("/"):
+        url = f"https://my.centraluniversity.ru{url}"
+
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        response = context.request.get(url, timeout=args.timeout)
+        status = response.status
+        content_type = response.headers.get("content-type", "")
+        if "application/json" in content_type:
+            body: object = response.json()
+        else:
+            body = response.text()
+        browser.close()
+
+    print_json({"status": status, "url": url, "body": body})
+    return 0
+
+
+def click_text_discover(args: argparse.Namespace) -> int:
+    sync_playwright = ensure_playwright()
+    observed: list[dict[str, object]] = []
+
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        page = context.new_page()
+
+        def on_request(request: Any) -> None:
+            if request.resource_type in {"xhr", "fetch"}:
+                observed.append({"method": request.method, "url": request.url, "type": request.resource_type})
+
+        page.on("request", on_request)
+        page.goto(args.url, wait_until="networkidle", timeout=args.timeout)
+        click_result = page.evaluate(
+            """text => {
+                const clean = s => (s || '').replace(/\\s+/g, ' ').trim();
+                const candidates = [...document.querySelectorAll('a, button, [role="button"], [tabindex], div, span')]
+                    .filter(el => clean(el.innerText || el.textContent).includes(text));
+                if (!candidates.length) {
+                    return { clicked: false, reason: 'text not found' };
+                }
+                let el = candidates.sort((a, b) => clean(a.innerText || a.textContent).length - clean(b.innerText || b.textContent).length)[0];
+                let target = el;
+                for (let i = 0; i < 6 && target; i += 1) {
+                    const role = target.getAttribute('role');
+                    const tabIndex = target.getAttribute('tabindex');
+                    if (target.tagName === 'A' || target.tagName === 'BUTTON' || role === 'button' || tabIndex !== null || target.onclick) {
+                        break;
+                    }
+                    target = target.parentElement;
+                }
+                (target || el).click();
+                return {
+                    clicked: true,
+                    tag: (target || el).tagName,
+                    text: clean((target || el).innerText || (target || el).textContent).slice(0, 300),
+                    href: (target || el).href || ''
+                };
+            }""",
+            args.text,
+        )
+        page.wait_for_timeout(args.seconds * 1000)
+        data = extract_snapshot(page)
+        browser.close()
+
+    deduped = []
+    seen = set()
+    for item in observed:
+        key = (item["method"], item["url"])
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(item)
+    print_json({"click": click_result, "final_url": data.get("url"), "requests": deduped, "snapshot": data})
+    return 0
+
+
 def add_common(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--url", default=DEFAULT_URL)
     parser.add_argument("--storage-state")
@@ -188,6 +267,15 @@ def main() -> int:
     add_common(discover_parser)
     discover_parser.add_argument("--seconds", type=int, default=20)
 
+    api_parser = sub.add_parser("api-get")
+    add_common(api_parser)
+    api_parser.add_argument("endpoint")
+
+    click_parser = sub.add_parser("click-text-discover")
+    add_common(click_parser)
+    click_parser.add_argument("text")
+    click_parser.add_argument("--seconds", type=int, default=10)
+
     args = parser.parse_args()
     try:
         if args.command == "login":
@@ -198,6 +286,10 @@ def main() -> int:
             return deadlines(args)
         if args.command == "discover-api":
             return discover_api(args)
+        if args.command == "api-get":
+            return api_get(args)
+        if args.command == "click-text-discover":
+            return click_text_discover(args)
     except Exception as exc:
         print_json({"error": str(exc)})
         return 1
@@ -207,4 +299,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
