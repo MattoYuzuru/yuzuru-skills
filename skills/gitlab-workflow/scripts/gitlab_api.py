@@ -14,7 +14,7 @@ import urllib.request
 from pathlib import Path
 
 
-DEFAULT_HOST = "https://gitlab.com"
+DEFAULT_HOST = "https://gitlab.tcsbank.ru"
 
 
 class GitLabError(RuntimeError):
