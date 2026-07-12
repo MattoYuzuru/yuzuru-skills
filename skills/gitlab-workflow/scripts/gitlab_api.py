@@ -156,10 +156,23 @@ def main() -> int:
     jobs.add_argument("pipeline_id")
     jobs.add_argument("--per-page", type=int, default=50)
 
+    trace = sub.add_parser("job-trace")
+    trace.add_argument("project")
+    trace.add_argument("job_id")
+
     search = sub.add_parser("code-search")
     search.add_argument("project")
     search.add_argument("query")
     search.add_argument("--per-page", type=int, default=20)
+
+    commit_list = sub.add_parser("commit-list")
+    commit_list.add_argument("project")
+    commit_list.add_argument("--ref", default=None)
+    commit_list.add_argument("--per-page", type=int, default=20)
+
+    commit_read = sub.add_parser("commit-read")
+    commit_read.add_argument("project")
+    commit_read.add_argument("sha")
 
     fork = sub.add_parser("fork-create")
     fork.add_argument("project")
@@ -213,9 +226,19 @@ def main() -> int:
             pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/pipelines?per_page={args.per_page}"))
         elif args.command == "pipeline-jobs":
             pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/pipelines/{args.pipeline_id}/jobs?per_page={args.per_page}"))
+        elif args.command == "job-trace":
+            print(request_text(args.host, token, "GET", f"/projects/{project_id(args.project)}/jobs/{args.job_id}/trace"), end="")
         elif args.command == "code-search":
             query = urllib.parse.urlencode({"scope": "blobs", "search": args.query, "per_page": args.per_page})
             pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/search?{query}"))
+        elif args.command == "commit-list":
+            params = {"per_page": args.per_page}
+            if args.ref:
+                params["ref_name"] = args.ref
+            query = urllib.parse.urlencode(params)
+            pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/repository/commits?{query}"))
+        elif args.command == "commit-read":
+            pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/repository/commits/{args.sha}"))
         elif args.command == "fork-create":
             pretty(request_json(args.host, token, "POST", f"/projects/{project_id(args.project)}/fork", {}))
         elif args.command == "mr-create":
