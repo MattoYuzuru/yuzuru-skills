@@ -186,6 +186,23 @@ def main() -> int:
     mr_create.add_argument("--target-project-id", type=int)
     mr_create.add_argument("--remove-source-branch", action="store_true")
 
+    mr_note = sub.add_parser("mr-note-create")
+    mr_note.add_argument("project")
+    mr_note.add_argument("iid")
+    mr_note.add_argument("--body", required=True)
+
+    discussion_reply = sub.add_parser("mr-discussion-reply")
+    discussion_reply.add_argument("project")
+    discussion_reply.add_argument("iid")
+    discussion_reply.add_argument("discussion_id")
+    discussion_reply.add_argument("--body", required=True)
+
+    discussion_resolve = sub.add_parser("mr-discussion-resolve")
+    discussion_resolve.add_argument("project")
+    discussion_resolve.add_argument("iid")
+    discussion_resolve.add_argument("discussion_id")
+    discussion_resolve.add_argument("--unresolve", action="store_true")
+
     args = parser.parse_args()
 
     try:
@@ -252,6 +269,24 @@ def main() -> int:
             if args.target_project_id is not None:
                 payload["target_project_id"] = args.target_project_id
             pretty(request_json(args.host, token, "POST", f"/projects/{project_id(args.project)}/merge_requests", payload))
+        elif args.command == "mr-note-create":
+            pretty(request_json(
+                args.host, token, "POST",
+                f"/projects/{project_id(args.project)}/merge_requests/{args.iid}/notes",
+                {"body": args.body},
+            ))
+        elif args.command == "mr-discussion-reply":
+            pretty(request_json(
+                args.host, token, "POST",
+                f"/projects/{project_id(args.project)}/merge_requests/{args.iid}/discussions/{args.discussion_id}/notes",
+                {"body": args.body},
+            ))
+        elif args.command == "mr-discussion-resolve":
+            pretty(request_json(
+                args.host, token, "PUT",
+                f"/projects/{project_id(args.project)}/merge_requests/{args.iid}/discussions/{args.discussion_id}",
+                {"resolved": not args.unresolve},
+            ))
         else:
             raise GitLabError(f"Unsupported command: {args.command}")
     except GitLabError as exc:
