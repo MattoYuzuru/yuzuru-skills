@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -37,6 +38,10 @@ def project_id(path: str) -> str:
     return urllib.parse.quote(path, safe="")
 
 
+def file_id(path: str) -> str:
+    return urllib.parse.quote(path, safe="")
+
+
 def request_json(host: str, token: str, method: str, path: str, data: dict | None = None) -> object:
     host = host.rstrip("/")
     body = None
@@ -61,8 +66,35 @@ def request_json(host: str, token: str, method: str, path: str, data: dict | Non
     return json.loads(raw)
 
 
+def request_text(host: str, token: str, method: str, path: str) -> str:
+    host = host.rstrip("/")
+    headers = {"PRIVATE-TOKEN": token, "Accept": "text/plain"}
+
+    req = urllib.request.Request(f"{host}/api/v4{path}", headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        message = exc.read().decode("utf-8", errors="replace")
+        raise GitLabError(f"GitLab API error {exc.code}: {message}") from exc
+    except urllib.error.URLError as exc:
+        raise GitLabError(f"GitLab API connection error: {exc.reason}") from exc
+
+
 def pretty(data: object) -> None:
     print(json.dumps(data, ensure_ascii=False, indent=2))
+
+
+def markdown_outline(text: str, max_level: int) -> list[dict[str, object]]:
+    outline = []
+    for line in text.splitlines():
+        match = re.match(r"^(#{1,6})\s+(.+?)\s*$", line)
+        if not match:
+            continue
+        level = len(match.group(1))
+        if level <= max_level:
+            outline.append({"level": level, "title": match.group(2)})
+    return outline
 
 
 def add_common(parser: argparse.ArgumentParser) -> None:
@@ -79,6 +111,24 @@ def main() -> int:
 
     repo = sub.add_parser("repo-info")
     repo.add_argument("project")
+
+    tree = sub.add_parser("tree")
+    tree.add_argument("project")
+    tree.add_argument("--path", default="")
+    tree.add_argument("--ref", default="main")
+    tree.add_argument("--recursive", action="store_true")
+    tree.add_argument("--per-page", type=int, default=100)
+
+    raw = sub.add_parser("file-raw")
+    raw.add_argument("project")
+    raw.add_argument("file_path")
+    raw.add_argument("--ref", default="main")
+
+    outline = sub.add_parser("file-outline")
+    outline.add_argument("project")
+    outline.add_argument("file_paths", nargs="+")
+    outline.add_argument("--ref", default="main")
+    outline.add_argument("--max-level", type=int, default=2)
 
     mr_list = sub.add_parser("mr-list")
     mr_list.add_argument("project")
@@ -132,6 +182,24 @@ def main() -> int:
             pretty(request_json(args.host, token, "GET", "/user"))
         elif args.command == "repo-info":
             pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}"))
+        elif args.command == "tree":
+            query = urllib.parse.urlencode({
+                "path": args.path,
+                "ref": args.ref,
+                "recursive": str(args.recursive).lower(),
+                "per_page": args.per_page,
+            })
+            pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/repository/tree?{query}"))
+        elif args.command == "file-raw":
+            query = urllib.parse.urlencode({"ref": args.ref})
+            print(request_text(args.host, token, "GET", f"/projects/{project_id(args.project)}/repository/files/{file_id(args.file_path)}/raw?{query}"), end="")
+        elif args.command == "file-outline":
+            outlines = {}
+            query = urllib.parse.urlencode({"ref": args.ref})
+            for path in args.file_paths:
+                text = request_text(args.host, token, "GET", f"/projects/{project_id(args.project)}/repository/files/{file_id(path)}/raw?{query}")
+                outlines[path] = markdown_outline(text, args.max_level)
+            pretty(outlines)
         elif args.command == "mr-list":
             query = urllib.parse.urlencode({"state": args.state, "per_page": args.per_page})
             pretty(request_json(args.host, token, "GET", f"/projects/{project_id(args.project)}/merge_requests?{query}"))
@@ -172,4 +240,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
