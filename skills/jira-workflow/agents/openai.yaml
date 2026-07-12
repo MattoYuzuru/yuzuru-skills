@@ -1,0 +1,4 @@
+interface:
+  display_name: "Jira Workflow"
+  short_description: "Jira issue read, search, create, link, and transition workflow"
+  default_prompt: "Use $jira-workflow to inspect or update a Jira issue."
