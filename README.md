@@ -99,12 +99,27 @@ GitHub repository, issue, pull request, Projects, and Actions workflow without M
 GitLab repository and merge request workflow:
 
 - PAT check;
-- read repo/MR/pipeline/comments;
+- read repo/tree/file/commit/MR/pipeline/job-log/comments;
 - code search;
+- reply to and resolve MR discussion threads;
 - fork-based workflow;
 - push branch;
 - create MR;
-- strict rules: never print tokens, avoid direct upstream pushes, confirm write actions.
+- strict rules: never print tokens, avoid direct upstream pushes, confirm write actions,
+  and require the user to have asked for that specific write/destructive action first.
+
+### `jira-workflow`
+
+Jira issue read, search, create, link, and transition workflow:
+
+- PAT check via `~/.jira.env`;
+- read issue/search via JQL/creation metadata/link types/transitions/open epics;
+- create issues and epics from wiki-markup templates with a generic custom-field mechanism;
+- epic decomposition into sub-tasks;
+- link two issues and move an issue's status;
+- quality-check an issue against a checklist before Review;
+- strict rules: never invent custom field ids, preview and confirm before every write,
+  double-confirm closing/cancelling transitions, dedupe via JQL before retrying after a 5xx.
 
 ### `google-ai-search`
 
