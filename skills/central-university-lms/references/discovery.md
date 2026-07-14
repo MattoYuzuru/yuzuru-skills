@@ -23,6 +23,10 @@ All are plain JSON GETs against `https://my.centraluniversity.ru`, authenticated
 | `GET /api/micro-lms/courses/{id}/overview` | Full course structure | `themes[]` (stages, e.g. "Неделя 1: ...") → `longreads[]` (materials/lab blocks, has `type`, e.g. `common`) → `exercises[]` (homework: `name`, `maxScore`, `activity.name`, `activity.weight`, `deadline`) |
 | `GET /api/micro-lms/courses/{id}/student/progress` | Score summary | `{earnedScore, leftToEarnScore, maxScore}` |
 | `GET /api/micro-lms/deadlines?limit=&courseId=` | Was expected to aggregate deadlines | Returned `[]` in testing even with real courseIds/no filter — do not rely on it; use `course-overview` walk instead (see `deadlines_api` in `lms.py`) |
+| `GET /api/micro-lms/longreads/{id}/materials?limit=100&offset=0` | Material and assigned task IDs for a longread | Use this to resolve `taskId`; do not scrape the theme accordion. |
+| `GET /api/micro-lms/tasks/{id}` | Task description, state, solution, scores, and metadata | Contains student PII too; filter the response before reporting it. |
+| `GET /api/micro-lms/tasks/{id}/events` | Task status history | Filter event payloads: `taskCreated` embeds student details. |
+| `GET /api/micro-lms/tasks/{id}/comments` | Comments and their attachments | Read-only; never post or upload. |
 | `GET /api/student-hub/students/me` | Full student profile | Contains real PII (full name, INN, SNILS, phone, email) — never print, log, or write this response to the repo |
 
 Not found yet: a "ведомость"/transcript/grades-across-courses endpoint. `course-progress` only gives one course's score. If asked for a full transcript, say this isn't wired up yet rather than guessing from DOM.
@@ -41,7 +45,7 @@ Storage state expires (observed after ~3 weeks). If any command redirects to `id
 
 ## Environment Gotchas
 
-- **Headless triggers Yandex SmartCaptcha.** Every command that launches a browser must run headed (default — do not pass `--headless`) on the user's own machine. Headless Chrome's UA is fingerprinted and the LMS bounces to `showcaptcha`.
+- **Headless triggers Yandex SmartCaptcha at login.** Run `login` headed on the user's own machine. API-only commands with an already-valid storage state were verified with `--headless`; do not use headless mode to establish or refresh a session.
 - **Corporate TLS-inspection proxy breaks `context.request.get()`.** Chromium page navigation trusts the OS keychain fine, but Playwright's Node-based request client does not, and raises "self-signed certificate in certificate chain" on every `api_request`/`api-get` call. Fix: export `NODE_EXTRA_CA_CERTS` pointing at a PEM containing the corporate root CA (see SKILL.md Setup step 2) before running any API-backed command. Do not "fix" this by disabling TLS verification (e.g. `ignore_https_errors=True`) in the script — that's a real security downgrade for a config problem that has a proper fix.
 
 ## Extraction Hints (DOM fallback only)
@@ -56,4 +60,3 @@ Keep uncertain results marked as inferred.
 ## Write Actions
 
 The first version must not submit homework, upload files, mark lessons complete, send messages, or mutate LMS state.
-

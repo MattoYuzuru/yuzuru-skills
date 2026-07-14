@@ -3,6 +3,7 @@
   "should_trigger": [
     "Покажи мои ближайшие дедлайны в Central University",
     "Какие домашние задания сейчас есть в моем LMS?",
+    "Открой последнюю домашку по Spring и покажи условие, решение и комментарии",
     "Summarize my current Central University courses from the LMS"
   ],
   "should_not_trigger": [
@@ -13,6 +14,8 @@
   "capabilities": [
     {"name": "inspect-courses", "effect": "read", "confirmation": "none"},
     {"name": "inspect-homework", "effect": "read", "confirmation": "none"},
-    {"name": "inspect-deadlines", "effect": "read", "confirmation": "none"}
+    {"name": "inspect-deadlines", "effect": "read", "confirmation": "none"},
+    {"name": "inspect-task-details", "effect": "read", "confirmation": "none"},
+    {"name": "check-api-health", "effect": "read", "confirmation": "none"}
   ]
 }

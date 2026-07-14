@@ -1,13 +1,13 @@
 ---
 name: central-university-lms
-description: Read-only workflow for Central University LMS at my.centraluniversity.ru. Use when the user asks to inspect their current courses, homework, assignments, deadlines, LMS course pages, or study workload using an authenticated local browser session.
+description: Read-only workflow for Central University LMS at my.centraluniversity.ru. Use when the user asks to inspect their current courses, homework, assignments, task descriptions, solutions, comments, statuses, deadlines, LMS course pages, or study workload using an authenticated local browser session.
 ---
 
 # Central University LMS
 
 ## Overview
 
-Use this skill to inspect the user's own Central University LMS account and produce compact summaries of courses, homework, and deadlines. The first version is read-only and uses Playwright with a local browser storage state.
+Use this skill to inspect the user's own Central University LMS account and produce compact summaries of courses, homework, deadlines, task descriptions, solutions, comments, and task history. It is read-only and uses Playwright with a local browser storage state.
 
 Default LMS URL:
 
@@ -24,21 +24,43 @@ https://my.centraluniversity.ru/learn/courses/view/actual/all
 - Do not commit cookies, tokens, screenshots with private data, assignment files, or downloaded course materials.
 - Do not submit homework, change profile data, mark lessons complete, or send messages in this skill version.
 
+## Routing
+
+| Intent | Run | Effect |
+|---|---|---|
+| Set up or repair the local runtime | `python3 scripts/bootstrap.py` | local setup |
+| List courses | `lms.py list-courses` | read |
+| Inspect a course's materials and exercises | `lms.py course-overview <course_id>` | read |
+| Find upcoming assignments | `lms.py deadlines` | read |
+| Read a task's description, solution, comments, history, and metadata | `lms.py task-details <longread_id>` | read |
+| Verify the supported API route chain | `lms.py api-health <course_id> <longread_id>` | read |
+
 ## Setup
 
-1. If no storage state exists, run interactive login and let the user sign in manually. The LMS uses Yandex SmartCaptcha, which flags headless Chrome — this step must run headed:
+Resolve the installed skill directory and run all commands below from it. Never assume the current directory is this repository.
+
+1. Create or reuse the skill's isolated environment. It works on macOS, Linux, and Windows; its JSON output contains the exact Python executable to use for `lms.py`:
 
 ```bash
-python3 skills/central-university-lms/scripts/lms.py login
+# macOS/Linux
+python3 scripts/bootstrap.py
+# Windows
+py -3 scripts/bootstrap.py
 ```
 
-2. Before any command that hits `/api/...` (everything except `snapshot`, `deadlines-dom`, `discover-api`, `click-text-discover`), export a CA bundle that includes the corporate TLS-inspection root, or every API call fails with "self-signed certificate in certificate chain":
+2. If no storage state exists, let the user log in manually in a headed browser. Yandex SmartCaptcha flags headless Chrome, so do not pass `--headless` to `login`:
 
 ```bash
-security find-certificate -a -p /Library/Keychains/System.keychain > /tmp/corp-ca.pem
-security find-certificate -a -p /System/Library/Keychains/SystemRootCertificates.keychain >> /tmp/corp-ca.pem
-export NODE_EXTRA_CA_CERTS=/tmp/corp-ca.pem
+<python-from-bootstrap> scripts/lms.py login
 ```
+
+3. If an API command reports `self-signed certificate in certificate chain`, export the organization's trusted PEM bundle before retrying:
+
+```bash
+export NODE_EXTRA_CA_CERTS=/path/to/trusted-corporate-root.pem
+```
+
+Read `references/environment.md` only for OS-specific setup, CA bundle export, or headless-operation questions.
 
 ## Workflow
 
@@ -47,7 +69,7 @@ Prefer the JSON API commands below over DOM scraping — they read the LMS's own
 1. List current courses:
 
 ```bash
-python3 skills/central-university-lms/scripts/lms.py list-courses
+<python-from-bootstrap> scripts/lms.py list-courses
 ```
 
 Returns `{totalCount, count, items[]}` with course id/name/category; auto-paginates.
@@ -55,7 +77,7 @@ Returns `{totalCount, count, items[]}` with course id/name/category; auto-pagina
 2. Drill into a course's stages/materials/homework (course id from step 1):
 
 ```bash
-python3 skills/central-university-lms/scripts/lms.py course-overview <course_id>
+<python-from-bootstrap> scripts/lms.py course-overview <course_id>
 ```
 
 Returns `themes[]` (stages, e.g. "Неделя 1: ...") → each theme's `longreads[]` (materials/lab-work blocks) → each longread's `exercises[]` (homework items with `name`, `maxScore`, `activity.name`, `deadline`).
@@ -63,24 +85,37 @@ Returns `themes[]` (stages, e.g. "Неделя 1: ...") → each theme's `longre
 3. Course score summary:
 
 ```bash
-python3 skills/central-university-lms/scripts/lms.py course-progress <course_id>
+<python-from-bootstrap> scripts/lms.py course-progress <course_id>
 ```
 
 4. Upcoming deadlines across all published courses (walks step 1 + step 2 for every course, flattens exercises with a `deadline`, filters to the future by default):
 
 ```bash
-python3 skills/central-university-lms/scripts/lms.py deadlines --limit 20
+<python-from-bootstrap> scripts/lms.py deadlines --limit 20
 # add --include-past to see everything, including already-passed deadlines
+```
+
+5. Read one assignment in full (use the longread id from `course-overview`). The result includes a direct LMS URL, plain-text description and links, solution, task information, status history, and comments:
+
+```bash
+<python-from-bootstrap> scripts/lms.py task-details <longread_id>
+# add --exercise-id <id> only if the longread has more than one task
+```
+
+6. After an LMS API or frontend change, validate the supported API chain for a known course/longread:
+
+```bash
+<python-from-bootstrap> scripts/lms.py api-health <course_id> <longread_id>
 ```
 
 ### DOM fallback
 
-Only fall back to these if an API endpoint above starts returning errors (LMS backend change):
+Only fall back to these if an API endpoint above starts returning errors. `click-text-discover` is a diagnostic tool, not a routine navigation mechanism:
 
 ```bash
-python3 skills/central-university-lms/scripts/lms.py discover-api --seconds 20   # re-capture real endpoints; run headed
-python3 skills/central-university-lms/scripts/lms.py snapshot                     # raw DOM dump
-python3 skills/central-university-lms/scripts/lms.py deadlines-dom                # regex over rendered text
+<python-from-bootstrap> scripts/lms.py discover-api --seconds 20   # re-capture real endpoints; run headed
+<python-from-bootstrap> scripts/lms.py snapshot                     # raw DOM dump
+<python-from-bootstrap> scripts/lms.py deadlines-dom                # regex over rendered text
 ```
 
 ## Output Contract
@@ -93,9 +128,9 @@ When reporting to the user, prefer:
 - deadline as returned by the API (ISO 8601, already reliable — no need to flag as inferred);
 - max score / activity weight if relevant to the question;
 - course id if the user may want to drill in further;
+- direct task URL, description links, status, solution, and comments for task-detail requests;
 - if a DOM fallback command was used instead, mark results as inferred/uncertain.
 
 ## References
 
 Read `references/discovery.md` before changing extraction logic or adding new endpoints.
-
