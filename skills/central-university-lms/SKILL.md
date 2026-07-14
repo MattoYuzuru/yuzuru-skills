@@ -24,30 +24,63 @@ https://my.centraluniversity.ru/learn/courses/view/actual/all
 - Do not commit cookies, tokens, screenshots with private data, assignment files, or downloaded course materials.
 - Do not submit homework, change profile data, mark lessons complete, or send messages in this skill version.
 
-## Workflow
+## Setup
 
-1. If no storage state exists, run interactive login and let the user sign in manually:
+1. If no storage state exists, run interactive login and let the user sign in manually. The LMS uses Yandex SmartCaptcha, which flags headless Chrome — this step must run headed:
 
 ```bash
 python3 skills/central-university-lms/scripts/lms.py login
 ```
 
-2. Discover API/XHR endpoints if the DOM extractor is insufficient:
+2. Before any command that hits `/api/...` (everything except `snapshot`, `deadlines-dom`, `discover-api`, `click-text-discover`), export a CA bundle that includes the corporate TLS-inspection root, or every API call fails with "self-signed certificate in certificate chain":
 
 ```bash
-python3 skills/central-university-lms/scripts/lms.py discover-api --seconds 20
+security find-certificate -a -p /Library/Keychains/System.keychain > /tmp/corp-ca.pem
+security find-certificate -a -p /System/Library/Keychains/SystemRootCertificates.keychain >> /tmp/corp-ca.pem
+export NODE_EXTRA_CA_CERTS=/tmp/corp-ca.pem
 ```
 
-3. Capture a current read-only snapshot:
+## Workflow
+
+Prefer the JSON API commands below over DOM scraping — they read the LMS's own structured data instead of guessing from rendered text.
+
+1. List current courses:
 
 ```bash
-python3 skills/central-university-lms/scripts/lms.py snapshot
+python3 skills/central-university-lms/scripts/lms.py list-courses
 ```
 
-4. Extract likely homework/deadline rows:
+Returns `{totalCount, count, items[]}` with course id/name/category; auto-paginates.
+
+2. Drill into a course's stages/materials/homework (course id from step 1):
 
 ```bash
-python3 skills/central-university-lms/scripts/lms.py deadlines
+python3 skills/central-university-lms/scripts/lms.py course-overview <course_id>
+```
+
+Returns `themes[]` (stages, e.g. "Неделя 1: ...") → each theme's `longreads[]` (materials/lab-work blocks) → each longread's `exercises[]` (homework items with `name`, `maxScore`, `activity.name`, `deadline`).
+
+3. Course score summary:
+
+```bash
+python3 skills/central-university-lms/scripts/lms.py course-progress <course_id>
+```
+
+4. Upcoming deadlines across all published courses (walks step 1 + step 2 for every course, flattens exercises with a `deadline`, filters to the future by default):
+
+```bash
+python3 skills/central-university-lms/scripts/lms.py deadlines --limit 20
+# add --include-past to see everything, including already-passed deadlines
+```
+
+### DOM fallback
+
+Only fall back to these if an API endpoint above starts returning errors (LMS backend change):
+
+```bash
+python3 skills/central-university-lms/scripts/lms.py discover-api --seconds 20   # re-capture real endpoints; run headed
+python3 skills/central-university-lms/scripts/lms.py snapshot                     # raw DOM dump
+python3 skills/central-university-lms/scripts/lms.py deadlines-dom                # regex over rendered text
 ```
 
 ## Output Contract
@@ -55,13 +88,14 @@ python3 skills/central-university-lms/scripts/lms.py deadlines
 When reporting to the user, prefer:
 
 - course name;
+- stage/theme name (for course-overview);
 - assignment/homework title;
-- deadline as displayed in LMS;
-- status if visible;
-- course or homework URL if visible;
-- uncertainty notes if the extractor inferred data from text.
+- deadline as returned by the API (ISO 8601, already reliable — no need to flag as inferred);
+- max score / activity weight if relevant to the question;
+- course id if the user may want to drill in further;
+- if a DOM fallback command was used instead, mark results as inferred/uncertain.
 
 ## References
 
-Read `references/discovery.md` before changing extraction logic.
+Read `references/discovery.md` before changing extraction logic or adding new endpoints.
 

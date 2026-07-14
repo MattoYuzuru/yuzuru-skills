@@ -7,12 +7,14 @@ import argparse
 import json
 import os
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 
 DEFAULT_URL = "https://my.centraluniversity.ru/learn/courses/view/actual/all"
 DEFAULT_STATE = Path("~/.config/yuzuru-codex-skills/central-university-lms/storage-state.json").expanduser()
+API_BASE = "https://my.centraluniversity.ru"
 DEADLINE_RE = re.compile(
     r"(?i)(дедлайн|deadline|домаш|homework|assignment|задани|сдать|до\s+\d{1,2}[./]\d{1,2}|"
     r"\d{1,2}[./]\d{1,2}(?:[./]\d{2,4})?)"
@@ -67,6 +69,20 @@ def context_with_state(p: Any, args: argparse.Namespace):
     return browser, context
 
 
+def api_request(context: Any, path: str, params: dict[str, object] | None = None) -> dict[str, object]:
+    """GET a micro-lms/hub JSON endpoint using the authenticated context.
+
+    Requires NODE_EXTRA_CA_CERTS to point at a PEM bundle containing the
+    corporate TLS-inspection root CA, or context.request.get raises
+    "self-signed certificate in certificate chain". See references/discovery.md.
+    """
+    url = path if path.startswith("http") else f"{API_BASE}{path}"
+    response = context.request.get(url, params=params or {})
+    if response.status >= 400:
+        raise RuntimeError(f"GET {url} -> {response.status}: {response.text()[:500]}")
+    return response.json()
+
+
 def extract_snapshot(page: Any) -> dict[str, object]:
     return page.evaluate(
         """() => {
@@ -101,7 +117,7 @@ def snapshot(args: argparse.Namespace) -> int:
     return 0
 
 
-def deadlines(args: argparse.Namespace) -> int:
+def deadlines_dom(args: argparse.Namespace) -> int:
     sync_playwright = ensure_playwright()
     with sync_playwright() as p:
         browser, context = context_with_state(p, args)
@@ -131,6 +147,105 @@ def deadlines(args: argparse.Namespace) -> int:
             break
 
     print_json({"url": data.get("url"), "matches": matches})
+    return 0
+
+
+def list_courses(args: argparse.Namespace) -> int:
+    """List the student's courses via /api/micro-lms/courses/student.
+
+    Without --limit, auto-paginates until paging.totalCount items are collected.
+    """
+    sync_playwright = ensure_playwright()
+    page_size = args.limit or 50
+    items: list[dict[str, object]] = []
+    offset = args.offset
+    total_count: int | None = None
+
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        while True:
+            params: dict[str, object] = {"limit": page_size, "offset": offset}
+            if args.state:
+                params["state"] = args.state
+            body = api_request(context, "/api/micro-lms/courses/student", params)
+            page_items = body.get("items", [])
+            items.extend(page_items)
+            paging = body.get("paging", {})
+            total_count = paging.get("totalCount", len(items))
+            offset += page_size
+            if args.limit or not page_items or len(items) >= total_count:
+                break
+        browser.close()
+
+    print_json({"totalCount": total_count, "count": len(items), "items": items})
+    return 0
+
+
+def course_overview(args: argparse.Namespace) -> int:
+    """Fetch /api/micro-lms/courses/{id}/overview: themes -> longreads -> exercises."""
+    sync_playwright = ensure_playwright()
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        body = api_request(context, f"/api/micro-lms/courses/{args.course_id}/overview")
+        browser.close()
+    print_json(body)
+    return 0
+
+
+def course_progress(args: argparse.Namespace) -> int:
+    """Fetch /api/micro-lms/courses/{id}/student/progress: earned/left/max score."""
+    sync_playwright = ensure_playwright()
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        body = api_request(context, f"/api/micro-lms/courses/{args.course_id}/student/progress")
+        browser.close()
+    print_json(body)
+    return 0
+
+
+def deadlines_api(args: argparse.Namespace) -> int:
+    """Walk published courses' overview and flatten exercises that carry a deadline.
+
+    This is the preferred deadline extractor: it reads the LMS's own deadline
+    field per exercise instead of regexing rendered DOM text.
+    """
+    sync_playwright = ensure_playwright()
+    matches: list[dict[str, object]] = []
+
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        courses_body = api_request(
+            context, "/api/micro-lms/courses/student", {"limit": 100, "offset": 0, "state": "published"}
+        )
+        for course in courses_body.get("items", []):
+            course_id = course["id"]
+            overview = api_request(context, f"/api/micro-lms/courses/{course_id}/overview")
+            for theme in overview.get("themes", []):
+                for longread in theme.get("longreads", []):
+                    for exercise in longread.get("exercises", []):
+                        deadline = exercise.get("deadline")
+                        if not deadline:
+                            continue
+                        matches.append(
+                            {
+                                "courseId": course_id,
+                                "courseName": course.get("name"),
+                                "theme": theme.get("name"),
+                                "longread": longread.get("name"),
+                                "exercise": exercise.get("name"),
+                                "maxScore": exercise.get("maxScore"),
+                                "activity": (exercise.get("activity") or {}).get("name"),
+                                "deadline": deadline,
+                            }
+                        )
+        browser.close()
+
+    if not args.include_past:
+        now = datetime.now(timezone.utc).isoformat()
+        matches = [m for m in matches if m["deadline"] >= now]
+
+    matches.sort(key=lambda m: m["deadline"])
+    print_json({"count": len(matches), "matches": matches[: args.limit]})
     return 0
 
 
@@ -259,9 +374,28 @@ def main() -> int:
     snapshot_parser = sub.add_parser("snapshot")
     add_common(snapshot_parser)
 
+    list_courses_parser = sub.add_parser("list-courses")
+    add_common(list_courses_parser)
+    list_courses_parser.add_argument("--state", default="published")
+    list_courses_parser.add_argument("--limit", type=int)
+    list_courses_parser.add_argument("--offset", type=int, default=0)
+
+    course_overview_parser = sub.add_parser("course-overview")
+    add_common(course_overview_parser)
+    course_overview_parser.add_argument("course_id")
+
+    course_progress_parser = sub.add_parser("course-progress")
+    add_common(course_progress_parser)
+    course_progress_parser.add_argument("course_id")
+
     deadlines_parser = sub.add_parser("deadlines")
     add_common(deadlines_parser)
     deadlines_parser.add_argument("--limit", type=int, default=50)
+    deadlines_parser.add_argument("--include-past", action="store_true")
+
+    deadlines_dom_parser = sub.add_parser("deadlines-dom")
+    add_common(deadlines_dom_parser)
+    deadlines_dom_parser.add_argument("--limit", type=int, default=50)
 
     discover_parser = sub.add_parser("discover-api")
     add_common(discover_parser)
@@ -282,8 +416,16 @@ def main() -> int:
             return login(args)
         if args.command == "snapshot":
             return snapshot(args)
+        if args.command == "list-courses":
+            return list_courses(args)
+        if args.command == "course-overview":
+            return course_overview(args)
+        if args.command == "course-progress":
+            return course_progress(args)
         if args.command == "deadlines":
-            return deadlines(args)
+            return deadlines_api(args)
+        if args.command == "deadlines-dom":
+            return deadlines_dom(args)
         if args.command == "discover-api":
             return discover_api(args)
         if args.command == "api-get":
