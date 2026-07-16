@@ -142,6 +142,18 @@ Read-only Central University LMS workflow:
 - compact Markdown/JSON summaries;
 - no secrets in this repository.
 
+### `google-sheets-workflow`
+
+Google Sheets/Drive workflow via a headless service account (no OAuth browser consent):
+
+- isolated per-skill venv bootstrap for `google-auth` (RSA JWT signing only);
+- list spreadsheets shared with the service account, inspect sheet metadata, read ranges;
+- create spreadsheets (auto-shared back to the user), write/append values and formulas;
+- generic `batchUpdate` escape hatch for formatting, freeze panes, merges, pivot tables;
+- clear ranges, delete sheet tabs, trash spreadsheets;
+- strict rules: never print the service-account key or cached token, confirm before every
+  write/destructive action, `list` only covers sheets already shared with the service account.
+
 ## Authoring
 
 Read [AGENTS.md](AGENTS.md) and [docs/skill-authoring.md](docs/skill-authoring.md), then use the

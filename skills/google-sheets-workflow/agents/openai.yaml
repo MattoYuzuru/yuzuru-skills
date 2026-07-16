@@ -1,0 +1,4 @@
+interface:
+  display_name: "Google Sheets Workflow"
+  short_description: "Google Sheets read/write via a headless service account, no browser consent"
+  default_prompt: "Use $google-sheets-workflow to work with a Google Sheet."
