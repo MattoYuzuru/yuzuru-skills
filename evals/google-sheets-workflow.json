@@ -26,6 +26,7 @@
     {"name": "delete-sheet", "effect": "destructive", "confirmation": "exact"},
     {"name": "trash", "effect": "destructive", "confirmation": "exact"},
     {"name": "import-service-account", "effect": "write", "confirmation": "explicit"},
+    {"name": "known-spreadsheets", "effect": "read", "confirmation": "none"},
     {"name": "remove", "effect": "destructive", "confirmation": "exact"}
   ]
 }

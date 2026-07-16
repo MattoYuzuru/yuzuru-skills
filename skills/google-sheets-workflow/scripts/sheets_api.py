@@ -17,7 +17,7 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
-from sheets_config import SheetsConfigError, get_access_token, load_user_email
+from sheets_config import SheetsConfigError, get_access_token, load_user_email, remember_spreadsheet
 
 SHEETS_BASE = "https://sheets.googleapis.com/v4/spreadsheets"
 DRIVE_BASE = "https://www.googleapis.com/drive/v3"
@@ -91,13 +91,22 @@ def cmd_list(token: str, args: argparse.Namespace) -> None:
     }
     url = f"{DRIVE_BASE}/files?{urllib.parse.urlencode(params)}"
     result = request_json_bounded_retry(token, "GET", url)
-    pretty({"note": "spreadsheets shared with the service account, not the user's whole Drive", "files": result.get("files", [])})
+    files = result.get("files", [])
+    for file in files:
+        remember_spreadsheet(file["id"], title=file.get("name"), url=file.get("webViewLink"))
+    pretty({"note": "spreadsheets shared with the service account, not the user's whole Drive", "files": files})
 
 
 def cmd_info(token: str, args: argparse.Namespace) -> None:
-    params = {"fields": "spreadsheetId,properties.title,sheets.properties"}
+    params = {"fields": "spreadsheetId,properties.title,spreadsheetUrl,sheets.properties"}
     url = f"{SHEETS_BASE}/{args.spreadsheet_id}?{urllib.parse.urlencode(params)}"
-    pretty(request_json_bounded_retry(token, "GET", url))
+    result = request_json_bounded_retry(token, "GET", url)
+    remember_spreadsheet(
+        args.spreadsheet_id,
+        title=result.get("properties", {}).get("title"),
+        url=result.get("spreadsheetUrl"),
+    )
+    pretty(result)
 
 
 def cmd_read(token: str, args: argparse.Namespace) -> None:
@@ -129,6 +138,7 @@ def cmd_create(token: str, args: argparse.Namespace) -> None:
     created = request_json_bounded_retry(token, "POST", SHEETS_BASE, body)
     spreadsheet_id = created["spreadsheetId"]
     result: dict[str, Any] = {"spreadsheetId": spreadsheet_id, "webViewLink": created.get("spreadsheetUrl")}
+    remember_spreadsheet(spreadsheet_id, title=args.title, url=created.get("spreadsheetUrl"))
 
     user_email = load_user_email()
     if user_email:

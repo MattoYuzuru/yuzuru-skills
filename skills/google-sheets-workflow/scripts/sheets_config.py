@@ -43,12 +43,26 @@ def service_account_key_path() -> Path:
     return config_dir() / "service-account.json"
 
 
-def user_email_path() -> Path:
-    return config_dir() / "user-email"
+def config_path() -> Path:
+    """Non-secret metadata: client_email (mirrored from the key), user_email, and the
+    known-spreadsheets registry. Kept separate from the service-account key so the secret
+    and everything else can be reasoned about (and deleted) independently."""
+    return config_dir() / "config.json"
 
 
 def token_cache_path() -> Path:
     return config_dir() / "token-cache.json"
+
+
+def _load_config() -> dict[str, Any]:
+    try:
+        return json.loads(config_path().read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_config(data: dict[str, Any]) -> None:
+    _write_private(config_path(), json.dumps(data, indent=2))
 
 
 def _write_private(path: Path, data: str) -> None:
@@ -78,6 +92,9 @@ def save_service_account_key(source_path: Path) -> dict[str, Any]:
             raise SheetsConfigError(f"Service-account key is missing required field '{field}'.")
     _write_private(service_account_key_path(), text)
     token_cache_path().unlink(missing_ok=True)
+    config = _load_config()
+    config["client_email"] = info["client_email"]
+    _save_config(config)
     return {"client_email": info["client_email"]}
 
 
@@ -89,23 +106,47 @@ def load_service_account_info() -> dict[str, Any] | None:
         return None
 
 
+def load_client_email() -> str | None:
+    """Fast path for the (non-secret) service-account email — reads config.json instead of
+    opening the private key file, so 'check' and 'known-spreadsheets' never touch the secret."""
+    return _load_config().get("client_email")
+
+
 def save_user_email(email: str) -> None:
     email = email.strip()
     if "@" not in email:
         raise SheetsConfigError(f"'{email}' does not look like an email address.")
-    _write_private(user_email_path(), email + "\n")
+    config = _load_config()
+    config["user_email"] = email
+    _save_config(config)
 
 
 def load_user_email() -> str | None:
-    try:
-        return user_email_path().read_text(encoding="utf-8").strip() or None
-    except FileNotFoundError:
-        return None
+    return _load_config().get("user_email")
+
+
+def remember_spreadsheet(spreadsheet_id: str, *, title: str | None = None, url: str | None = None) -> None:
+    """Cache id -> {title, url, last_seen} so a spreadsheet seen once via list/info/create can
+    be recalled by title later without asking the user to re-paste the link."""
+    config = _load_config()
+    known = config.setdefault("known_spreadsheets", {})
+    entry = known.get(spreadsheet_id, {})
+    if title:
+        entry["title"] = title
+    if url:
+        entry["url"] = url
+    entry["last_seen"] = int(time.time())
+    known[spreadsheet_id] = entry
+    _save_config(config)
+
+
+def load_known_spreadsheets() -> dict[str, Any]:
+    return _load_config().get("known_spreadsheets", {})
 
 
 def remove_all() -> None:
     service_account_key_path().unlink(missing_ok=True)
-    user_email_path().unlink(missing_ok=True)
+    config_path().unlink(missing_ok=True)
     token_cache_path().unlink(missing_ok=True)
 
 

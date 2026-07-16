@@ -45,11 +45,30 @@ python3 scripts/setup.py set-user-email you@example.com
 Spreadsheets created by `sheets_api.py create` are auto-shared (Editor) with this address so
 they show up in your own Google account, since the service account technically owns them.
 
+**`create` only works on a Google Workspace project** (a Shared Drive, or domain-wide
+delegation to impersonate a real user) — the new file needs storage quota to live in, and a
+standalone service account on a personal (`@gmail.com`-style) account has none. On a personal
+account `create` always fails with `403 The caller does not have permission`; there is no
+workaround from this skill's side. If that's your setup, create the spreadsheet yourself in
+Sheets and share it with `client_email` (step 5) — `write`/`append`/`batch-update` on existing,
+shared spreadsheets are unaffected, since those don't need to create new file storage.
+
 ## 5. Share existing spreadsheets
 
 For every spreadsheet you want the agent to read or edit: open it in Google Sheets → **Share**
 → paste the service account's email (`client_email` from `setup.py check`) → **Editor** → Send.
 This is the only manual step needed per spreadsheet, and it never expires or needs repeating.
+
+## Storage layout
+
+Two files live in the config directory (`setup.py check`'s `config_dir`):
+
+- `service-account.json` — the secret key, 0600, only ever read to sign a JWT.
+- `config.json` — everything non-secret: `client_email` (mirrored from the key, so `check` and
+  `known-spreadsheets` never have to open the secret file), `user_email`, and a
+  `known_spreadsheets` registry (id → title/URL/last-seen) that `list`/`info`/`create`
+  auto-populate, so a spreadsheet used once can be recalled by title without re-pasting its
+  link. `setup.py known-spreadsheets` prints it.
 
 ## Rotating or revoking a key
 

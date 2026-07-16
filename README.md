@@ -148,11 +148,18 @@ Google Sheets/Drive workflow via a headless service account (no OAuth browser co
 
 - isolated per-skill venv bootstrap for `google-auth` (RSA JWT signing only);
 - list spreadsheets shared with the service account, inspect sheet metadata, read ranges;
-- create spreadsheets (auto-shared back to the user), write/append values and formulas;
+- create spreadsheets (auto-shared back to the user; requires a Workspace-backed service
+  account, see below), write/append values and formulas;
 - generic `batchUpdate` escape hatch for formatting, freeze panes, merges, pivot tables;
 - clear ranges, delete sheet tabs, trash spreadsheets;
+- local `known-spreadsheets` registry (id/title/URL) auto-populated by `list`/`info`/`create`,
+  so a spreadsheet seen once can be recalled without re-pasting its link every time;
 - strict rules: never print the service-account key or cached token, confirm before every
-  write/destructive action, `list` only covers sheets already shared with the service account.
+  write/destructive action, read a range before overwriting it with `write`, `list` only covers
+  sheets already shared with the service account;
+- known limitation: `create` needs a Shared Drive or domain-wide delegation for storage quota —
+  on a personal (non-Workspace) account it 403s, so create the spreadsheet by hand and share it
+  with the service account instead.
 
 ## Authoring
 

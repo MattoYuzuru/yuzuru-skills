@@ -12,13 +12,14 @@ from typing import Any
 from sheets_config import (
     SheetsConfigError,
     config_dir,
-    load_service_account_info,
+    config_path,
+    load_client_email,
+    load_known_spreadsheets,
     load_user_email,
     remove_all,
     save_service_account_key,
     save_user_email,
     service_account_key_path,
-    user_email_path,
 )
 
 SETUP_URL = "https://console.cloud.google.com/iam-admin/serviceaccounts"
@@ -29,13 +30,12 @@ def print_json(value: dict[str, Any], *, stream: Any = sys.stdout) -> None:
 
 
 def collect_status() -> dict[str, Any]:
-    info = load_service_account_info()
+    key_configured = service_account_key_path().is_file()
     user_email = load_user_email()
-    key_configured = info is not None
     result: dict[str, Any] = {
         "ready": key_configured and user_email is not None,
         "service_account_key_configured": key_configured,
-        "client_email": info.get("client_email") if info else None,
+        "client_email": load_client_email(),
         "user_email": user_email,
         "config_dir": str(config_dir()),
     }
@@ -86,7 +86,12 @@ def set_user_email(args: argparse.Namespace) -> int:
 
 def remove(_args: argparse.Namespace) -> int:
     remove_all()
-    print_json({"removed": True, "service_account_key": str(service_account_key_path()), "user_email": str(user_email_path())})
+    print_json({"removed": True, "service_account_key": str(service_account_key_path()), "config": str(config_path())})
+    return 0
+
+
+def known_spreadsheets(_args: argparse.Namespace) -> int:
+    print_json({"known_spreadsheets": load_known_spreadsheets()})
     return 0
 
 
@@ -106,7 +111,12 @@ def main() -> int:
     )
     email_parser.add_argument("email")
 
-    subparsers.add_parser("remove", help="Delete the stored key, cached token, and user email.")
+    subparsers.add_parser("remove", help="Delete the stored key, cached token, and config (email + known spreadsheets).")
+
+    subparsers.add_parser(
+        "known-spreadsheets",
+        help="List spreadsheets previously seen via list/info/create, cached locally with title and URL.",
+    )
 
     args = parser.parse_args()
 
@@ -118,6 +128,8 @@ def main() -> int:
         return import_service_account(args)
     if args.command == "set-user-email":
         return set_user_email(args)
+    if args.command == "known-spreadsheets":
+        return known_spreadsheets(args)
     return remove(args)
 
 
