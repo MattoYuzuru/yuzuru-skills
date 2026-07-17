@@ -7,12 +7,15 @@ import argparse
 import json
 import os
 import re
+from datetime import datetime, timezone
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
 
 DEFAULT_URL = "https://my.centraluniversity.ru/learn/courses/view/actual/all"
 DEFAULT_STATE = Path("~/.config/yuzuru-codex-skills/central-university-lms/storage-state.json").expanduser()
+API_BASE = "https://my.centraluniversity.ru"
 DEADLINE_RE = re.compile(
     r"(?i)(дедлайн|deadline|домаш|homework|assignment|задани|сдать|до\s+\d{1,2}[./]\d{1,2}|"
     r"\d{1,2}[./]\d{1,2}(?:[./]\d{2,4})?)"
@@ -67,6 +70,121 @@ def context_with_state(p: Any, args: argparse.Namespace):
     return browser, context
 
 
+def api_request(context: Any, path: str, params: dict[str, object] | None = None) -> Any:
+    """GET a micro-lms/hub JSON endpoint using the authenticated context.
+
+    Requires NODE_EXTRA_CA_CERTS to point at a PEM bundle containing the
+    corporate TLS-inspection root CA, or context.request.get raises
+    "self-signed certificate in certificate chain". See references/discovery.md.
+    """
+    url = path if path.startswith("http") else f"{API_BASE}{path}"
+    response = context.request.get(url, params=params or {})
+    if response.status >= 400:
+        raise RuntimeError(f"GET {url} -> {response.status}: {response.text()[:500]}")
+    return response.json()
+
+
+def course_longread_url(course_id: object, theme_id: object, longread_id: object) -> str:
+    return f"{API_BASE}/learn/courses/view/actual/{course_id}/themes/{theme_id}/longreads/{longread_id}"
+
+
+class DescriptionParser(HTMLParser):
+    """Extract readable text and links from an LMS rich-text description."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.parts: list[str] = []
+        self.links: list[str] = []
+
+    def handle_data(self, data: str) -> None:
+        self.parts.append(data)
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "a":
+            href = dict(attrs).get("href")
+            if href:
+                self.links.append(href)
+
+    def text(self) -> str:
+        return " ".join(" ".join(self.parts).split())
+
+
+def description_fields(view_content: object) -> dict[str, object]:
+    """Return text and links from the JSON-encoded rich-text exercise description."""
+    try:
+        payload = json.loads(view_content) if isinstance(view_content, str) else view_content
+    except json.JSONDecodeError:
+        payload = {}
+    html = payload.get("description", "") if isinstance(payload, dict) else ""
+    parser = DescriptionParser()
+    if isinstance(html, str):
+        parser.feed(html)
+    links = list(dict.fromkeys(parser.links))
+    return {"text": parser.text(), "links": links}
+
+
+def compact_attachments(value: object) -> list[dict[str, object]]:
+    if not isinstance(value, list):
+        return []
+    attachments = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        attachments.append(
+            {
+                key: item[key]
+                for key in ("id", "name", "url", "downloadUrl", "size")
+                if key in item and item[key] is not None
+            }
+        )
+    return attachments
+
+
+def event_summary(event: object) -> dict[str, object]:
+    if not isinstance(event, dict):
+        return {"type": "unknown"}
+    content = event.get("content") if isinstance(event.get("content"), dict) else {}
+    summary = {
+        key: content[key]
+        for key in ("state", "score", "deadline", "maxScore", "startDate", "solutionUrl")
+        if key in content and content[key] is not None
+    }
+    return {
+        "at": event.get("occurredOn"),
+        "type": event.get("type"),
+        "actor": event.get("actorName") or None,
+        "details": summary,
+    }
+
+
+def comment_summary(comment: object) -> dict[str, object]:
+    if not isinstance(comment, dict):
+        return {"message": str(comment)}
+    return {
+        "id": comment.get("id"),
+        "at": comment.get("createdAt") or comment.get("createdOn") or comment.get("date"),
+        "author": comment.get("authorName") or comment.get("actorName") or comment.get("author"),
+        "message": comment.get("content") or comment.get("message") or comment.get("text"),
+        "attachments": compact_attachments(comment.get("attachments")),
+    }
+
+
+def longread_task(context: Any, longread_id: str, exercise_id: str | None) -> dict[str, object]:
+    materials = api_request(context, f"/api/micro-lms/longreads/{longread_id}/materials", {"limit": 100, "offset": 0})
+    items = materials.get("items", [])
+    candidates = [item for item in items if isinstance(item, dict) and item.get("taskId")]
+    if exercise_id:
+        candidates = [item for item in candidates if str(item.get("id")) == exercise_id]
+    if len(candidates) != 1:
+        available = [
+            {"exerciseId": item.get("id"), "name": item.get("name"), "taskId": item.get("taskId")}
+            for item in candidates
+        ]
+        hint = "Provide --exercise-id." if candidates else "No assigned task was found in this longread."
+        raise RuntimeError(f"Expected exactly one task. {hint} Available: {available}")
+    return candidates[0]
+
+
 def extract_snapshot(page: Any) -> dict[str, object]:
     return page.evaluate(
         """() => {
@@ -101,7 +219,7 @@ def snapshot(args: argparse.Namespace) -> int:
     return 0
 
 
-def deadlines(args: argparse.Namespace) -> int:
+def deadlines_dom(args: argparse.Namespace) -> int:
     sync_playwright = ensure_playwright()
     with sync_playwright() as p:
         browser, context = context_with_state(p, args)
@@ -131,6 +249,201 @@ def deadlines(args: argparse.Namespace) -> int:
             break
 
     print_json({"url": data.get("url"), "matches": matches})
+    return 0
+
+
+def list_courses(args: argparse.Namespace) -> int:
+    """List the student's courses via /api/micro-lms/courses/student.
+
+    Without --limit, auto-paginates until paging.totalCount items are collected.
+    """
+    sync_playwright = ensure_playwright()
+    page_size = args.limit or 50
+    items: list[dict[str, object]] = []
+    offset = args.offset
+    total_count: int | None = None
+
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        while True:
+            params: dict[str, object] = {"limit": page_size, "offset": offset}
+            if args.state:
+                params["state"] = args.state
+            body = api_request(context, "/api/micro-lms/courses/student", params)
+            page_items = body.get("items", [])
+            items.extend(page_items)
+            paging = body.get("paging", {})
+            total_count = paging.get("totalCount", len(items))
+            offset += page_size
+            if args.limit or not page_items or len(items) >= total_count:
+                break
+        browser.close()
+
+    print_json({"totalCount": total_count, "count": len(items), "items": items})
+    return 0
+
+
+def course_overview(args: argparse.Namespace) -> int:
+    """Fetch /api/micro-lms/courses/{id}/overview: themes -> longreads -> exercises."""
+    sync_playwright = ensure_playwright()
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        body = api_request(context, f"/api/micro-lms/courses/{args.course_id}/overview")
+        browser.close()
+    print_json(body)
+    return 0
+
+
+def course_progress(args: argparse.Namespace) -> int:
+    """Fetch /api/micro-lms/courses/{id}/student/progress: earned/left/max score."""
+    sync_playwright = ensure_playwright()
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        body = api_request(context, f"/api/micro-lms/courses/{args.course_id}/student/progress")
+        browser.close()
+    print_json(body)
+    return 0
+
+
+def task_details(args: argparse.Namespace) -> int:
+    """Fetch assignment description, solution, events, comments, and information via the LMS task API."""
+    sync_playwright = ensure_playwright()
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        try:
+            material = longread_task(context, args.longread_id, args.exercise_id)
+            task_id = material["taskId"]
+            task = api_request(context, f"/api/micro-lms/tasks/{task_id}")
+            events = api_request(context, f"/api/micro-lms/tasks/{task_id}/events")
+            comments = api_request(context, f"/api/micro-lms/tasks/{task_id}/comments")
+        finally:
+            browser.close()
+
+    if not isinstance(task, dict):
+        raise RuntimeError(f"Unexpected task response for task {task_id}")
+    exercise = task.get("exercise") if isinstance(task.get("exercise"), dict) else {}
+    course = task.get("course") if isinstance(task.get("course"), dict) else {}
+    theme = task.get("theme") if isinstance(task.get("theme"), dict) else {}
+    longread = task.get("longread") if isinstance(task.get("longread"), dict) else {}
+    solution = task.get("solution") if isinstance(task.get("solution"), dict) else {}
+    description = description_fields(exercise.get("viewContent"))
+    exercise_url = exercise.get("exerciseUrl")
+    if exercise_url and exercise_url not in description["links"]:
+        description["links"].append(exercise_url)
+
+    information = {
+        "deadline": task.get("deadline") or exercise.get("deadline"),
+        "status": task.get("state"),
+        "activity": (exercise.get("activity") or {}).get("name"),
+        "score": task.get("score"),
+        "maxScore": exercise.get("maxScore"),
+        "extraScore": task.get("extraScore"),
+        "course": {"id": course.get("id"), "name": course.get("name")},
+        "theme": {"id": theme.get("id"), "name": theme.get("name")},
+    }
+    output = {
+        "url": course_longread_url(course.get("id"), theme.get("id"), longread.get("id")),
+        "task": {
+            "id": task.get("id"),
+            "exerciseId": exercise.get("id"),
+            "name": exercise.get("name") or longread.get("name"),
+            "type": task.get("type"),
+            "state": task.get("state"),
+            "createdAt": task.get("createdAt"),
+            "startedAt": task.get("startedAt"),
+            "submittedAt": task.get("submitAt"),
+            "evaluatedAt": task.get("evaluateAt"),
+        },
+        "description": description,
+        "solution": {
+            "type": solution.get("type"),
+            "url": solution.get("solutionUrl"),
+            "attachments": compact_attachments(solution.get("attachments")),
+        },
+        "information": information,
+        "events": [event_summary(event) for event in events] if isinstance(events, list) else [],
+        "comments": [comment_summary(comment) for comment in comments] if isinstance(comments, list) else [],
+    }
+    print_json(output)
+    return 0
+
+
+def api_health(args: argparse.Namespace) -> int:
+    """Verify the supported API route chain for one longread without scraping the UI."""
+    sync_playwright = ensure_playwright()
+    checks = []
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        try:
+            overview = api_request(context, f"/api/micro-lms/courses/{args.course_id}/overview")
+            checks.append({"endpoint": "course-overview", "ok": isinstance(overview, dict)})
+            material = longread_task(context, args.longread_id, args.exercise_id)
+            checks.append({"endpoint": "longread-materials", "ok": True})
+            task_id = material["taskId"]
+            task = api_request(context, f"/api/micro-lms/tasks/{task_id}")
+            checks.append({"endpoint": "task", "ok": isinstance(task, dict)})
+            events = api_request(context, f"/api/micro-lms/tasks/{task_id}/events")
+            checks.append({"endpoint": "task-events", "ok": isinstance(events, list)})
+            comments = api_request(context, f"/api/micro-lms/tasks/{task_id}/comments")
+            checks.append({"endpoint": "task-comments", "ok": isinstance(comments, list)})
+        finally:
+            browser.close()
+
+    print_json(
+        {
+            "status": "ok" if all(check["ok"] for check in checks) else "unexpected-response",
+            "courseId": args.course_id,
+            "longreadId": args.longread_id,
+            "taskId": task_id,
+            "checks": checks,
+        }
+    )
+    return 0
+
+
+def deadlines_api(args: argparse.Namespace) -> int:
+    """Walk published courses' overview and flatten exercises that carry a deadline.
+
+    This is the preferred deadline extractor: it reads the LMS's own deadline
+    field per exercise instead of regexing rendered DOM text.
+    """
+    sync_playwright = ensure_playwright()
+    matches: list[dict[str, object]] = []
+
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        courses_body = api_request(
+            context, "/api/micro-lms/courses/student", {"limit": 100, "offset": 0, "state": "published"}
+        )
+        for course in courses_body.get("items", []):
+            course_id = course["id"]
+            overview = api_request(context, f"/api/micro-lms/courses/{course_id}/overview")
+            for theme in overview.get("themes", []):
+                for longread in theme.get("longreads", []):
+                    for exercise in longread.get("exercises", []):
+                        deadline = exercise.get("deadline")
+                        if not deadline:
+                            continue
+                        matches.append(
+                            {
+                                "courseId": course_id,
+                                "courseName": course.get("name"),
+                                "theme": theme.get("name"),
+                                "longread": longread.get("name"),
+                                "exercise": exercise.get("name"),
+                                "maxScore": exercise.get("maxScore"),
+                                "activity": (exercise.get("activity") or {}).get("name"),
+                                "deadline": deadline,
+                            }
+                        )
+        browser.close()
+
+    if not args.include_past:
+        now = datetime.now(timezone.utc).isoformat()
+        matches = [m for m in matches if m["deadline"] >= now]
+
+    matches.sort(key=lambda m: m["deadline"])
+    print_json({"count": len(matches), "matches": matches[: args.limit]})
     return 0
 
 
@@ -259,9 +572,39 @@ def main() -> int:
     snapshot_parser = sub.add_parser("snapshot")
     add_common(snapshot_parser)
 
+    list_courses_parser = sub.add_parser("list-courses")
+    add_common(list_courses_parser)
+    list_courses_parser.add_argument("--state", default="published")
+    list_courses_parser.add_argument("--limit", type=int)
+    list_courses_parser.add_argument("--offset", type=int, default=0)
+
+    course_overview_parser = sub.add_parser("course-overview")
+    add_common(course_overview_parser)
+    course_overview_parser.add_argument("course_id")
+
+    course_progress_parser = sub.add_parser("course-progress")
+    add_common(course_progress_parser)
+    course_progress_parser.add_argument("course_id")
+
+    task_details_parser = sub.add_parser("task-details")
+    add_common(task_details_parser)
+    task_details_parser.add_argument("longread_id")
+    task_details_parser.add_argument("--exercise-id")
+
+    health_parser = sub.add_parser("api-health")
+    add_common(health_parser)
+    health_parser.add_argument("course_id")
+    health_parser.add_argument("longread_id")
+    health_parser.add_argument("--exercise-id")
+
     deadlines_parser = sub.add_parser("deadlines")
     add_common(deadlines_parser)
     deadlines_parser.add_argument("--limit", type=int, default=50)
+    deadlines_parser.add_argument("--include-past", action="store_true")
+
+    deadlines_dom_parser = sub.add_parser("deadlines-dom")
+    add_common(deadlines_dom_parser)
+    deadlines_dom_parser.add_argument("--limit", type=int, default=50)
 
     discover_parser = sub.add_parser("discover-api")
     add_common(discover_parser)
@@ -282,8 +625,20 @@ def main() -> int:
             return login(args)
         if args.command == "snapshot":
             return snapshot(args)
+        if args.command == "list-courses":
+            return list_courses(args)
+        if args.command == "course-overview":
+            return course_overview(args)
+        if args.command == "course-progress":
+            return course_progress(args)
+        if args.command == "task-details":
+            return task_details(args)
+        if args.command == "api-health":
+            return api_health(args)
         if args.command == "deadlines":
-            return deadlines(args)
+            return deadlines_api(args)
+        if args.command == "deadlines-dom":
+            return deadlines_dom(args)
         if args.command == "discover-api":
             return discover_api(args)
         if args.command == "api-get":

@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Прочитай данные из этой Google Таблицы и посчитай сумму",
+    "Создай новую Google-таблицу с колонками Дата, Сумма, Категория",
+    "Добавь формулу =SUM(B2:B20) в ячейку B21 этой таблицы",
+    "Build a pivot table in this Google Sheet summarizing sales by region",
+    "List the spreadsheets shared with our service account"
+  ],
+  "should_not_trigger": [
+    "Открой этот Excel-файл на моём компьютере",
+    "Create a table in this Markdown document",
+    "Explain how VLOOKUP works in general"
+  ],
+  "capabilities": [
+    {"name": "list", "effect": "read", "confirmation": "none"},
+    {"name": "info", "effect": "read", "confirmation": "none"},
+    {"name": "read", "effect": "read", "confirmation": "none"},
+    {"name": "read-batch", "effect": "read", "confirmation": "none"},
+    {"name": "create", "effect": "write", "confirmation": "explicit"},
+    {"name": "write", "effect": "write", "confirmation": "explicit"},
+    {"name": "append", "effect": "write", "confirmation": "explicit"},
+    {"name": "add-sheet", "effect": "write", "confirmation": "explicit"},
+    {"name": "batch-update", "effect": "write", "confirmation": "explicit"},
+    {"name": "clear", "effect": "destructive", "confirmation": "exact"},
+    {"name": "delete-sheet", "effect": "destructive", "confirmation": "exact"},
+    {"name": "trash", "effect": "destructive", "confirmation": "exact"},
+    {"name": "import-service-account", "effect": "write", "confirmation": "explicit"},
+    {"name": "known-spreadsheets", "effect": "read", "confirmation": "none"},
+    {"name": "remove", "effect": "destructive", "confirmation": "exact"}
+  ]
+}

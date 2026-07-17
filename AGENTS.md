@@ -13,6 +13,49 @@ classification, eval expectations, and review checklist.
 Repository-only trigger and effect contracts live in `evals/<skill-name>.json`; they are not
 installed or loaded when a skill activates.
 
+## Development workflow
+
+Use this lifecycle for a new skill or a substantial redesign. For a small, well-scoped fix, keep
+the same checks but compress the planning and commit steps proportionally.
+
+1. **Inspect before changing anything.** Read this file and `docs/skill-authoring.md`, then inspect
+   the closest existing skills, scripts, references, and eval contracts. Check `git status`, the
+   current branch, remotes, and recent commit style. Preserve every unrelated local change.
+2. **Synchronize safely and isolate the work.** Fetch the remote first. Use `git pull --ff-only`
+   only when the current branch and worktree make that safe; otherwise report the state instead of
+   stashing, resetting, or overwriting user work. Create a dedicated feature branch before edits.
+3. **Turn the request into a design.** Extract concrete trigger and non-trigger examples,
+   acceptance criteria, capabilities, effect classes, authentication boundaries, failure modes,
+   target agents, and context/output budgets. Inspect current official API documentation and
+   deprecation notices for every external integration rather than relying on model memory.
+4. **Brainstorm and plan.** Compare viable approaches, then propose the skill tree, routing table,
+   deterministic scripts, selectively loaded references, eval cases, and test strategy. Surface
+   material tradeoffs or unresolved requirements and get the user's approval before implementation.
+5. **Implement the approved scope completely.** Build deterministic capabilities first, then write
+   `SKILL.md` as their compact router. Add only resources justified by the accepted use cases. Make
+   small logical commits during substantial work, following the repository's existing commit style
+   and never including unrelated files.
+6. **Verify behavior, not only structure.** Run `./skill validate <name>`, credential-free `--help`
+   checks, unit tests, and realistic read-only smoke tests. Exercise `--dry-run` for writes and exact
+   target checks for destructive operations. Install for every declared target agent and, for a
+   substantial or fragile skill, test it from a fresh session before calling it complete.
+7. **Deliver deliberately.** Review the final diff and working tree, summarize verification and
+   residual risks, and create the final local commit. A push, pull request, comment, upload, or any
+   other external write still requires separate explicit confirmation of the exact target. After
+   confirmation, push the feature branch and report the resulting URL or remote state.
+
+The request and approved clarifications are the acceptance contract. A finished skill must satisfy
+all of them; do not silently omit a difficult capability or leave placeholders for a later version.
+Ask about decisions that materially change scope, security, cost, or external effects. Resolve
+minor implementation details from repository conventions and verified platform behavior.
+
+Architecture has priority over prose volume. Give the model only the non-obvious decisions it needs,
+and move repeated, fragile, or credential-sensitive behavior into scripts. Enforce important safety
+properties in code where practical: validate targets, constrain hosts or origins, prevent credential
+forwarding across redirects, bound and redact output, avoid automatic retries of mutations, and
+provide dry-run or confirmation mechanisms for writes. Prompt instructions alone are not a security
+boundary.
+
 ## The Agent Skills format
 
 A skill is a directory under `skills/<name>/` containing:
