@@ -17,7 +17,7 @@ develop new ones safely.
 Clone the repository and install its local CLI:
 
 ```bash
-git clone git@github.com:MattoYuzuru/yuzuru-skills.git
+git clone https://github.com/MattoYuzuru/yuzuru-skills.git
 cd yuzuru-skills
 ./install.sh
 ```
@@ -41,12 +41,12 @@ Claude Code. Override these locations with `YUZURU_CODEX_SKILLS_DIR` or
 
 | Skill | Purpose |
 |---|---|
-| `central-university-lms` | Read-only access to courses, assignments, comments, progress, and deadlines in Central University LMS. |
+| `central-university-lms` | Headless LMS inspection, unfinished-homework export, solution-manifest validation, and safe write discovery. |
 | `github-workflow` | GitHub repositories, issues, pull requests, Projects, Actions, and local Git workflows. |
 | `gitlab-workflow` | GitLab repositories, merge requests, discussions, pipelines, logs, and fork-based delivery. |
 | `google-ai-search` | Token-efficient public-web research through the Gemini API with Google Search grounding. |
 | `google-sheets-workflow` | Google Sheets and Drive reads, controlled writes, formulas, formatting, and structural changes. |
-| `jira-workflow` | Jira issue discovery, creation, linking, quality checks, and status transitions. |
+| `jira-workflow` | Jira Data Center/Server issue discovery, creation, linking, quality checks, and status transitions. |
 
 To create or update a skill, give the repository to an agent and point it to
 [`AGENTS.md`](AGENTS.md). The detailed architecture, context budgets, script contract, effect model,
@@ -59,6 +59,8 @@ are available through the same CLI:
   --resources scripts,references
 ./skill validate my-skill
 ./skill validate all
+python3 scripts/smoke_scripts.py
+python3 scripts/run_tests.py
 ```
 
 Secrets and browser sessions must remain outside the repository. Skills prefer official APIs,

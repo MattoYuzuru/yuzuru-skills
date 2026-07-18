@@ -4,7 +4,8 @@ Read this reference only when setting up a new device, resolving TLS inspection,
 
 ## Portable Runtime
 
-Run `python3 scripts/bootstrap.py` from the resolved skill directory. It creates or reuses one venv in the OS cache directory:
+Run `python3 scripts/bootstrap.py` from the resolved skill directory. It creates or reuses one venv
+in the OS cache directory and installs the repository-pinned Playwright version:
 
 - macOS/Linux: `~/.cache/yuzuru-codex-skills/central-university-lms/venv` unless `XDG_CACHE_HOME` is set.
 - Windows: `%LOCALAPPDATA%\\yuzuru-codex-skills\\central-university-lms\\venv`.

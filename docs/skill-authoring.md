@@ -45,6 +45,7 @@ skills/<skill-name>/
   agents/openai.yaml     optional Codex UI metadata
   references/*.md        optional model-readable detail
   scripts/*              optional deterministic helpers
+  scripts/tests/*        optional credential-free helper tests
   assets/*               optional output templates and static resources
 ```
 
@@ -129,8 +130,11 @@ Every helper script should follow these rules:
 6. Emit compact JSON by default; make pretty or raw output opt-in.
 7. Paginate collections and expose explicit `--limit` or cursor controls.
 8. Filter API responses to fields required by the workflow.
-9. Make side effects explicit in command names and support `--dry-run` when useful.
-10. Avoid model-driven retries when a deterministic bounded retry is safe inside the script.
+9. Make side effects explicit in command names; preview writes with `--dry-run` and enforce an
+   execution confirmation flag when practical.
+10. Retry only bounded idempotent reads. Never automatically retry a mutation after an ambiguous
+    timeout/5xx/429 unless the protocol provides a verified idempotency key.
+11. Validate credential-bearing target origins and reject cross-origin redirects.
 
 Prefer one discoverable CLI with subcommands over many tiny scripts when they share authentication
 and transport. Split code only for maintainability, not to mirror documentation folders.
@@ -146,6 +150,9 @@ Classify every capability:
 
 Instructions are not a security boundary. Enforce read-only behavior with credentials, API scopes,
 database roles, sandboxing, and server-side validation.
+
+One approval may authorize an exact finite batch. Record its targets and payloads before execution,
+never expand it, journal partial results, and re-read state before recovering from ambiguous writes.
 
 ## Evaluation Contract
 
@@ -187,7 +194,8 @@ knowledge the agent already has. Prefer one representative example over several 
 5. Write `SKILL.md` as a router over those capabilities.
 6. Add only the references required by identified tasks.
 7. Run `./skill validate <name>`.
-8. Run script smoke checks and at least one realistic read-only task.
+8. Run `python3 scripts/smoke_scripts.py`, `python3 scripts/run_tests.py`, and at least one realistic
+   read-only task.
 9. Add trigger/effect eval cases for ambiguous or external-system skills.
 10. Install for both target agents and test from a fresh session.
 
@@ -213,5 +221,7 @@ knowledge the agent already has. Prefer one representative example over several 
 - Are writes and destructive actions visibly classified?
 - Are paths independent of the maintainer's machine and current directory?
 - Are all secrets outside the repository?
+- Are credential-bearing hosts exact HTTPS origins with cross-origin redirects blocked?
+- Are read retries bounded and mutation retries disabled or provably idempotent?
 - Does `./skill validate` pass?
 - Was at least one realistic workflow smoke-tested?
