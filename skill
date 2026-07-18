@@ -379,7 +379,9 @@ cmd_validate() {
 }
 
 interactive_install() {
-  [ -t 0 ] && [ -t 1 ] || die "interactive install requires a terminal"
+  if [ ! -t 0 ] || [ ! -t 1 ]; then
+    die "interactive install requires a terminal"
+  fi
   command -v tput >/dev/null 2>&1 || die "interactive install requires tput"
 
   local names selected conflicts count i key cursor apply quit status marker pointer desc
@@ -513,7 +515,9 @@ interactive_install() {
 main() {
   local command
   command="${1:-install}"
-  [ "$#" -gt 0 ] && shift || true
+  if [ "$#" -gt 0 ]; then
+    shift
+  fi
 
   case "$command" in
     help|-h|--help)
