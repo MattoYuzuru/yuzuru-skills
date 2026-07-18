@@ -18,7 +18,9 @@ jobs:
           python-version: "3.12"
       - name: Validate skills
         run: ./skill validate all
-      - name: Test GitHub workflow helper
-        env:
-          PYTHONPATH: skills/github-workflow/scripts
-        run: python3 -m unittest discover -s skills/github-workflow/scripts/tests -v
+      - name: Compile Python helpers
+        run: python3 -m compileall -q scripts skills
+      - name: Check credential-free help
+        run: python3 scripts/smoke_scripts.py
+      - name: Run helper unit tests
+        run: python3 scripts/run_tests.py

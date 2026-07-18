@@ -34,7 +34,8 @@ python3 scripts/search.py \
 ```
 
 Use the installed `google-ai-search` launcher when available. The default model
-is `gemini-2.5-flash-lite`, selected for free-tier availability and low cost.
+is the stable `gemini-3.1-flash-lite`; override it with
+`GOOGLE_AI_SEARCH_MODEL` when Google announces a newer compatible model.
 
 ## Result Handling
 

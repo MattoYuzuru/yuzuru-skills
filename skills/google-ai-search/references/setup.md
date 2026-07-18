@@ -32,7 +32,7 @@ The key is stored at
 - `GOOGLE_AI_SEARCH_API_KEY` or `GEMINI_API_KEY`: use an environment key instead
   of the config file.
 - `GOOGLE_AI_SEARCH_CONFIG_DIR`: override the config directory.
-- `GOOGLE_AI_SEARCH_MODEL`: override the default `gemini-2.5-flash-lite` model.
+- `GOOGLE_AI_SEARCH_MODEL`: override the default `gemini-3.1-flash-lite` model.
 - `GOOGLE_AI_SEARCH_BIN_DIR`: override the POSIX launcher directory.
 
 The Gemini free tier may allow Google Search grounding without billing, subject

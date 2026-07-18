@@ -19,6 +19,13 @@ ABSOLUTE_PATH_RE = re.compile(r"(?:/Users/|/home/)[^\s`]+")
 RUNTIME_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", "node_modules"}
 ALLOWED_TARGETS = {"codex", "claude"}
 EFFECT_CONFIRMATION = {"read": "none", "write": "explicit", "destructive": "exact"}
+FORBIDDEN_REPOSITORY_FILES = {
+    ".env",
+    "api-key",
+    "service-account.json",
+    "storage-state.json",
+    "token-cache.json",
+}
 TEMPLATE_MARKERS = {
     "Describe the capability and its scope in one short paragraph.",
     "Select the relevant route and load only its required reference.",
@@ -259,6 +266,13 @@ def validate_skill(skill_dir: Path, evals_dir: Path) -> Result:
     validate_resource_links(skill_dir, body, result)
     validate_python_scripts(skill_dir, result)
     validate_openai_metadata(skill_dir, name, result)
+
+    for path in sorted(skill_dir.rglob("*")):
+        if path.is_file() and path.name.casefold() in FORBIDDEN_REPOSITORY_FILES:
+            result.errors.append(
+                f"credential/session artifact must stay outside the repository: "
+                f"{path.relative_to(skill_dir)}"
+            )
     return result
 
 
