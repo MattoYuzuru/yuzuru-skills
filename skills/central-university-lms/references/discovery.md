@@ -4,17 +4,18 @@ Use this reference before changing `scripts/lms.py`.
 
 ## Goal
 
-Build a read-only extractor for `https://my.centraluniversity.ru/learn/courses/view/actual/all` that can list current courses, homework, deadlines, and visible statuses for the user's own account.
+Maintain a safe mixed-effect integration for the user's own account: structured reads and exports
+now, followed by verified solution-link submissions after the private write contract is observed.
 
 ## Preferred Order
 
 1. Use the documented JSON API endpoints below (`api_request` in `lms.py`).
-2. Re-run `discover-api` / `click-text-discover` to find new endpoints if the LMS frontend changes and a documented endpoint starts 404ing.
+2. Re-run `discover-api` to find new read endpoints if the LMS frontend changes and a documented endpoint starts 404ing.
 3. Use DOM extraction (`snapshot`, `deadlines-dom`) only when no endpoint covers the need.
 
 ## Known API Endpoints
 
-All are plain JSON GETs against `https://my.centraluniversity.ru`, authenticated via the saved storage state (no extra headers needed). Discovered 2026-07-14 via `discover-api` + `click-text-discover` while navigating the real UI.
+All are plain JSON GETs against `https://my.centraluniversity.ru`, authenticated via the saved storage state (no extra headers needed). Discovered 2026-07-14 while navigating the real UI.
 
 | Endpoint | Purpose | Notes |
 |---|---|---|
@@ -26,7 +27,7 @@ All are plain JSON GETs against `https://my.centraluniversity.ru`, authenticated
 | `GET /api/micro-lms/longreads/{id}/materials?limit=100&offset=0` | Material and assigned task IDs for a longread | Use this to resolve `taskId`; do not scrape the theme accordion. |
 | `GET /api/micro-lms/tasks/{id}` | Task description, state, solution, scores, and metadata | Contains student PII too; filter the response before reporting it. |
 | `GET /api/micro-lms/tasks/{id}/events` | Task status history | Filter event payloads: `taskCreated` embeds student details. |
-| `GET /api/micro-lms/tasks/{id}/comments` | Comments and their attachments | Read-only; never post or upload. |
+| `GET /api/micro-lms/tasks/{id}/comments` | Comments and their attachments | Filter before reporting; write behavior is not wired. |
 | `GET /api/student-hub/students/me` | Full student profile | Contains real PII (full name, INN, SNILS, phone, email) — never print, log, or write this response to the repo |
 
 Not found yet: a "ведомость"/transcript/grades-across-courses endpoint. `course-progress` only gives one course's score. If asked for a full transcript, say this isn't wired up yet rather than guessing from DOM.
@@ -59,4 +60,10 @@ Keep uncertain results marked as inferred.
 
 ## Write Actions
 
-The first version must not submit homework, upload files, mark lessons complete, send messages, or mutate LMS state.
+No write endpoint is trusted yet. Use `observe-action --confirm-write-observation` only after the
+user authorizes one exact manual UI action. It records the exact-origin API method/path, response
+status, header names, and redacted body shape; it does not click or replay anything.
+
+Do not add a generic POST escape hatch. Enable each write as a dedicated command only after adding
+sanitized fixtures, preflight checks, explicit confirmation, a single-attempt mutation, and a
+post-write read verification. See `references/submissions.md` for the solution-link gate.
