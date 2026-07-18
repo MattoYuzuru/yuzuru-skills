@@ -1,13 +1,14 @@
 ---
 name: jira-workflow
-description: Jira issue workflow: read, search, create, link, and transition issues via REST API using a local Personal Access Token. Use when the user asks to inspect a Jira issue, search Jira via JQL, create an epic/feature/task, link two issues, or move an issue's status.
+description: Jira Data Center and Server issue workflow: read, search, create, link, and transition issues through REST API v2 using a local Personal Access Token. Use when the user asks to inspect a self-managed Jira issue, search via JQL, create an epic/feature/task, link issues, or move an issue's status.
 ---
 
 # Jira Workflow
 
 ## Overview
 
-Use this skill for Jira read workflows and controlled write workflows. Prefer the helper script in
+Use this skill for self-managed Jira Data Center/Server read workflows and controlled writes. It
+does not implement Jira Cloud authentication or REST v3. Prefer the helper script in
 `scripts/jira_api.py` for every API call so tokens are never pasted into prompts or committed to
 repositories. Resolve this skill's installed directory before running the examples below; run
 commands from that directory (or address `scripts/jira_api.py` relative to it).
@@ -45,7 +46,7 @@ existing `JIRA_PAT` while doing this.
 | List issue link types | `link-types` | read |
 | List an issue's available transitions | `transitions <key>` | read |
 | List open epics | `epics-open [--project] [--max-results]` | read |
-| Create an issue, epic, or sub-task | `create --project --issuetype-id --summary [--description] [--field KEY=VALUE ...] [--dry-run]` | write |
+| Create an issue, epic, or sub-task | `create --project --issuetype-id --summary [--description] [--field KEY=VALUE ...]` | write |
 | Decompose an epic into sub-tasks | workflow built from `read` + repeated `create` (see below) | write |
 | Link two issues | `link --type --inward --outward [--dry-run]` | write |
 | Move an issue's status | `move-status <key> --transition-id <id> [--dry-run]` | write |
@@ -93,7 +94,7 @@ python3 scripts/jira_api.py create --project LP --issuetype-id 10001 \
   --dry-run
 ```
 
-Only drop `--dry-run` after the user has confirmed the previewed payload exactly as it will be sent.
+After confirmation, replace `--dry-run` with `--confirm-write`.
 
 ## Epic Decomposition
 
@@ -152,10 +153,12 @@ python3 scripts/jira_api.py search --jql 'project = LP AND reporter = currentUse
 
 ## Guardrails
 
-- Never create, link, or transition an issue without previewing the exact payload and getting
-  explicit user confirmation first — `create`, `link`, and `move-status` all support `--dry-run`
-  for this and should be run with it until confirmed.
+- Never create, link, or transition an issue without previewing the exact payload with `--dry-run`.
+  After approval, execute once with `--confirm-write`; the helper never retries mutations.
 - Never invent a project-specific custom field id — always resolve it via `createmeta` first.
+- `createmeta` uses the Jira 9+ granular per-project/per-issue-type endpoints, not the removed
+  aggregate endpoint.
+- Use only an HTTPS Jira origin. Cross-origin redirects are rejected to protect the PAT.
 - Never retry `create` after a `5xx` response without checking JQL for a possible duplicate first —
   an unconditional retry can create duplicate issues.
 - Prefer forward-only status transitions. A transition that closes or cancels an issue requires a
