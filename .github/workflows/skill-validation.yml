@@ -20,6 +20,8 @@ jobs:
         run: ./skill validate all
       - name: Compile Python helpers
         run: python3 -m compileall -q scripts skills
+      - name: Check shell helpers
+        run: shellcheck skill install.sh skills/google-ai-search/scripts/*.sh
       - name: Check credential-free help
         run: python3 scripts/smoke_scripts.py
       - name: Run helper unit tests

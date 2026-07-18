@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main() -> int:
     tests = sorted((ROOT / "skills").glob("*/scripts/tests/test_*.py"))
+    tests.extend(sorted((ROOT / "scripts" / "tests").glob("test_*.py")))
     failures: list[dict[str, object]] = []
     for path in tests:
         scripts_dir = path.parents[1]

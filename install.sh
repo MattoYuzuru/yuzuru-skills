@@ -80,7 +80,7 @@ case ":${PATH}:" in
   *)
     printf '\n%s is not in PATH.\n' "$BIN_DIR"
     printf 'Add this to your shell config, then restart the shell:\n'
-    printf '  export PATH="%s:$PATH"\n' "$BIN_DIR"
+    printf '  export PATH="%s:%s"\n' "$BIN_DIR" "\$PATH"
     ;;
 esac
 
@@ -88,4 +88,3 @@ printf '\nNext steps:\n'
 printf '  %s list\n' "$COMMAND_NAME"
 printf '  %s install\n' "$COMMAND_NAME"
 printf '  %s install all\n' "$COMMAND_NAME"
-

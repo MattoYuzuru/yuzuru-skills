@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -36,6 +37,20 @@ def parse_targets(value: str) -> list[str]:
 
 def title_from_name(name: str) -> str:
     return " ".join(part.capitalize() for part in name.split("-"))
+
+
+def short_description(description: str) -> str:
+    capability = re.split(r"\bUse when\b", description, maxsplit=1, flags=re.IGNORECASE)[0]
+    capability = capability.strip().rstrip(".")
+    if len(capability) < 25:
+        capability = f"{capability} agent workflow"
+    if len(capability) > 64:
+        capability = capability[:61].rstrip() + "..."
+    return capability
+
+
+def yaml_string(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
 
 
 def main() -> int:
@@ -100,6 +115,19 @@ Describe the capability and its scope in one short paragraph.
     if set(args.targets) != ALLOWED_TARGETS:
         targets = ", ".join(args.targets)
         (skill_dir / "skill.yaml").write_text(f"targets: [{targets}]\n", encoding="utf-8")
+    if "codex" in args.targets:
+        agents_dir = skill_dir / "agents"
+        agents_dir.mkdir()
+        openai_yaml = "\n".join(
+            [
+                "interface:",
+                f"  display_name: {yaml_string(title)}",
+                f"  short_description: {yaml_string(short_description(args.description))}",
+                f"  default_prompt: {yaml_string(f'Use ${args.name} to complete this workflow safely.')}",
+                "",
+            ]
+        )
+        (agents_dir / "openai.yaml").write_text(openai_yaml, encoding="utf-8")
 
     print(f"created: {skill_dir}")
     print("next: replace the template text, add only required resources, then run:")
