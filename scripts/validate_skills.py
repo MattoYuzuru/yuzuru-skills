@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import fnmatch
 import json
 import re
 import sys
@@ -19,6 +20,27 @@ ABSOLUTE_PATH_RE = re.compile(r"(?:/Users/|/home/)[^\s`]+")
 RUNTIME_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", "node_modules"}
 ALLOWED_TARGETS = {"codex", "claude"}
 EFFECT_CONFIRMATION = {"read": "none", "write": "explicit", "destructive": "exact"}
+FORBIDDEN_REPOSITORY_FILES = {
+    ".env",
+    "api-key",
+    "service-account.json",
+    "storage-state.json",
+    "token-cache.json",
+}
+FORBIDDEN_REPOSITORY_PATTERNS = {
+    ".env*",
+    "*.key",
+    "*.pem",
+    "client_secret*.json",
+    "credentials*.json",
+    "service-account*.json",
+    "storage-state*.json",
+    "token-cache*.json",
+}
+SECRET_CONTENT_RE = re.compile(
+    r"-----BEGIN (?:RSA |EC )?PRIVATE KEY-----|\bghp_[A-Za-z0-9]{30,}\b|"
+    r"\bglpat-[A-Za-z0-9_-]{20,}\b|\bAIza[A-Za-z0-9_-]{30,}\b"
+)
 TEMPLATE_MARKERS = {
     "Describe the capability and its scope in one short paragraph.",
     "Select the relevant route and load only its required reference.",
@@ -90,10 +112,24 @@ def validate_openai_metadata(skill_dir: Path, name: str, result: Result) -> None
     if not path.exists():
         return
     text = path.read_text(encoding="utf-8")
-    for key in ("display_name:", "short_description:", "default_prompt:"):
-        if key not in text:
-            result.errors.append(f"agents/openai.yaml is missing {key[:-1]}")
-    if f"${name}" not in text:
+    values: dict[str, str] = {}
+    for key in ("display_name", "short_description", "default_prompt"):
+        match = re.search(rf"^\s+{key}:\s*(.+?)\s*$", text, re.MULTILINE)
+        if not match:
+            result.errors.append(f"agents/openai.yaml is missing {key}")
+            continue
+        raw = match.group(1)
+        if not (raw.startswith('"') and raw.endswith('"')):
+            result.errors.append(f"agents/openai.yaml {key} must be a quoted string")
+            continue
+        try:
+            values[key] = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            result.errors.append(f"agents/openai.yaml {key} is not a valid quoted string: {exc}")
+    short = values.get("short_description", "")
+    if short and not 25 <= len(short) <= 64:
+        result.errors.append("agents/openai.yaml short_description must be 25-64 characters")
+    if f"${name}" not in values.get("default_prompt", ""):
         result.errors.append(f"agents/openai.yaml default_prompt must mention ${name}")
 
 
@@ -259,6 +295,34 @@ def validate_skill(skill_dir: Path, evals_dir: Path) -> Result:
     validate_resource_links(skill_dir, body, result)
     validate_python_scripts(skill_dir, result)
     validate_openai_metadata(skill_dir, name, result)
+
+    for path in sorted(skill_dir.rglob("*")):
+        folded = path.name.casefold()
+        if path.is_file() and (
+            folded in FORBIDDEN_REPOSITORY_FILES
+            or any(fnmatch.fnmatch(folded, pattern) for pattern in FORBIDDEN_REPOSITORY_PATTERNS)
+        ):
+            result.errors.append(
+                f"credential/session artifact must stay outside the repository: "
+                f"{path.relative_to(skill_dir)}"
+            )
+        if path.is_file():
+            try:
+                content = path.read_text(encoding="utf-8")
+            except (UnicodeDecodeError, OSError):
+                continue
+            if SECRET_CONTENT_RE.search(content):
+                result.errors.append(
+                    f"possible committed secret in {path.relative_to(skill_dir)}"
+                )
+
+    public_scripts = [
+        path for path in (skill_dir / "scripts").glob("*.py")
+        if path.name not in {"__init__.py"} and not path.name.startswith("_")
+    ] if (skill_dir / "scripts").is_dir() else []
+    tests = list((skill_dir / "scripts" / "tests").glob("test_*.py"))
+    if public_scripts and not tests:
+        result.warnings.append("Python helpers have no scripts/tests/test_*.py coverage")
     return result
 
 
@@ -280,6 +344,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Validate Yuzuru skills")
     parser.add_argument("names", nargs="*", help="skill names or 'all' (default: all)")
     parser.add_argument("--json", action="store_true", help="emit machine-readable results")
+    parser.add_argument("--strict", action="store_true", help="treat warnings as validation failures")
     parser.add_argument("--skills-dir", type=Path, required=True, help=argparse.SUPPRESS)
     parser.add_argument("--evals-dir", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
@@ -314,7 +379,7 @@ def main() -> int:
             f"validated {len(results)} skill(s): "
             f"{sum(item.ok for item in results)} passed, {sum(not item.ok for item in results)} failed"
         )
-    return 0 if all(item.ok for item in results) else 1
+    return 0 if all(item.ok and (not args.strict or not item.warnings) for item in results) else 1
 
 
 if __name__ == "__main__":

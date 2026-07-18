@@ -11,6 +11,20 @@ import sys
 from pathlib import Path
 
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+
+
+def pinned_version(package: str) -> str:
+    prefix = f"{package}=="
+    for line in (SCRIPT_DIR / "requirements.txt").read_text(encoding="utf-8").splitlines():
+        if line.startswith(prefix):
+            return line.removeprefix(prefix).strip()
+    raise RuntimeError(f"Missing exact {package} pin in scripts/requirements.txt")
+
+
+PLAYWRIGHT_VERSION = pinned_version("playwright")
+
+
 def default_venv() -> Path:
     cache_home = os.environ.get("XDG_CACHE_HOME")
     if not cache_home:
@@ -58,9 +72,20 @@ def main() -> int:
         print("Python 3.10 or newer is required by lms.py", file=sys.stderr)
         return 1
 
-    if subprocess.run([str(python), "-c", "import playwright.sync_api"], capture_output=True).returncode:
-        print(f"Installing Playwright into {args.venv}", file=sys.stderr)
-        run([str(python), "-m", "pip", "install", "--upgrade", "playwright"])
+    package_check = subprocess.run(
+        [
+            str(python),
+            "-c",
+            (
+                "from importlib.metadata import version; "
+                f"raise SystemExit(version('playwright') != '{PLAYWRIGHT_VERSION}')"
+            ),
+        ],
+        capture_output=True,
+    )
+    if package_check.returncode:
+        print(f"Installing Playwright {PLAYWRIGHT_VERSION} into {args.venv}", file=sys.stderr)
+        run([str(python), "-m", "pip", "install", "--requirement", str(SCRIPT_DIR / "requirements.txt")])
 
     print("Ensuring Chromium is installed", file=sys.stderr)
     run([str(python), "-m", "playwright", "install", "chromium"])

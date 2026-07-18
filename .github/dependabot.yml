@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /skills/central-university-lms/scripts
+    schedule:
+      interval: monthly
+  - package-ecosystem: pip
+    directory: /skills/google-sheets-workflow/scripts
+    schedule:
+      interval: monthly

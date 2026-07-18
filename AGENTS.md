@@ -65,6 +65,7 @@ skills/<name>/
   SKILL.md            required — frontmatter + instructions
   skill.yaml          optional — repository target-agent metadata
   scripts/             optional — deterministic code the skill runs
+    tests/              optional — credential-free unit tests for helpers
   references/          optional — detail loaded on demand, not at activation
   assets/               optional — output templates and static files
   agents/openai.yaml    optional — Codex-only UI metadata, see below
@@ -170,9 +171,9 @@ Claude Code ignores this file entirely. Do not add it to a Claude-only skill.
 
 ## Adding a new skill: checklist
 
-1. `mkdir -p skills/<name>/scripts` (and `references/`, `assets/` if needed).
-2. Write `SKILL.md` with portable `name` and `description` frontmatter, following the
-   template below. Add `skill.yaml` only for a restricted target set.
+1. Run `./skill new <name> --description "... Use when ..."` with only the required
+   `--resources`. It creates Codex UI metadata automatically when Codex is targeted.
+2. Replace the scaffold in `SKILL.md`; add `skill.yaml` only for a restricted target set.
 3. Put any deterministic/credential-handling logic in `scripts/`, called from the body.
 4. Add `agents/openai.yaml` only if the skill should target Codex's UI.
 5. Run `./skill list` — confirm the new skill shows up with the right per-agent status
@@ -181,8 +182,10 @@ Claude Code ignores this file entirely. Do not add it to a Claude-only skill.
    one target at a time) and confirm the symlink lands where expected
    (`~/.agents/skills` for Codex, `~/.claude/skills` for Claude Code, both overridable via
    `YUZURU_CODEX_SKILLS_DIR` / `YUZURU_CLAUDE_SKILLS_DIR`).
-7. Add `evals/<name>.json` when triggering is ambiguous or the skill has side effects.
-8. Update the "Current Skills" list in `README.md`.
+7. Add credential-free tests under `scripts/tests/`; run `python3 scripts/run_tests.py` and
+   `python3 scripts/smoke_scripts.py`.
+8. Add `evals/<name>.json` when triggering is ambiguous or the skill has side effects.
+9. Update the skill table in `README.md`.
 
 ### Minimal template
 

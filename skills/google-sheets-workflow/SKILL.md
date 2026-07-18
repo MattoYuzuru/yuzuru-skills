@@ -74,7 +74,7 @@ Read `references/setup.md` only when the user needs more detail than the checkli
 | Write/overwrite a range (values or formulas) | `references/ranges-and-values.md` | `write <id> --range <A1> --values <json>` | write |
 | Append rows below existing data | `references/ranges-and-values.md` | `append <id> --range <A1> --values <json>` | write |
 | Add a sheet tab | — | `add-sheet <id> --title <title>` | write |
-| Format cells, freeze rows, merge cells, build a pivot table | `references/batch-update-recipes.md` | `batch-update <id> --requests <json>` | write |
+| Format cells, freeze rows, merge cells, build a pivot table | `references/batch-update-recipes.md` | `batch-update <id> --requests-file <json>` | write |
 | Clear a range | — | `clear <id> --range <A1>` | destructive |
 | Delete a sheet tab | — | `delete-sheet <id> --sheet-id <id>` | destructive |
 | Move a spreadsheet to trash | — | `trash <id>` | destructive |
@@ -96,11 +96,10 @@ exactly as typed (e.g. a string that happens to start with `=`). See
 
 ## Pivot Tables And Formatting
 
-There is no dedicated `pivot-create` command. `batch-update` is the generic escape hatch for
-everything beyond plain cell values — pivot tables, cell formatting, freeze panes, merged
-cells, conditional formatting, column/row resizing — built from a raw `batchUpdate` requests
-array. Read `references/batch-update-recipes.md` for worked request bodies before writing one
-from scratch.
+There is no dedicated `pivot-create` command. `batch-update` validates a JSON request file for
+non-destructive operations beyond plain cell values: pivot tables, formatting, freeze panes,
+merges, conditional formatting, and resizing. It rejects destructive request types; use a
+dedicated destructive command instead. Read `references/batch-update-recipes.md` first.
 
 ## Error Handling
 
@@ -109,7 +108,8 @@ from scratch.
 | `403` / `404` on a spreadsheet the user expects to work | Not shared with the service account yet | Tell the user to open it and Share it (Editor) with the `client_email` from `setup.py check`, then retry |
 | `403 The caller does not have permission` on `create` specifically | The service account has no personal Drive storage quota — normal for accounts outside Google Workspace (no Shared Drive, no domain-wide delegation) | Do not retry. Tell the user this account can't create new spreadsheets via the API; have them create the spreadsheet themselves in Sheets and share it with `client_email`, then use `write`/`append`/`batch-update` on it instead |
 | `400 invalid_grant` during auth | Service-account key revoked/deleted in Cloud Console | Ask the user to create a new key and re-run `import-service-account` |
-| `429` | Rate limit | The script retries once automatically; if it still fails, wait and retry that one call — don't loop |
+| `429` on a read | Rate limit | The script retries one GET once; if it still fails, wait rather than looping |
+| `429` or timeout on a write | Ambiguous mutation result | Do not retry automatically; read the target state first |
 | `400` on `write`/`append`/`batch-update` | Malformed range or request body | Fix the payload using the error message; don't retry blindly |
 
 ## Guardrails
@@ -117,14 +117,18 @@ from scratch.
 - Never print the service-account key file, the cached access token, or any file under this
   skill's config directory — only ever pass file *paths* to `setup.py import-service-account`.
 - `create`, `write`, `append`, `add-sheet`, and `batch-update` are writes: preview the exact
-  command and payload (via `--dry-run`) and get explicit user confirmation before dropping it.
+  command and payload with `--dry-run`, obtain approval, then add `--confirm-write`.
 - Before running `write` (it silently overwrites) on a range that isn't provably empty (e.g.
   not a range you just created via `create`/`add-sheet` this turn), run a plain `read` on that
   exact range first and show its current contents next to the intended new values as part of
   the confirmation — one cheap read call, and the only way to catch "this range already has
   data" before it's gone. `append` doesn't need this; it only adds rows.
 - `clear`, `delete-sheet`, and `trash` are destructive: confirm the exact spreadsheet id, range,
-  or sheet name with the user before running, even after a `--dry-run` preview.
+  or sheet name after a dry-run, then add `--confirm-destructive`.
+- Reads return at most 10,000 cells by default and mark `truncated`; raise `--max-cells` only when
+  the task requires the additional context.
+- If `create` reports `created-not-shared`, use its returned id and share it manually. Never retry
+  `create`, because the spreadsheet already exists.
 - `list` only shows spreadsheets already shared with the service account, not the user's whole
   Drive — say so plainly if the user seems to expect otherwise.
 - Never invent a `sheetId` or range — resolve it from `info`/`read` first.

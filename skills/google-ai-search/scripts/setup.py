@@ -134,7 +134,13 @@ def configure(args: argparse.Namespace) -> int:
     return 0
 
 
-def remove_key() -> int:
+def remove_key(args: argparse.Namespace) -> int:
+    if not args.confirm_remove:
+        print_json(
+            {"error": "remove-key requires --confirm-remove because it deletes the stored API key."},
+            stream=sys.stderr,
+        )
+        return 1
     path = key_path()
     path.unlink(missing_ok=True)
     print_json({"removed": True, "config_path": str(path)})
@@ -148,7 +154,8 @@ def main() -> int:
     configure_parser = subparsers.add_parser("configure", help="Validate and save an API key securely.")
     configure_parser.add_argument("--skip-validation", action="store_true")
     configure_parser.add_argument("--timeout", type=float, default=15.0)
-    subparsers.add_parser("remove-key", help="Delete the key stored in the config file.")
+    remove_parser = subparsers.add_parser("remove-key", help="Delete the key stored in the config file.")
+    remove_parser.add_argument("--confirm-remove", action="store_true")
     args = parser.parse_args()
 
     if args.command == "check":
@@ -157,7 +164,7 @@ def main() -> int:
         return 0 if status["ready"] else 2
     if args.command == "configure":
         return configure(args)
-    return remove_key()
+    return remove_key(args)
 
 
 if __name__ == "__main__":

@@ -7,6 +7,14 @@
 *.token
 *.cookie
 *.cookies
+*.key
+*.pem
+api-key
+client_secret*.json
+credentials*.json
+service-account*.json
+storage-state*.json
+token-cache*.json
 secrets/
 .local/
 
@@ -18,4 +26,3 @@ dist/
 build/
 .cache/
 tmp/
-

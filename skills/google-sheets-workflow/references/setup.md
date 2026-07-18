@@ -1,5 +1,8 @@
 # Cloud Console setup (service account, no OAuth consent screen)
 
+`scripts/bootstrap.py` installs the repository-pinned `google-auth` version in an isolated venv;
+dependency updates arrive as reviewed repository changes rather than implicit upgrades.
+
 One-time, browser-based, done by the user — there is no API to create credentials without
 already having credentials. After this, everything is headless.
 
@@ -76,7 +79,7 @@ Delete the key in Cloud Console (Service Account → Keys → delete), create a 
 `import-service-account` again. To remove everything this skill stored locally:
 
 ```bash
-python3 scripts/setup.py remove
+python3 scripts/setup.py remove --confirm-remove
 ```
 
 ## Why not OAuth2 user consent?

@@ -4,7 +4,8 @@ Read this reference only when setting up a new device, resolving TLS inspection,
 
 ## Portable Runtime
 
-Run `python3 scripts/bootstrap.py` from the resolved skill directory. It creates or reuses one venv in the OS cache directory:
+Run `python3 scripts/bootstrap.py` from the resolved skill directory. It creates or reuses one venv
+in the OS cache directory and installs the repository-pinned Playwright version:
 
 - macOS/Linux: `~/.cache/yuzuru-codex-skills/central-university-lms/venv` unless `XDG_CACHE_HOME` is set.
 - Windows: `%LOCALAPPDATA%\\yuzuru-codex-skills\\central-university-lms\\venv`.
@@ -15,7 +16,11 @@ Set `CENTRAL_UNIVERSITY_LMS_VENV` or pass `--venv` to choose another location. U
 
 Run `login` headed on a device where the user can complete authentication and any CAPTCHA. Keep the storage-state file outside the repository and protect it with user-only filesystem permissions.
 
-After a valid state exists, API-only commands (`list-courses`, `course-overview`, `course-progress`, `deadlines`, `task-details`, and `api-health`) can use `--headless`; this was verified against the LMS API. Do not use headless mode to establish or refresh a session. If an API command redirects to `id.centraluniversity.ru`, ask the user to re-authenticate rather than trying to bypass the CAPTCHA.
+After a valid state exists, API-only commands (`session-check`, `list-courses`, `course-overview`,
+`course-progress`, `deadlines`, `task-details`, `api-health`, and `export-pending`) run headlessly by
+default; this was verified against the LMS API. Pass `--headed` only for diagnostics. Do not use
+headless mode to establish or refresh a session. If a command returns `reauth_required`, ask the
+user to re-authenticate rather than trying to bypass the CAPTCHA.
 
 ## TLS Inspection
 

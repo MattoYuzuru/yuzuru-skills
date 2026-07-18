@@ -17,6 +17,31 @@ from api_config import AI_STUDIO_KEY_URL, DEFAULT_MODEL, key_path, load_api_key
 API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models"
 
 
+def bounded_int(minimum: int, maximum: int):
+    def parse(value: str) -> int:
+        parsed = int(value)
+        if not minimum <= parsed <= maximum:
+            raise argparse.ArgumentTypeError(f"must be between {minimum} and {maximum}")
+        return parsed
+    return parse
+
+
+def bounded_float(minimum: float, maximum: float):
+    def parse(value: str) -> float:
+        parsed = float(value)
+        if not minimum <= parsed <= maximum:
+            raise argparse.ArgumentTypeError(f"must be between {minimum} and {maximum}")
+        return parsed
+    return parse
+
+
+def bounded_query(value: str) -> str:
+    value = value.strip()
+    if not value or len(value) > 2000:
+        raise argparse.ArgumentTypeError("query must contain between 1 and 2000 characters")
+    return value
+
+
 def clean_text(text: str, max_chars: int) -> str:
     text = text.strip()
     if len(text) <= max_chars:
@@ -24,7 +49,7 @@ def clean_text(text: str, max_chars: int) -> str:
     return text[:max_chars].rstrip() + "..."
 
 
-def parse_sources(metadata: dict[str, Any]) -> list[dict[str, str]]:
+def parse_sources(metadata: dict[str, Any], max_sources: int) -> list[dict[str, str]]:
     sources: list[dict[str, str]] = []
     seen: set[str] = set()
     for chunk in metadata.get("groundingChunks", []):
@@ -34,6 +59,8 @@ def parse_sources(metadata: dict[str, Any]) -> list[dict[str, str]]:
             continue
         seen.add(url)
         sources.append({"title": web.get("title") or url, "url": url})
+        if len(sources) >= max_sources:
+            break
     return sources
 
 
@@ -57,9 +84,9 @@ def parse_response(payload: dict[str, Any], args: argparse.Namespace) -> dict[st
         "answer": clean_text(answer, args.max_chars),
         "model": args.model,
         "search_queries": metadata.get("webSearchQueries", []),
-        "sources": parse_sources(metadata) if args.include_sources else [],
+        "sources": parse_sources(metadata, args.max_sources) if args.include_sources else [],
     }
-    if payload.get("usageMetadata"):
+    if args.include_usage and payload.get("usageMetadata"):
         result["usage"] = payload["usageMetadata"]
     if not answer:
         result["error"] = "Gemini returned an empty answer."
@@ -125,13 +152,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Grounded Google web research through Gemini API")
-    parser.add_argument("--query", "-q", required=True)
+    parser.add_argument("--query", "-q", required=True, type=bounded_query)
     parser.add_argument("--lang", "-l", default="en")
     parser.add_argument("--model", default=os.environ.get("GOOGLE_AI_SEARCH_MODEL", DEFAULT_MODEL))
-    parser.add_argument("--max-chars", type=int, default=5000)
-    parser.add_argument("--max-output-tokens", type=int, default=2048)
+    parser.add_argument("--max-chars", type=bounded_int(200, 20000), default=5000)
+    parser.add_argument("--max-output-tokens", type=bounded_int(128, 8192), default=2048)
     parser.add_argument("--include-sources", "-s", action="store_true")
-    parser.add_argument("--timeout", type=float, default=60.0)
+    parser.add_argument("--max-sources", type=bounded_int(1, 20), default=10)
+    parser.add_argument("--include-usage", action="store_true")
+    parser.add_argument("--timeout", type=bounded_float(1.0, 180.0), default=60.0)
     args = parser.parse_args()
 
     result = run(args)

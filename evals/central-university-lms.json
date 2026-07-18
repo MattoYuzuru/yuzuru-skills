@@ -4,6 +4,8 @@
     "Покажи мои ближайшие дедлайны в Central University",
     "Какие домашние задания сейчас есть в моем LMS?",
     "Открой последнюю домашку по Spring и покажи условие, решение и комментарии",
+    "Выгрузи ссылки и условия всех невыполненных домашних заданий из LMS",
+    "Проверь манифест ссылок на выполненные задания перед отправкой",
     "Summarize my current Central University courses from the LMS"
   ],
   "should_not_trigger": [
@@ -16,6 +18,10 @@
     {"name": "inspect-homework", "effect": "read", "confirmation": "none"},
     {"name": "inspect-deadlines", "effect": "read", "confirmation": "none"},
     {"name": "inspect-task-details", "effect": "read", "confirmation": "none"},
-    {"name": "check-api-health", "effect": "read", "confirmation": "none"}
+    {"name": "check-api-health", "effect": "read", "confirmation": "none"},
+    {"name": "session-check", "effect": "read", "confirmation": "none"},
+    {"name": "export-pending", "effect": "read", "confirmation": "none"},
+    {"name": "validate-submissions", "effect": "read", "confirmation": "none"},
+    {"name": "observe-action", "effect": "write", "confirmation": "explicit"}
   ]
 }

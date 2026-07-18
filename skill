@@ -379,7 +379,9 @@ cmd_validate() {
 }
 
 interactive_install() {
-  [ -t 0 ] && [ -t 1 ] || die "interactive install requires a terminal"
+  if [ ! -t 0 ] || [ ! -t 1 ]; then
+    die "interactive install requires a terminal"
+  fi
   command -v tput >/dev/null 2>&1 || die "interactive install requires tput"
 
   local names selected conflicts count i key cursor apply quit status marker pointer desc
@@ -418,6 +420,8 @@ interactive_install() {
     printf 'Claude install: %s\n\n' "$CLAUDE_DIR"
     printf 'Use arrows to move, Space to toggle, a=all, n=none, Enter=apply, q=quit.\n'
     printf 'Conflicts are shown as [!] and are not modified. A toggle applies to every\n'
+    # Backticks below are documentation, not command substitution.
+    # shellcheck disable=SC2016
     printf 'agent the skill targets; use `skill install --agent AGENT NAME` for one agent only.\n\n'
 
     i=0
@@ -456,23 +460,23 @@ interactive_install() {
       ' ')
         if [ "${conflicts[$cursor]}" = "0" ]; then
           if [ "${selected[$cursor]}" = "1" ]; then
-            selected[$cursor]="0"
+            selected[cursor]="0"
           else
-            selected[$cursor]="1"
+            selected[cursor]="1"
           fi
         fi
         ;;
       a)
         i=0
         while [ "$i" -lt "$count" ]; do
-          [ "${conflicts[$i]}" = "0" ] && selected[$i]="1"
+          [ "${conflicts[$i]}" = "0" ] && selected[i]="1"
           i=$((i + 1))
         done
         ;;
       n)
         i=0
         while [ "$i" -lt "$count" ]; do
-          [ "${conflicts[$i]}" = "0" ] && selected[$i]="0"
+          [ "${conflicts[$i]}" = "0" ] && selected[i]="0"
           i=$((i + 1))
         done
         ;;
@@ -511,7 +515,9 @@ interactive_install() {
 main() {
   local command
   command="${1:-install}"
-  [ "$#" -gt 0 ] && shift || true
+  if [ "$#" -gt 0 ]; then
+    shift
+  fi
 
   case "$command" in
     help|-h|--help)

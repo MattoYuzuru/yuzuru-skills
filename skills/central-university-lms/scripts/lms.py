@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only Central University LMS helper."""
+"""Central University LMS read/export helper and safe write-discovery tool."""
 
 from __future__ import annotations
 
@@ -7,15 +7,26 @@ import argparse
 import json
 import os
 import re
+import sys
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
+from lms_core import (
+    API_BASE,
+    LmsError,
+    is_unfinished,
+    redacted_shape,
+    resolve_lms_url,
+    sanitized_request_url,
+    validate_submission_manifest,
+    write_private_json,
+)
+
 
 DEFAULT_URL = "https://my.centraluniversity.ru/learn/courses/view/actual/all"
 DEFAULT_STATE = Path("~/.config/yuzuru-codex-skills/central-university-lms/storage-state.json").expanduser()
-API_BASE = "https://my.centraluniversity.ru"
 DEADLINE_RE = re.compile(
     r"(?i)(дедлайн|deadline|домаш|homework|assignment|задани|сдать|до\s+\d{1,2}[./]\d{1,2}|"
     r"\d{1,2}[./]\d{1,2}(?:[./]\d{2,4})?)"
@@ -36,8 +47,8 @@ def state_path(value: str | None) -> Path:
     return Path(value).expanduser() if value else DEFAULT_STATE
 
 
-def print_json(data: object) -> None:
-    print(json.dumps(data, ensure_ascii=False, indent=2))
+def print_json(data: object, *, stream: Any = sys.stdout) -> None:
+    print(json.dumps(data, ensure_ascii=False, indent=2), file=stream)
 
 
 def login(args: argparse.Namespace) -> int:
@@ -64,24 +75,37 @@ def login(args: argparse.Namespace) -> int:
 def context_with_state(p: Any, args: argparse.Namespace):
     storage = state_path(args.storage_state)
     if not storage.exists():
-        raise RuntimeError(f"Storage state not found: {storage}. Run login first.")
+        raise LmsError("reauth_required", f"Storage state not found: {storage}. Run login first.")
     browser = p.chromium.launch(headless=args.headless)
     context = browser.new_context(storage_state=str(storage))
     return browser, context
 
 
-def api_request(context: Any, path: str, params: dict[str, object] | None = None) -> Any:
+def api_request(
+    context: Any,
+    path: str,
+    params: dict[str, object] | None = None,
+    *,
+    timeout: int = 30000,
+) -> Any:
     """GET a micro-lms/hub JSON endpoint using the authenticated context.
 
     Requires NODE_EXTRA_CA_CERTS to point at a PEM bundle containing the
     corporate TLS-inspection root CA, or context.request.get raises
     "self-signed certificate in certificate chain". See references/discovery.md.
     """
-    url = path if path.startswith("http") else f"{API_BASE}{path}"
-    response = context.request.get(url, params=params or {})
+    url = resolve_lms_url(path, require_api=True)
+    response = context.request.get(url, params=params or {}, timeout=timeout)
+    response_url = response.url
+    if response_url and not response_url.startswith(f"{API_BASE}/api/"):
+        raise LmsError("reauth_required", "LMS session expired or redirected. Run login again.")
     if response.status >= 400:
-        raise RuntimeError(f"GET {url} -> {response.status}: {response.text()[:500]}")
-    return response.json()
+        code = "reauth_required" if response.status in {401, 403} else "api_error"
+        raise LmsError(code, f"GET {url} -> {response.status}: {response.text()[:500]}")
+    try:
+        return response.json()
+    except Exception as exc:
+        raise LmsError("invalid_response", f"GET {url} did not return JSON.") from exc
 
 
 def course_longread_url(course_id: object, theme_id: object, longread_id: object) -> str:
@@ -368,6 +392,165 @@ def task_details(args: argparse.Namespace) -> int:
     return 0
 
 
+def session_check(args: argparse.Namespace) -> int:
+    """Verify that saved auth works without returning private course data."""
+    sync_playwright = ensure_playwright()
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        try:
+            body = api_request(
+                context,
+                "/api/micro-lms/courses/student",
+                {"limit": 1, "offset": 0, "state": "published"},
+                timeout=args.timeout,
+            )
+        finally:
+            browser.close()
+    print_json(
+        {
+            "status": "ready",
+            "headless": args.headless,
+            "publishedCourseCount": (body.get("paging") or {}).get("totalCount"),
+        }
+    )
+    return 0
+
+
+def pending_manifest_item(
+    course: dict[str, Any],
+    theme: dict[str, Any],
+    longread: dict[str, Any],
+    material: dict[str, Any],
+    task: dict[str, Any],
+) -> dict[str, Any]:
+    exercise = task.get("exercise") if isinstance(task.get("exercise"), dict) else {}
+    solution = task.get("solution") if isinstance(task.get("solution"), dict) else {}
+    description = description_fields(exercise.get("viewContent"))
+    exercise_url = exercise.get("exerciseUrl")
+    if exercise_url and exercise_url not in description["links"]:
+        description["links"].append(exercise_url)
+    return {
+        "taskId": str(task.get("id") or material.get("taskId")),
+        "exerciseId": str(exercise.get("id") or material.get("id") or ""),
+        "longreadId": str(longread.get("id") or ""),
+        "course": {"id": course.get("id"), "name": course.get("name")},
+        "theme": {"id": theme.get("id"), "name": theme.get("name")},
+        "title": exercise.get("name") or material.get("name") or longread.get("name"),
+        "taskUrl": course_longread_url(course.get("id"), theme.get("id"), longread.get("id")),
+        "condition": description,
+        "deadline": task.get("deadline") or exercise.get("deadline"),
+        "currentState": task.get("state"),
+        "solution": {
+            "type": solution.get("type"),
+            "url": solution.get("solutionUrl"),
+        },
+        "snapshot": {
+            "state": task.get("state"),
+            "submittedAt": task.get("submitAt"),
+            "evaluatedAt": task.get("evaluateAt"),
+        },
+    }
+
+
+def export_pending(args: argparse.Namespace) -> int:
+    """Export a bounded, resumable input manifest for unfinished homework."""
+    sync_playwright = ensure_playwright()
+    items: list[dict[str, Any]] = []
+    scanned_tasks = 0
+    truncated = False
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        try:
+            courses_body = api_request(
+                context,
+                "/api/micro-lms/courses/student",
+                {"limit": args.course_limit, "offset": 0, "state": "published"},
+                timeout=args.timeout,
+            )
+            courses = courses_body.get("items", [])[: args.course_limit]
+            if (courses_body.get("paging") or {}).get("totalCount", len(courses)) > len(courses):
+                truncated = True
+            for course in courses:
+                overview = api_request(
+                    context,
+                    f"/api/micro-lms/courses/{course['id']}/overview",
+                    timeout=args.timeout,
+                )
+                for theme in overview.get("themes", []):
+                    for longread in theme.get("longreads", []):
+                        if not longread.get("exercises"):
+                            continue
+                        materials = api_request(
+                            context,
+                            f"/api/micro-lms/longreads/{longread['id']}/materials",
+                            {"limit": 100, "offset": 0},
+                            timeout=args.timeout,
+                        )
+                        for material in materials.get("items", []):
+                            if not isinstance(material, dict) or not material.get("taskId"):
+                                continue
+                            scanned_tasks += 1
+                            task = api_request(
+                                context,
+                                f"/api/micro-lms/tasks/{material['taskId']}",
+                                timeout=args.timeout,
+                            )
+                            if not isinstance(task, dict) or not is_unfinished(task):
+                                continue
+                            items.append(pending_manifest_item(course, theme, longread, material, task))
+                            if len(items) >= args.limit:
+                                truncated = True
+                                break
+                        if len(items) >= args.limit:
+                            break
+                    if len(items) >= args.limit:
+                        break
+                if len(items) >= args.limit:
+                    break
+        finally:
+            browser.close()
+
+    items.sort(key=lambda item: (item.get("deadline") or "9999", item.get("title") or ""))
+    payload = {
+        "schemaVersion": 1,
+        "kind": "central-university-pending-homework",
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "source": API_BASE,
+        "scannedTasks": scanned_tasks,
+        "count": len(items),
+        "truncated": truncated,
+        "items": items,
+    }
+    if args.output:
+        output = Path(args.output)
+        write_private_json(output, payload)
+        print_json({"status": "saved", "output": str(output.expanduser().resolve()), "count": len(items), "truncated": truncated})
+    else:
+        print_json(payload)
+    return 0
+
+
+def validate_submissions(args: argparse.Namespace) -> int:
+    path = Path(args.manifest).expanduser()
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise LmsError("invalid_manifest", f"Submission manifest not found: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise LmsError("invalid_manifest", f"Submission manifest is not valid JSON: {exc}") from exc
+    submissions = validate_submission_manifest(payload)
+    print_json(
+        {
+            "status": "valid",
+            "effect": "local-validation-only",
+            "count": len(submissions),
+            "submissions": submissions,
+            "next": "Observe and document the real LMS write endpoint before enabling submit-manifest.",
+        }
+    )
+    return 0
+
+
 def api_health(args: argparse.Namespace) -> int:
     """Verify the supported API route chain for one longread without scraping the UI."""
     sync_playwright = ensure_playwright()
@@ -448,6 +631,7 @@ def deadlines_api(args: argparse.Namespace) -> int:
 
 
 def discover_api(args: argparse.Namespace) -> int:
+    """Observe bounded LMS API traffic without recording query values or bodies."""
     sync_playwright = ensure_playwright()
     observed: list[dict[str, object]] = []
 
@@ -457,10 +641,12 @@ def discover_api(args: argparse.Namespace) -> int:
 
         def on_request(request: Any) -> None:
             if request.resource_type in {"xhr", "fetch"}:
-                observed.append({"method": request.method, "url": request.url, "type": request.resource_type})
+                url = sanitized_request_url(request.url)
+                if url:
+                    observed.append({"method": request.method, "url": url, "type": request.resource_type})
 
         page.on("request", on_request)
-        page.goto(args.url, wait_until="domcontentloaded", timeout=args.timeout)
+        page.goto(resolve_lms_url(args.url), wait_until="domcontentloaded", timeout=args.timeout)
         page.wait_for_timeout(args.seconds * 1000)
         browser.close()
 
@@ -472,102 +658,114 @@ def discover_api(args: argparse.Namespace) -> int:
             continue
         seen.add(key)
         deduped.append(item)
-    print_json({"url": args.url, "requests": deduped})
+        if len(deduped) >= args.limit:
+            break
+    print_json({"url": resolve_lms_url(args.url), "requests": deduped, "truncated": len(observed) > len(deduped)})
     return 0
 
 
-def api_get(args: argparse.Namespace) -> int:
-    sync_playwright = ensure_playwright()
-    url = args.endpoint
-    if url.startswith("/"):
-        url = f"https://my.centraluniversity.ru{url}"
-
-    with sync_playwright() as p:
-        browser, context = context_with_state(p, args)
-        response = context.request.get(url, timeout=args.timeout)
-        status = response.status
-        content_type = response.headers.get("content-type", "")
-        if "application/json" in content_type:
-            body: object = response.json()
-        else:
-            body = response.text()
-        browser.close()
-
-    print_json({"status": status, "url": url, "body": body})
-    return 0
+def request_body_shape(request: Any) -> Any:
+    try:
+        return redacted_shape(request.post_data_json) if request.post_data else None
+    except Exception:
+        return "<non-json-body>" if request.post_data else None
 
 
-def click_text_discover(args: argparse.Namespace) -> int:
-    sync_playwright = ensure_playwright()
-    observed: list[dict[str, object]] = []
-
-    with sync_playwright() as p:
-        browser, context = context_with_state(p, args)
-        page = context.new_page()
-
-        def on_request(request: Any) -> None:
-            if request.resource_type in {"xhr", "fetch"}:
-                observed.append({"method": request.method, "url": request.url, "type": request.resource_type})
-
-        page.on("request", on_request)
-        page.goto(args.url, wait_until="networkidle", timeout=args.timeout)
-        click_result = page.evaluate(
-            """text => {
-                const clean = s => (s || '').replace(/\\s+/g, ' ').trim();
-                const candidates = [...document.querySelectorAll('a, button, [role="button"], [tabindex], div, span')]
-                    .filter(el => clean(el.innerText || el.textContent).includes(text));
-                if (!candidates.length) {
-                    return { clicked: false, reason: 'text not found' };
-                }
-                let el = candidates.sort((a, b) => clean(a.innerText || a.textContent).length - clean(b.innerText || b.textContent).length)[0];
-                let target = el;
-                for (let i = 0; i < 6 && target; i += 1) {
-                    const role = target.getAttribute('role');
-                    const tabIndex = target.getAttribute('tabindex');
-                    if (target.tagName === 'A' || target.tagName === 'BUTTON' || role === 'button' || tabIndex !== null || target.onclick) {
-                        break;
-                    }
-                    target = target.parentElement;
-                }
-                (target || el).click();
-                return {
-                    clicked: true,
-                    tag: (target || el).tagName,
-                    text: clean((target || el).innerText || (target || el).textContent).slice(0, 300),
-                    href: (target || el).href || ''
-                };
-            }""",
-            args.text,
+def observe_action(args: argparse.Namespace) -> int:
+    """Observe a user-performed LMS write without clicking or replaying it."""
+    if not args.confirm_write_observation:
+        raise LmsError(
+            "confirmation_required",
+            "observe-action requires --confirm-write-observation because the user's manual UI action may mutate LMS state.",
         )
+    sync_playwright = ensure_playwright()
+    observed: list[dict[str, Any]] = []
+    by_request: dict[int, dict[str, Any]] = {}
+
+    with sync_playwright() as p:
+        browser, context = context_with_state(p, args)
+        page = context.new_page()
+
+        def on_request(request: Any) -> None:
+            if request.resource_type not in {"xhr", "fetch"} or request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
+                return
+            url = sanitized_request_url(request.url)
+            if not url:
+                return
+            item = {
+                "method": request.method,
+                "url": url,
+                "type": request.resource_type,
+                "headerNames": sorted(
+                    key.casefold()
+                    for key in request.headers
+                    if key.casefold() not in {"authorization", "cookie", "x-csrf-token", "x-xsrf-token"}
+                ),
+                "bodyShape": request_body_shape(request),
+                "status": None,
+            }
+            observed.append(item)
+            by_request[id(request)] = item
+
+        def on_response(response: Any) -> None:
+            item = by_request.get(id(response.request))
+            if item is not None:
+                item["status"] = response.status
+
+        page.on("request", on_request)
+        page.on("response", on_response)
+        page.goto(resolve_lms_url(args.url), wait_until="networkidle", timeout=args.timeout)
         page.wait_for_timeout(args.seconds * 1000)
-        data = extract_snapshot(page)
         browser.close()
 
-    deduped = []
-    seen = set()
-    for item in observed:
-        key = (item["method"], item["url"])
-        if key in seen:
-            continue
-        seen.add(key)
-        deduped.append(item)
-    print_json({"click": click_result, "final_url": data.get("url"), "requests": deduped, "snapshot": data})
+    payload = {
+        "schemaVersion": 1,
+        "kind": "central-university-write-observation",
+        "effect": "user-performed-write-observation",
+        "requests": observed[: args.limit],
+        "truncated": len(observed) > args.limit,
+        "note": "Values and sensitive headers are redacted. This command never clicks or replays requests.",
+    }
+    if args.output:
+        write_private_json(Path(args.output), payload)
+        print_json(
+            {
+                "status": "saved",
+                "output": str(Path(args.output).expanduser().resolve()),
+                "count": len(payload["requests"]),
+            }
+        )
+    else:
+        print_json(payload)
     return 0
 
 
-def add_common(parser: argparse.ArgumentParser) -> None:
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be greater than zero")
+    return parsed
+
+
+def add_common(parser: argparse.ArgumentParser, *, default_headless: bool = True) -> None:
     parser.add_argument("--url", default=DEFAULT_URL)
     parser.add_argument("--storage-state")
-    parser.add_argument("--timeout", type=int, default=30000)
-    parser.add_argument("--headless", action="store_true")
+    parser.add_argument("--timeout", type=positive_int, default=30000)
+    browser_mode = parser.add_mutually_exclusive_group()
+    browser_mode.add_argument("--headless", dest="headless", action="store_true")
+    browser_mode.add_argument("--headed", dest="headless", action="store_false")
+    parser.set_defaults(headless=default_headless)
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Read-only Central University LMS helper")
+    parser = argparse.ArgumentParser(description="Central University LMS automation helper")
     sub = parser.add_subparsers(dest="command", required=True)
 
     login_parser = sub.add_parser("login")
-    add_common(login_parser)
+    add_common(login_parser, default_headless=False)
+
+    session_parser = sub.add_parser("session-check")
+    add_common(session_parser)
 
     snapshot_parser = sub.add_parser("snapshot")
     add_common(snapshot_parser)
@@ -599,30 +797,40 @@ def main() -> int:
 
     deadlines_parser = sub.add_parser("deadlines")
     add_common(deadlines_parser)
-    deadlines_parser.add_argument("--limit", type=int, default=50)
+    deadlines_parser.add_argument("--limit", type=positive_int, default=50)
     deadlines_parser.add_argument("--include-past", action="store_true")
+
+    export_parser = sub.add_parser("export-pending")
+    add_common(export_parser)
+    export_parser.add_argument("--limit", type=positive_int, default=100)
+    export_parser.add_argument("--course-limit", type=positive_int, default=50)
+    export_parser.add_argument("--output", help="Write a private JSON manifest instead of stdout.")
+
+    validate_parser = sub.add_parser("validate-submissions")
+    validate_parser.add_argument("manifest")
 
     deadlines_dom_parser = sub.add_parser("deadlines-dom")
     add_common(deadlines_dom_parser)
-    deadlines_dom_parser.add_argument("--limit", type=int, default=50)
+    deadlines_dom_parser.add_argument("--limit", type=positive_int, default=50)
 
     discover_parser = sub.add_parser("discover-api")
-    add_common(discover_parser)
-    discover_parser.add_argument("--seconds", type=int, default=20)
+    add_common(discover_parser, default_headless=False)
+    discover_parser.add_argument("--seconds", type=positive_int, default=20)
+    discover_parser.add_argument("--limit", type=positive_int, default=100)
 
-    api_parser = sub.add_parser("api-get")
-    add_common(api_parser)
-    api_parser.add_argument("endpoint")
-
-    click_parser = sub.add_parser("click-text-discover")
-    add_common(click_parser)
-    click_parser.add_argument("text")
-    click_parser.add_argument("--seconds", type=int, default=10)
+    observe_parser = sub.add_parser("observe-action")
+    add_common(observe_parser, default_headless=False)
+    observe_parser.add_argument("--seconds", type=positive_int, default=60)
+    observe_parser.add_argument("--limit", type=positive_int, default=20)
+    observe_parser.add_argument("--output")
+    observe_parser.add_argument("--confirm-write-observation", action="store_true")
 
     args = parser.parse_args()
     try:
         if args.command == "login":
             return login(args)
+        if args.command == "session-check":
+            return session_check(args)
         if args.command == "snapshot":
             return snapshot(args)
         if args.command == "list-courses":
@@ -637,16 +845,21 @@ def main() -> int:
             return api_health(args)
         if args.command == "deadlines":
             return deadlines_api(args)
+        if args.command == "export-pending":
+            return export_pending(args)
+        if args.command == "validate-submissions":
+            return validate_submissions(args)
         if args.command == "deadlines-dom":
             return deadlines_dom(args)
         if args.command == "discover-api":
             return discover_api(args)
-        if args.command == "api-get":
-            return api_get(args)
-        if args.command == "click-text-discover":
-            return click_text_discover(args)
+        if args.command == "observe-action":
+            return observe_action(args)
+    except LmsError as exc:
+        print_json({"error": str(exc), "code": exc.code}, stream=sys.stderr)
+        return 1
     except Exception as exc:
-        print_json({"error": str(exc)})
+        print_json({"error": str(exc), "code": "unexpected_error"}, stream=sys.stderr)
         return 1
 
     return 2

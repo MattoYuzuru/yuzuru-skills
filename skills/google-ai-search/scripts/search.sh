@@ -12,6 +12,6 @@ while [ -L "$SCRIPT_PATH" ]; do
   esac
 done
 
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)
+SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)
 
 exec "$PYTHON_BIN" "$SCRIPT_DIR/search.py" "$@"

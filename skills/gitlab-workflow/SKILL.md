@@ -23,7 +23,7 @@ Never print the token. Never place it in a repository, command transcript, issue
 
 ## Host And Project
 
-Default host is `https://gitlab.tcsbank.ru`. Override with:
+Default host is `https://gitlab.com`. For self-managed GitLab, set an exact HTTPS origin:
 
 ```bash
 export GITLAB_HOST="https://gitlab.example.com"
@@ -78,7 +78,8 @@ python3 scripts/gitlab_api.py job-trace group/repo 789
 python3 scripts/gitlab_api.py code-search group/repo "SomeClass"
 ```
 
-After reading raw JSON (or a raw job trace/file), summarize only the fields needed for the user's task.
+`file-raw` and `job-trace` are bounded by default and report `truncated`; raise their
+`--max-chars` limits only when the task requires more context. Summarize only needed fields.
 
 ## MR Discussion And Comment Write Workflow
 
@@ -88,10 +89,10 @@ explicitly asked for that specific action in this conversation — never post a 
 resolve/unresolve a discussion proactively just because it seems helpful while reviewing an MR.
 
 ```bash
-python3 scripts/gitlab_api.py mr-note-create group/repo 123 --body "Looks good, one nit below."
-python3 scripts/gitlab_api.py mr-discussion-reply group/repo 123 <discussion_id> --body "Fixed in the latest push."
-python3 scripts/gitlab_api.py mr-discussion-resolve group/repo 123 <discussion_id>
-python3 scripts/gitlab_api.py mr-discussion-resolve group/repo 123 <discussion_id> --unresolve
+python3 scripts/gitlab_api.py mr-note-create group/repo 123 --body "Looks good, one nit below." --dry-run
+python3 scripts/gitlab_api.py mr-note-create group/repo 123 --body "Looks good, one nit below." --confirm-write
+python3 scripts/gitlab_api.py mr-discussion-resolve group/repo 123 <discussion_id> --dry-run
+python3 scripts/gitlab_api.py mr-discussion-resolve group/repo 123 <discussion_id> --confirm-destructive
 ```
 
 Resolving/unresolving is a state change other reviewers rely on to track review progress — confirm the exact
@@ -116,12 +117,14 @@ Use write operations only after the user confirms the target project, branch, co
 The helper currently covers API reads, `fork-create`, and `mr-create`; use `git` for local clone, commit, and push.
 
 ```bash
-python3 scripts/gitlab_api.py fork-create group/repo
+python3 scripts/gitlab_api.py fork-create group/repo --dry-run
+python3 scripts/gitlab_api.py fork-create group/repo --confirm-write
 python3 scripts/gitlab_api.py mr-create group/repo \
   --source-branch feature/example \
   --target-branch main \
   --title "Describe the change" \
-  --description "Short MR description"
+  --description "Short MR description" \
+  --confirm-write
 ```
 
 ## Guardrails
@@ -130,6 +133,9 @@ python3 scripts/gitlab_api.py mr-create group/repo \
   `mr-discussion-reply`, `mr-discussion-resolve`, any `git push`) requires the user to have asked for that
   specific action first in this conversation — never perform one proactively, even mid-task, even if it looks
   like the obviously helpful next step.
+- Preview API writes with `--dry-run`; execute approved writes with `--confirm-write` and exact
+  discussion resolution with `--confirm-destructive`. The helper never retries mutations.
+- Use only an HTTPS GitLab origin. Cross-origin redirects are rejected so the token cannot follow them.
 - Do not push directly to upstream unless the user explicitly asks and has confirmed the exact remote and branch.
 - Do not use `--force` push without a separate explicit confirmation.
 - Do not delete branches, close MRs, approve MRs, or resolve discussions without a separate confirmation of the

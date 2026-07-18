@@ -12,13 +12,17 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Validate skills
-        run: ./skill validate all
-      - name: Test GitHub workflow helper
-        env:
-          PYTHONPATH: skills/github-workflow/scripts
-        run: python3 -m unittest discover -s skills/github-workflow/scripts/tests -v
+        run: ./skill validate all --strict
+      - name: Compile Python helpers
+        run: python3 -m compileall -q scripts skills
+      - name: Check shell helpers
+        run: shellcheck skill install.sh skills/google-ai-search/scripts/*.sh
+      - name: Check credential-free help
+        run: python3 scripts/smoke_scripts.py
+      - name: Run helper unit tests
+        run: python3 scripts/run_tests.py
