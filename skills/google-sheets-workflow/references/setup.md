@@ -76,7 +76,7 @@ Delete the key in Cloud Console (Service Account → Keys → delete), create a 
 `import-service-account` again. To remove everything this skill stored locally:
 
 ```bash
-python3 scripts/setup.py remove
+python3 scripts/setup.py remove --confirm-remove
 ```
 
 ## Why not OAuth2 user consent?

@@ -84,7 +84,13 @@ def set_user_email(args: argparse.Namespace) -> int:
     return 0
 
 
-def remove(_args: argparse.Namespace) -> int:
+def remove(args: argparse.Namespace) -> int:
+    if not args.confirm_remove:
+        print_json(
+            {"error": "remove requires --confirm-remove because it deletes local credentials and config."},
+            stream=sys.stderr,
+        )
+        return 1
     remove_all()
     print_json({"removed": True, "service_account_key": str(service_account_key_path()), "config": str(config_path())})
     return 0
@@ -111,7 +117,10 @@ def main() -> int:
     )
     email_parser.add_argument("email")
 
-    subparsers.add_parser("remove", help="Delete the stored key, cached token, and config (email + known spreadsheets).")
+    remove_parser = subparsers.add_parser(
+        "remove", help="Delete the stored key, cached token, and config (email + known spreadsheets)."
+    )
+    remove_parser.add_argument("--confirm-remove", action="store_true")
 
     subparsers.add_parser(
         "known-spreadsheets",

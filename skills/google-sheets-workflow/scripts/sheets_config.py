@@ -90,6 +90,10 @@ def save_service_account_key(source_path: Path) -> dict[str, Any]:
     for field in ("client_email", "private_key", "token_uri"):
         if not info.get(field):
             raise SheetsConfigError(f"Service-account key is missing required field '{field}'.")
+    if info["token_uri"] != TOKEN_URL:
+        raise SheetsConfigError(
+            f"Service-account token_uri must be the official Google endpoint {TOKEN_URL}."
+        )
     _write_private(service_account_key_path(), text)
     token_cache_path().unlink(missing_ok=True)
     config = _load_config()
@@ -101,9 +105,14 @@ def save_service_account_key(source_path: Path) -> dict[str, Any]:
 def load_service_account_info() -> dict[str, Any] | None:
     path = service_account_key_path()
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        info = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         return None
+    except json.JSONDecodeError as exc:
+        raise SheetsConfigError(f"Stored service-account key is not valid JSON: {exc}") from exc
+    if info.get("token_uri") != TOKEN_URL:
+        raise SheetsConfigError("Stored service-account key has an untrusted token_uri; import a valid Google key.")
+    return info
 
 
 def load_client_email() -> str | None:
@@ -168,7 +177,7 @@ def _build_signed_jwt(info: dict[str, Any], scopes: list[str]) -> str:
     claims = {
         "iss": info["client_email"],
         "scope": " ".join(scopes),
-        "aud": info.get("token_uri", TOKEN_URL),
+        "aud": TOKEN_URL,
         "iat": now,
         "exp": now + 3600,
     }
@@ -212,10 +221,10 @@ def get_access_token(scopes: list[str]) -> str:
         )
 
     assertion = _build_signed_jwt(info, scopes)
-    token_response = _exchange_jwt_for_token(assertion, info.get("token_uri", TOKEN_URL))
+    token_response = _exchange_jwt_for_token(assertion, TOKEN_URL)
     access_token = token_response.get("access_token")
     if not access_token:
-        raise SheetsConfigError(f"Token exchange response had no access_token: {token_response}")
+        raise SheetsConfigError("Token exchange response had no access_token.")
 
     expires_at = int(time.time()) + int(token_response.get("expires_in", 3600))
     _write_private(

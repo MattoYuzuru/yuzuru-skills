@@ -1,11 +1,12 @@
 # batchUpdate recipes
 
-`batch-update <spreadsheet-id> --requests '<JSON array>'` sends its argument verbatim as the
-`requests` array of a Sheets API `spreadsheets.batchUpdate` call. Get the target `sheetId`
+Save the JSON array in a local file and run
+`batch-update <spreadsheet-id> --requests-file <path>`. The helper validates a maximum of 100
+single-operation requests and rejects destructive operation types before calling
+`spreadsheets.batchUpdate`. Get the target `sheetId`
 (an integer, not the sheet's title) from `info <spreadsheet-id>` first — never guess it.
 
-Always run once with `--dry-run` to preview the exact payload before dropping it, per
-`SKILL.md`'s guardrails.
+Always run once with `--dry-run`, obtain approval, then add `--confirm-write`.
 
 ## Freeze a header row
 
