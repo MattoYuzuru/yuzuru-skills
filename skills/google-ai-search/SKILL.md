@@ -41,6 +41,8 @@ is the stable `gemini-3.1-flash-lite`; override it with
 
 - Summarize the JSON `answer` rather than pasting it blindly.
 - Cite URLs from `sources` near the claims they support.
+- Keep the default 10-source bound; raise `--max-sources` only when comparison breadth requires it.
+- Request `--include-usage` only when diagnosing cost or quota behavior.
 - Mention uncertainty when sources are weak or missing.
 - If authentication, quota, regional access, or API availability blocks the
   request, report it clearly and use another search path.
