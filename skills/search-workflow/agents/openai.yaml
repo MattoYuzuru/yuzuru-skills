@@ -1,0 +1,4 @@
+interface:
+  display_name: "Search Workflow"
+  short_description: "Token-efficient local file and code search"
+  default_prompt: "Use $search-workflow to choose the smallest correct local search route and return bounded results."
