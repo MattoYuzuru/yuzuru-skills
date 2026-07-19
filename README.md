@@ -47,6 +47,7 @@ Claude Code. Override these locations with `YUZURU_CODEX_SKILLS_DIR` or
 | `google-ai-search` | Token-efficient public-web research through the Gemini API with Google Search grounding. |
 | `google-sheets-workflow` | Google Sheets and Drive reads, controlled writes, formulas, formatting, and structural changes. |
 | `jira-workflow` | Jira Data Center/Server issue discovery, creation, linking, quality checks, and status transitions. |
+| `search-workflow` | Token-efficient routing across local files, source structure, data, documents, and archives. |
 
 To create or update a skill, give the repository to an agent and point it to
 [`AGENTS.md`](AGENTS.md). The detailed architecture, context budgets, script contract, effect model,

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Найди все вызовы этой функции в локальном репозитории",
+    "Отыщи аннотацию: я помню только слово Transactional",
+    "Search these PDFs and archives for the invoice number",
+    "Где в YAML-конфигах включён этот feature flag?"
+  ],
+  "should_not_trigger": [
+    "Погугли свежие бенчмарки ripgrep",
+    "Объясни, как работают регулярные выражения",
+    "Прочитай уже открытый файл и перескажи его",
+    "Исправь тест в указанной строке файла"
+  ],
+  "capabilities": [
+    {"name": "check-environment", "effect": "read", "confirmation": "none"},
+    {"name": "search-files-and-text", "effect": "read", "confirmation": "none"},
+    {"name": "search-code-structure", "effect": "read", "confirmation": "none"},
+    {"name": "search-documents-and-data", "effect": "read", "confirmation": "none"},
+    {"name": "install-search-tools", "effect": "write", "confirmation": "explicit"}
+  ]
+}
