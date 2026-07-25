@@ -40,6 +40,11 @@ AGENT is one of: codex, claude
 A skill installs for the agents listed in its optional `skill.yaml` sidecar.
 Legacy SKILL.md `agents:` frontmatter remains supported; no metadata means both.
 
+Per-agent status shown by `list`/`doctor`: available (not installed), installed,
+stale (symlink points at a path that no longer exists, e.g. after the repo was
+moved or renamed - repaired automatically by `install`), conflict (an unmanaged
+file or symlink is already there - left untouched).
+
 Environment:
   YUZURU_CODEX_SKILLS_DIR   Override Codex skills directory (default: ~/.agents/skills)
   YUZURU_CLAUDE_SKILLS_DIR  Override Claude Code skills directory (default: ~/.claude/skills)
@@ -164,6 +169,8 @@ status_for() {
     target="$(link_target "$dest")"
     if [ "$target" = "$src" ]; then
       printf 'installed'
+    elif [ ! -e "$dest" ]; then
+      printf 'stale'
     else
       printf 'conflict'
     fi
@@ -185,7 +192,7 @@ skill_status_summary() {
   for agent in $(skill_agents "$name"); do
     status="$(status_for "$agent" "$name")"
     case "$status" in
-      installed) any_installed=1 ;;
+      installed|stale) any_installed=1 ;;
       available) any_available=1 ;;
       conflict) any_conflict=1 ;;
     esac
@@ -223,6 +230,10 @@ install_one() {
       ln -s "$src" "$dest"
       printf 'installed: %s (%s) -> %s\n' "$name" "$agent" "$src"
       ;;
+    stale)
+      ln -sfn "$src" "$dest"
+      printf 'repaired: %s (%s) -> %s\n' "$name" "$agent" "$src"
+      ;;
     conflict)
       printf 'conflict: %s already exists and is not managed by this repo (%s)\n' "$dest" "$agent" >&2
       return 1
@@ -246,6 +257,10 @@ uninstall_one() {
       ;;
     available)
       printf 'not installed: %s (%s)\n' "$name" "$agent"
+      ;;
+    stale)
+      rm "$dest"
+      printf 'removed stale symlink: %s (%s)\n' "$name" "$agent"
       ;;
     conflict)
       printf 'refusing to remove unmanaged path: %s (%s)\n' "$dest" "$agent" >&2
@@ -289,6 +304,20 @@ agent_status_or_dash() {
   else
     printf -- '-'
   fi
+}
+
+# Counts install destinations across all skills/agents whose symlink target no
+# longer exists (see the `stale` branch of status_for).
+count_stale() {
+  local name agent status n
+  n=0
+  while IFS= read -r name; do
+    for agent in $(skill_agents "$name"); do
+      status="$(status_for "$agent" "$name")"
+      [ "$status" = "stale" ] && n=$((n + 1))
+    done
+  done < <(skill_names)
+  printf '%s' "$n"
 }
 
 cmd_list() {
@@ -367,6 +396,15 @@ cmd_doctor() {
   printf 'command:        %s\n' "${BASH_SOURCE[0]}"
   printf '\n'
   cmd_list
+
+  local stale
+  stale="$(count_stale)"
+  if [ "$stale" -gt 0 ]; then
+    printf '\n%s stale symlink(s) found (point to a path that no longer exists).\n' "$stale"
+    # Backticks below are documentation, not command substitution.
+    # shellcheck disable=SC2016
+    printf 'Run `skill install all` (or `skill install NAME`) to repair them.\n'
+  fi
 }
 
 cmd_new() {

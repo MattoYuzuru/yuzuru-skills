@@ -39,6 +39,12 @@ Skills are installed as symlinks in `~/.agents/skills` for Codex and `~/.claude/
 Claude Code. Override these locations with `YUZURU_CODEX_SKILLS_DIR` or
 `YUZURU_CLAUDE_SKILLS_DIR`. Start a new agent session after installation.
 
+Moving or renaming the cloned repository turns existing installs into stale symlinks that point
+at a path that no longer exists, so the affected skills silently stop being picked up. `skill
+doctor` flags stale entries and how many there are; re-running `skill install all` (or `skill
+install NAME`) repairs them in place. The `~/.local/bin/skill` launcher itself self-heals the same
+way: re-running `./install.sh` repairs a dangling launcher symlink with no `--force` needed.
+
 | Skill | Purpose |
 |---|---|
 | `central-university-lms` | Headless LMS inspection, unfinished-homework export, solution-manifest validation, and safe write discovery. |

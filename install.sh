@@ -13,6 +13,10 @@ Usage:
 
 Installs the repository CLI by symlinking ./skill into a user bin directory.
 It does not install any Codex skills by itself; run `skill install` after this.
+
+A dangling destination symlink (e.g. this repo was moved or renamed since the
+last install) is repaired automatically, no --force needed. --force is only
+required to overwrite a symlink pointing at a different, still-existing target.
 EOF
 }
 
@@ -63,6 +67,9 @@ mkdir -p "$BIN_DIR"
 if [ -e "$DEST" ] || [ -L "$DEST" ]; then
   if [ -L "$DEST" ] && [ "$(readlink "$DEST")" = "$SRC" ]; then
     printf 'already installed: %s -> %s\n' "$DEST" "$SRC"
+  elif [ -L "$DEST" ] && [ ! -e "$DEST" ]; then
+    ln -sfn "$SRC" "$DEST"
+    printf 'repaired stale symlink: %s -> %s\n' "$DEST" "$SRC"
   elif [ -L "$DEST" ] && [ "$FORCE" -eq 1 ]; then
     ln -sfn "$SRC" "$DEST"
     printf 'updated symlink: %s -> %s\n' "$DEST" "$SRC"
