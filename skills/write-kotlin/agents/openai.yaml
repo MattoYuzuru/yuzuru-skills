@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write Kotlin"
+  short_description: "Repository-adaptive Kotlin implementation"
+  default_prompt: "Use $write-kotlin to implement this Kotlin change in the repository's existing style."
