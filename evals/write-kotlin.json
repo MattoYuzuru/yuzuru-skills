@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Добавь в Kotlin-сервис идемпотентную обработку повторного webhook, сохранив текущую архитектуру.",
+    "Исправь NPE в UserMapper.kt и не меняй публичный контракт.",
+    "Refactor this Kotlin coroutine pipeline so cancellation is propagated correctly.",
+    "Implement the new state in this Kotlin Multiplatform domain model."
+  ],
+  "should_not_trigger": [
+    "Напиши unit-тесты для UserService.kt.",
+    "Проведи ревью Kotlin pull request и перечисли замечания.",
+    "Объясни, чем data class отличается от обычного класса в Kotlin.",
+    "Обнови версию Kotlin Gradle plugin, не меняя исходники.",
+    "Implement this service in Java."
+  ],
+  "capabilities": [
+    {
+      "name": "inspect-kotlin-context",
+      "effect": "read",
+      "confirmation": "none"
+    },
+    {
+      "name": "edit-kotlin-source",
+      "effect": "write",
+      "confirmation": "explicit"
+    },
+    {
+      "name": "verify-kotlin-change",
+      "effect": "read",
+      "confirmation": "none"
+    },
+    {
+      "name": "route-quality-followup",
+      "effect": "read",
+      "confirmation": "none"
+    }
+  ]
+}
