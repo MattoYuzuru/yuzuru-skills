@@ -1,0 +1,22 @@
+{
+  "name": "sre-agent",
+  "version": "0.1.0",
+  "description": "Independent software verification, reliability, performance, security, and release evidence.",
+  "author": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru"
+  },
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["sre", "testing", "reliability", "security"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "SRE Agent",
+    "shortDescription": "Independently verify behavior and reliability",
+    "longDescription": "Validate findings against requirements and runtime evidence, then assess failures, load, security, observability, and release readiness.",
+    "developerName": "MattoYuzuru",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Use SRE Agent to independently verify this implementation and reject unsupported findings."]
+  }
+}

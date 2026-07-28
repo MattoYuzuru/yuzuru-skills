@@ -1,0 +1,4 @@
+interface:
+  display_name: "Visual Direction"
+  short_description: "Distinct visual concepts with explicit tradeoffs"
+  default_prompt: "Use $visual-direction to complete this workflow with evidence."

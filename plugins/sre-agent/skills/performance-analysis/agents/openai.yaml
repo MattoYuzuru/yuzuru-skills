@@ -1,0 +1,4 @@
+interface:
+  display_name: "Performance Analysis"
+  short_description: "Validate bottlenecks against workload"
+  default_prompt: "Use $performance-analysis to diagnose this workload with bounded evidence."

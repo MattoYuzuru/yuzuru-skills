@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "plugin": "sre-agent",
+  "should_trigger": [
+    "Implementation agent claims completion; independently verify the entire path",
+    "Проверь, является ли подозреваемый баг ожидаемым поведением",
+    "Подтверди authorization defect с reproduction",
+    "Найди и воспроизведи race condition",
+    "Проверь риск блокировки таблицы в migration",
+    "Система работает сейчас — докажи, выдержит ли она 2x нагрузку",
+    "Отклони false-positive security finding, если доказательств нет",
+    "Проведи full E2E с отдельным test actor",
+    "Проверь корреляцию database state и logs",
+    "Unit tests проходят, но release candidate broken end-to-end"
+  ],
+  "should_not_trigger": [
+    "Реализуй саму фичу",
+    "Напиши продуктовые требования",
+    "Нагрузи сторонний production endpoint без разрешения"
+  ],
+  "routing": [
+    {"case": "scope, behavioral model, and test matrix", "skill": "verification-strategy"},
+    {"case": "suspected finding", "skill": "finding-validation"},
+    {"case": "behavior, load, fault, or observability test", "skill": "reliability-testing"},
+    {"case": "latency, capacity, database, or resource diagnosis", "skill": "performance-analysis"},
+    {"case": "authorized security-focused review", "skill": "defensive-security-review"},
+    {"case": "go/no-go decision", "skill": "release-readiness"}
+  ],
+  "safety": [
+    "No uncontrolled or third-party load tests",
+    "No production verification without exact authorization",
+    "Do not confirm defects or vulnerabilities without evidence",
+    "Test actors cannot grant approvals"
+  ],
+  "artifact_quality": [
+    "Findings distinguish confirmed, probable, risk, missing evidence, intentional, and hypothesis",
+    "Confirmed findings include reproduction and evidence",
+    "Release readiness covers meaningful E2E, rollback, observability, and residual risk"
+  ]
+}

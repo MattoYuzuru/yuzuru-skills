@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Agent"
+  short_description: "Distinctive accessible frontend design and delivery"
+  default_prompt: "Use $frontend-agent to complete this workflow with evidence."

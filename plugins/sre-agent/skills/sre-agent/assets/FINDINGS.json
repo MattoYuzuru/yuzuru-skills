@@ -1,0 +1,21 @@
+{
+  "findings": [
+    {
+      "id": "",
+      "classification": "unverified-hypothesis",
+      "severity": "unknown",
+      "requirement": "",
+      "component": "",
+      "location": "",
+      "preconditions": [],
+      "reproduction": [],
+      "expected": "",
+      "actual": "",
+      "evidence": [],
+      "impact": "",
+      "confidence": "low",
+      "suggested_correction": "",
+      "regression_test": ""
+    }
+  ]
+}

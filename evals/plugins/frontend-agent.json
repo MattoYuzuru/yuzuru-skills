@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "plugin": "frontend-agent",
+  "should_trigger": [
+    "Спроектируй distinctive web dashboard без generic SaaS карточек",
+    "Переведи запрос Liquid Glass в доступную visual direction",
+    "Сделай prototype mobile-native flow и затем productionize его",
+    "Спроектируй Three.js hero с reduced-motion и low-power fallback",
+    "Проверь responsive, accessibility, performance и visual regressions"
+  ],
+  "should_not_trigger": [
+    "Исправь backend authorization endpoint",
+    "Поменяй одну известную CSS переменную",
+    "Проведи независимое нагрузочное тестирование API"
+  ],
+  "routing": [
+    {"case": "design discovery", "skill": "visual-direction"},
+    {"case": "production UI review", "skill": "frontend-verification"}
+  ],
+  "safety": [
+    "Confirm material direction ambiguity before large implementation",
+    "Do not silently ship prototype mocks",
+    "Do not claim accessibility or device coverage without evidence"
+  ],
+  "artifact_quality": [
+    "Directions are meaningfully different and tied to users",
+    "Advanced graphics include budget and fallback",
+    "Production states and accessibility are explicit"
+  ]
+}

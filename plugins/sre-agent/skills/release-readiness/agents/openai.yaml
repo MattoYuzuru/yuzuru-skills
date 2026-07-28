@@ -1,0 +1,4 @@
+interface:
+  display_name: "Release Readiness"
+  short_description: "Assess go/no-go with end-to-end evidence"
+  default_prompt: "Use $release-readiness to assess this exact release candidate."

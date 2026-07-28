@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verification Strategy"
+  short_description: "Plan independent behavioral verification"
+  default_prompt: "Use $verification-strategy to build a scoped test and evidence plan."
