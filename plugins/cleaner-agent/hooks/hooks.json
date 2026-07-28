@@ -1,0 +1,17 @@
+{
+  "description": "Reject common mutable runtime artifacts created by file-writing tools.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/repository_pollution_guard.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

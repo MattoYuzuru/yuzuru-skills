@@ -1,0 +1,4 @@
+interface:
+  display_name: "Discovery Synthesis"
+  short_description: "Turn research evidence into honest decisions"
+  default_prompt: "Use $discovery-synthesis to complete this workflow with evidence."

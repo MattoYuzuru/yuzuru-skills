@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Verification"
+  short_description: "Accessible responsive visual verification"
+  default_prompt: "Use $frontend-verification to complete this workflow with evidence."

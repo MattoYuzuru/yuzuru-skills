@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repository Navigation"
+  short_description: "Fast maps and canonical documentation navigation"
+  default_prompt: "Use $repository-navigation to complete this workflow with evidence."

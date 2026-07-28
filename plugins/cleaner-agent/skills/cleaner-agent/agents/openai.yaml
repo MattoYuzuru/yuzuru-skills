@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cleaner Agent"
+  short_description: "Conservative code and documentation hygiene"
+  default_prompt: "Use $cleaner-agent to complete this workflow with evidence."

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  SOURCE_DIR="$(cd -P -- "$(dirname -- "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  case "$SOURCE" in
+    /*) ;;
+    *) SOURCE="${SOURCE_DIR}/${SOURCE}" ;;
+  esac
+done
+
+REPO_ROOT="$(cd -P -- "$(dirname -- "$SOURCE")" && pwd)"
+export PYTHONDONTWRITEBYTECODE=1
+exec python3 "${REPO_ROOT}/scripts/yuzuru_cli.py" "$@"

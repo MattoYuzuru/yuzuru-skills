@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product Requirements"
+  short_description: "Model product behavior, journeys, and traceability"
+  default_prompt: "Use $product-requirements to complete this workflow with evidence."

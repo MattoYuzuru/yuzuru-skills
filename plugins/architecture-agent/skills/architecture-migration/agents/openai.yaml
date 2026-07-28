@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architecture Migration"
+  short_description: "Safe architecture and data migration planning"
+  default_prompt: "Use $architecture-migration to complete this workflow with evidence."

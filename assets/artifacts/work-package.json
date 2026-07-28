@@ -1,0 +1,13 @@
+{
+  "work_package": {
+    "id": "WP-0001",
+    "objective": "Implement one bounded, accepted behavior.",
+    "requirements": [],
+    "architecture_decisions": [],
+    "allowed_repositories": [],
+    "allowed_paths": [],
+    "forbidden_actions": [],
+    "acceptance_checks": [],
+    "evidence_required": []
+  }
+}

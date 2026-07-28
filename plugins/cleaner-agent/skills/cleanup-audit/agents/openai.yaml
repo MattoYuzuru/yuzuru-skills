@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cleanup Audit"
+  short_description: "Evidence-ranked safe cleanup candidates"
+  default_prompt: "Use $cleanup-audit to complete this workflow with evidence."

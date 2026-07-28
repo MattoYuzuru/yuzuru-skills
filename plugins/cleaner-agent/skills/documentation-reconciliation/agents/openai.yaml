@@ -1,0 +1,4 @@
+interface:
+  display_name: "Documentation Reconciliation"
+  short_description: "Reconcile stale or contradictory documentation"
+  default_prompt: "Use $documentation-reconciliation to complete this workflow with evidence."

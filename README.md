@@ -1,76 +1,147 @@
-# Yuzuru Skills
+# Yuzuru Engineering Extensions
 
-Yuzuru Skills is a repository of reusable agent skills and deterministic helper scripts for
-controlled work with development tools and external systems. The library prioritizes efficiency,
-accuracy, and low token usage while remaining portable across Codex, Claude Code, and other agents
-that support the open Agent Skills format.
+Yuzuru is a cross-agent extension monorepo for Codex and Claude Code. It ships portable standalone
+Agent Skills, nine independently installable engineering plugins, thin vendor adapters, deterministic
+helpers, repository marketplaces, schemas, hooks, eval contracts, and a safe local CLI.
 
-The architecture is designed around how language models consume context: compact metadata selects
-a skill, `SKILL.md` routes the task, references are loaded only when needed, and scripts handle
-repeatable or credential-sensitive operations without putting their implementation into the prompt.
-The repository is also agent-readable: `AGENTS.md`, the authoring standard, eval contracts, and the
-CLI give an agent enough structure to inspect the library, select and install compatible skills, and
-develop new ones safely.
+Canonical behavior lives in each skill package. Claude agents and hooks, Codex UI metadata, dual
+manifests, and marketplaces adapt that behavior without maintaining independent prompt copies.
 
-## Use Yuzuru Skills
-
-Clone the repository and install its local CLI:
+## Quickstart
 
 ```bash
 git clone https://github.com/MattoYuzuru/yuzuru-skills.git
 cd yuzuru-skills
 ./install.sh
+
+yuzuru list
+yuzuru skill install search-workflow
+yuzuru marketplace add --agent codex
+yuzuru marketplace add --agent claude
+yuzuru plugin install sde-agent --agent codex
+yuzuru plugin install sde-agent --agent claude
 ```
 
-The installer creates `~/.local/bin/skill`. Add that directory to `PATH` if necessary, then use:
+`install.sh` links `yuzuru` and the backward-compatible `skill` launcher into
+`${YUZURU_BIN_DIR:-~/.local/bin}`. It does not install or enable capabilities by itself.
+
+Standalone skills use managed symlinks in `~/.agents/skills` and `~/.claude/skills`; override them
+with `YUZURU_CODEX_SKILLS_DIR` and `YUZURU_CLAUDE_SKILLS_DIR`. Plugins remain under their native
+manager, which owns installed and enabled state.
+
+## Everyday commands
 
 ```bash
-skill list                          # inspect skills and per-agent install status
-skill install                       # choose skills interactively
-skill install all                   # install every compatible skill
-skill install NAME                  # install one skill for every agent it targets
-skill install --agent codex NAME    # install for Codex or Claude Code only
-skill uninstall NAME                # remove repository-managed symlinks
-skill update                        # pull repository updates with --ff-only
-skill doctor                        # show paths and installation status
+yuzuru list --kind skill
+yuzuru list --kind plugin
+yuzuru plugin list --agent claude
+yuzuru plugin inspect architecture-agent
+yuzuru skill validate all --strict
+yuzuru plugin validate all --strict
+yuzuru validate --strict
+
+yuzuru update
+yuzuru marketplace update --agent codex
+yuzuru marketplace update --agent claude
+yuzuru plugin disable sde-agent --agent claude
+yuzuru plugin uninstall sde-agent --agent claude
+yuzuru doctor
+yuzuru doctor --repair
 ```
 
-Skills are installed as symlinks in `~/.agents/skills` for Codex and `~/.claude/skills` for
-Claude Code. Override these locations with `YUZURU_CODEX_SKILLS_DIR` or
-`YUZURU_CLAUDE_SKILLS_DIR`. Start a new agent session after installation.
+Claude exposes non-interactive plugin enable/disable commands. Current Codex exposes this control in
+the interactive `/plugins` view; `yuzuru plugin enable|disable ... --agent codex` reports
+`interaction_required` and never rewrites Codex configuration.
 
-Moving or renaming the cloned repository turns existing installs into stale symlinks that point
-at a path that no longer exists, so the affected skills silently stop being picked up. `skill
-doctor` flags stale entries and how many there are; re-running `skill install all` (or `skill
-install NAME`) repairs them in place. The `~/.local/bin/skill` launcher itself self-heals the same
-way: re-running `./install.sh` repairs a dangling launcher symlink with no `--force` needed.
+The legacy commands remain available:
+
+```bash
+skill list
+skill install NAME
+skill uninstall NAME
+skill new NAME --description "What it does. Use when ..."
+skill validate NAME
+skill update
+skill doctor
+```
+
+Updates refuse a dirty tree and use only `git pull --ff-only`. They never reset, stash, merge,
+rebase, re-enable plugins, or overwrite unmanaged installations.
+
+## Plugin catalog
+
+| Plugin | Purpose |
+|---|---|
+| `discovery-agent` | Evidence-based opportunity discovery, competitors, regional fit, feasibility, and risks. |
+| `product-agent` | Proportional PRDs, user behavior, evolvable MVP boundaries, acceptance, and traceability. |
+| `architecture-agent` | HLD/LLD, contracts, capacity, security boundaries, failure semantics, and migrations. |
+| `devops-agent` | Repository-adaptive CI/CD, delivery, infrastructure, rollback, observability, and operations. |
+| `harness-agent` | Agent readiness, documentation navigation, capability inventory, and code-intelligence decisions. |
+| `sde-agent` | Focused implementation, debugging, testing, self-review, migrations, and completion evidence. |
+| `frontend-agent` | UX direction, distinctive design, frontend architecture, implementation, accessibility, and visuals. |
+| `sre-agent` | Independent behavioral, reliability, performance, security, E2E, and release verification. |
+| `cleaner-agent` | Conservative documentation, code, and artifact hygiene with deletion evidence. |
+
+Each package under `plugins/<id>/` has one logical identity, dual manifests, a primary orchestration
+skill, focused supporting skills, scripts or hooks only where justified, a Claude specialist adapter,
+README, and eval contract. No package relies on symlinks outside its directory.
+
+## Standalone skill catalog
 
 | Skill | Purpose |
 |---|---|
-| `central-university-lms` | Headless LMS inspection, unfinished-homework export, solution-manifest validation, and safe write discovery. |
-| `github-workflow` | GitHub repositories, issues, pull requests, Projects, Actions, and local Git workflows. |
-| `gitlab-workflow` | GitLab repositories, merge requests, discussions, pipelines, logs, and fork-based delivery. |
-| `google-ai-search` | Token-efficient public-web research through the Gemini API with Google Search grounding. |
-| `google-sheets-workflow` | Google Sheets and Drive reads, controlled writes, formulas, formatting, and structural changes. |
-| `jira-workflow` | Jira Data Center/Server issue discovery, creation, linking, quality checks, and status transitions. |
-| `search-workflow` | Token-efficient routing across local files, source structure, data, documents, and archives. |
-| `write-kotlin` | Repository-adaptive Kotlin implementation and refactoring with explicit design priorities. |
+| `central-university-lms` | Headless LMS inspection and safe homework/status workflows. |
+| `github-workflow` | GitHub repositories, issues, pull requests, Projects, Actions, and local Git. |
+| `gitlab-workflow` | GitLab repositories, merge requests, discussions, pipelines, and fork delivery. |
+| `google-ai-search` | Token-efficient public research with Google Search grounding. |
+| `google-sheets-workflow` | Google Sheets/Drive reads, controlled writes, formulas, and structure. |
+| `jira-workflow` | Jira issue discovery, creation, linking, quality checks, and transitions. |
+| `search-workflow` | Fast routing across local source, files, structured data, documents, and archives. |
+| `write-kotlin` | Repository-adaptive Kotlin implementation and refactoring. |
 
-To create or update a skill, give the repository to an agent and point it to
-[`AGENTS.md`](AGENTS.md). The detailed architecture, context budgets, script contract, effect model,
-and review checklist live in [`docs/skill-authoring.md`](docs/skill-authoring.md). Mechanical checks
-are available through the same CLI:
+Existing skill paths are unchanged. Managed stale links caused by moving the clone can be diagnosed
+and repaired with `yuzuru doctor --repair`; unmanaged files and symlinks are never replaced.
+
+## Marketplaces and lifecycle
+
+The catalogs are committed source files:
+
+- Codex: `.agents/plugins/marketplace.json`;
+- Claude Code: `.claude-plugin/marketplace.json`.
+
+Native equivalents and enable/disable/uninstall details are in
+[Marketplace installation](docs/distribution/marketplaces.md). Version resolution and the canonical
+per-plugin version source are in [Releasing](docs/distribution/releasing.md). No cache, enabled state,
+credentials, or user configuration belongs in Git.
+
+## Authoring and validation
+
+Start at [docs/NAVIGATOR.md](docs/NAVIGATOR.md). It routes to repository architecture, standalone
+skill authoring, plugin packaging, scripts, hooks, MCP policy, schemas, testing, distribution,
+security, and contribution workflow. Root [AGENTS.md](AGENTS.md) stays deliberately compact.
 
 ```bash
-./skill new my-skill \
-  --description "What it does. Use when the user asks for a concrete task." \
+yuzuru skill new my-skill \
+  --description "Perform a bounded workflow. Use when the user requests that workflow." \
   --resources scripts,references
-./skill validate my-skill
-./skill validate all
+yuzuru plugin new my-plugin \
+  --description "Package a bounded capability for supported agents."
+
 python3 scripts/smoke_scripts.py
 python3 scripts/run_tests.py
+python3 scripts/run_evals.py
+yuzuru validate --strict
 ```
 
-Secrets and browser sessions must remain outside the repository. Skills prefer official APIs,
-scoped credentials, bounded outputs, dry runs, and explicit confirmation for external writes or
-destructive actions; each skill documents any additional setup and guardrails it requires.
+Runtime state uses XDG configuration/cache/data locations (with platform-appropriate home
+fallbacks), temporary directories, or native plugin data directories. Normal commands must not
+create environments, dependency caches, logs, reports, indexes, screenshots, or bytecode inside the
+clone.
+
+## Trust model
+
+Read-only inspection is the default. External writes, production changes, destructive cleanup, and
+load/fault testing require explicit scope and authorization appropriate to their impact. Scripts
+bound output, avoid credential output, validate targets, and offer dry runs for writes where
+applicable. See the [trust model](docs/security/trust-model.md) and
+[effect levels](docs/security/effect-model.md).

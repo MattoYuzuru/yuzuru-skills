@@ -1,0 +1,21 @@
+{
+  "name": "frontend-agent",
+  "version": "0.1.0",
+  "description": "Distinctive UX direction, frontend architecture, implementation, and visual verification.",
+  "author": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru"
+  },
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["frontend", "ux", "accessibility"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Frontend Agent",
+    "shortDescription": "Design and build distinctive accessible interfaces",
+    "longDescription": "Research meaningful directions, define interaction and system boundaries, implement production UI, and verify responsiveness and accessibility.",
+    "developerName": "MattoYuzuru",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Use Frontend Agent to establish a visual direction before implementing this interface."]
+  }
+}

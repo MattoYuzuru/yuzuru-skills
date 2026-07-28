@@ -1,0 +1,4 @@
+interface:
+  display_name: "Capability Inventory"
+  short_description: "Machine-readable agent capability health catalog"
+  default_prompt: "Use $capability-inventory to complete this workflow with evidence."

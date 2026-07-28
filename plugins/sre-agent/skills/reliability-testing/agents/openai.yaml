@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reliability Testing"
+  short_description: "Authorized deep reliability and load testing"
+  default_prompt: "Use $reliability-testing to complete this workflow with evidence."

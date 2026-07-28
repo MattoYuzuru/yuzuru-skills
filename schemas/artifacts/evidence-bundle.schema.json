@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MattoYuzuru/yuzuru-skills/schemas/artifacts/evidence-bundle.schema.json",
+  "title": "Yuzuru Evidence Bundle",
+  "type": "object",
+  "required": ["evidence_bundle"],
+  "additionalProperties": false,
+  "properties": {
+    "evidence_bundle": {
+      "type": "object",
+      "required": [
+        "work_package",
+        "revision",
+        "commands",
+        "tests",
+        "artifacts",
+        "findings",
+        "limitations",
+        "verified_environments",
+        "unverified_environments",
+        "release_ready"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "work_package": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "minLength": 1},
+        "commands": {"type": "array", "items": {"$ref": "#/$defs/execution"}, "maxItems": 500},
+        "tests": {"type": "array", "items": {"$ref": "#/$defs/execution"}, "maxItems": 500},
+        "artifacts": {"type": "array", "items": {"type": "string"}, "maxItems": 500},
+        "findings": {"type": "array", "items": {"type": "string"}, "maxItems": 500},
+        "limitations": {"type": "array", "items": {"type": "string"}, "maxItems": 500},
+        "verified_environments": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
+        "unverified_environments": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
+        "release_ready": {"type": "boolean"}
+      }
+    }
+  },
+  "$defs": {
+    "execution": {
+      "type": "object",
+      "required": ["command", "exit_code", "result"],
+      "additionalProperties": false,
+      "properties": {
+        "command": {"type": "string", "minLength": 1},
+        "exit_code": {"type": "integer"},
+        "result": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

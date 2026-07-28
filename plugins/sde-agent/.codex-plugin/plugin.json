@@ -1,0 +1,21 @@
+{
+  "name": "sde-agent",
+  "version": "0.1.0",
+  "description": "Repository-adaptive software implementation, testing, debugging, and evidence.",
+  "author": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru"
+  },
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["software-engineering", "implementation", "debugging"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "SDE Agent",
+    "shortDescription": "Implement bounded software changes with evidence",
+    "longDescription": "Acquire local contracts, plan proportionally, implement focused changes, test behavior, self-review, and report limitations.",
+    "developerName": "MattoYuzuru",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Use SDE Agent to implement this bounded change and prove what was validated."]
+  }
+}

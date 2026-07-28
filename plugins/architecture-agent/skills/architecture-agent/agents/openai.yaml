@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architecture Agent"
+  short_description: "Coherent system architecture and migration design"
+  default_prompt: "Use $architecture-agent to complete this workflow with evidence."

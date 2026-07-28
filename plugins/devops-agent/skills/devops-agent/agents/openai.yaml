@@ -1,0 +1,4 @@
+interface:
+  display_name: "DevOps Agent"
+  short_description: "Repository-adaptive delivery and platform workflows"
+  default_prompt: "Use $devops-agent to complete this workflow with evidence."

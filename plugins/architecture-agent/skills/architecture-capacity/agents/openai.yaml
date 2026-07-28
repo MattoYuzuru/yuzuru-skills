@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architecture Capacity"
+  short_description: "Deterministic workload and capacity modeling"
+  default_prompt: "Use $architecture-capacity to complete this workflow with evidence."

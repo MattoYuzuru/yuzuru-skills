@@ -1,0 +1,4 @@
+interface:
+  display_name: "Finding Validation"
+  short_description: "Confirm defects and reject false positives"
+  default_prompt: "Use $finding-validation to complete this workflow with evidence."

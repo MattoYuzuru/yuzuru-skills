@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Run every skill-local unittest file with the correct script import path."""
+"""Run repository, standalone-skill, plugin-script, and plugin-hook unit tests."""
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import subprocess
@@ -13,17 +14,35 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_files() -> list[Path]:
+    tests = list((ROOT / "skills").glob("*/scripts/tests/test_*.py"))
+    tests.extend((ROOT / "plugins").glob("*/skills/*/scripts/tests/test_*.py"))
+    tests.extend((ROOT / "plugins").glob("*/hooks/tests/test_*.py"))
+    tests.extend((ROOT / "scripts" / "tests").glob("test_*.py"))
+    return sorted(set(tests))
+
+
+def import_root(path: Path) -> Path:
+    if path.parent.name == "tests":
+        return path.parent.parent
+    return path.parent
+
+
 def main() -> int:
-    tests = sorted((ROOT / "skills").glob("*/scripts/tests/test_*.py"))
-    tests.extend(sorted((ROOT / "scripts" / "tests").glob("test_*.py")))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--match", help="Run only test paths containing this text")
+    args = parser.parse_args()
+    tests = [path for path in test_files() if not args.match or args.match in str(path)]
     failures: list[dict[str, object]] = []
     for path in tests:
-        scripts_dir = path.parents[1]
         environment = os.environ.copy()
+        environment["PYTHONDONTWRITEBYTECODE"] = "1"
         current = environment.get("PYTHONPATH")
-        environment["PYTHONPATH"] = str(scripts_dir) + (os.pathsep + current if current else "")
+        environment["PYTHONPATH"] = str(import_root(path)) + (
+            os.pathsep + current if current else ""
+        )
         result = subprocess.run(
-            [sys.executable, str(path), "-v"],
+            [sys.executable, "-B", str(path), "-v"],
             cwd=ROOT,
             env=environment,
             text=True,

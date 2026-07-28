@@ -1,0 +1,4 @@
+interface:
+  display_name: "Discovery Research"
+  short_description: "Research funnel for product opportunity evidence"
+  default_prompt: "Use $discovery-research to complete this workflow with evidence."

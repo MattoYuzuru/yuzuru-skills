@@ -1,0 +1,4 @@
+interface:
+  display_name: "SRE Agent"
+  short_description: "Independent evidence-based reliability verification"
+  default_prompt: "Use $sre-agent to complete this workflow with evidence."

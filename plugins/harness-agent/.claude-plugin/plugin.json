@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "harness-agent",
+  "displayName": "Harness Agent",
+  "version": "0.1.0",
+  "description": "Repository navigation, capability inventory, and agent-readiness improvements.",
+  "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["agents", "documentation", "repository-map"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

@@ -1,0 +1,13 @@
+{
+  "decision": {
+    "id": "ADR-0001",
+    "status": "proposed",
+    "context": "A material architecture choice requires review.",
+    "decision": "Use the smallest option that satisfies accepted requirements.",
+    "rationale": "The final rationale must cite requirements and evidence.",
+    "alternatives": [],
+    "consequences": [],
+    "risks": [],
+    "validation": []
+  }
+}

@@ -1,212 +1,33 @@
-# Authoring Skills In This Repository
+# Yuzuru Extension Repository
 
-This repo is a shared skill library for **Codex** and **Claude Code** (and any future
-agent that adopts the same format). One skill folder serves every agent that supports
-it — there is no `skills/codex/` vs `skills/claude/` split. This file is the standard
-to follow when writing a new skill or editing an existing one, by hand or by asking an
-agent to generate one.
+This repository is a cross-agent monorepo for standalone Agent Skills and installable plugins.
+Portable behavior lives in `SKILL.md`, `references/`, `scripts/`, `assets/`, and shared schemas.
+Claude Code and Codex manifests, hooks, and agent adapters must remain thin.
 
-Read `docs/skill-authoring.md` before creating or substantially restructuring a skill.
-It defines the repository's context budgets, routing pattern, script contract, effect
-classification, eval expectations, and review checklist.
+Start at [`docs/NAVIGATOR.md`](docs/NAVIGATOR.md). Load only the standard relevant to the change:
 
-Repository-only trigger and effect contracts live in `evals/<skill-name>.json`; they are not
-installed or loaded when a skill activates.
+- standalone skill work: [`docs/skill-authoring.md`](docs/skill-authoring.md);
+- plugin work: [`docs/authoring/plugins.md`](docs/authoring/plugins.md);
+- deterministic helpers: [`docs/authoring/scripts.md`](docs/authoring/scripts.md);
+- hooks or MCP: [`docs/authoring/hooks.md`](docs/authoring/hooks.md) or
+  [`docs/authoring/mcp.md`](docs/authoring/mcp.md);
+- distribution or migration: [`docs/distribution/marketplaces.md`](docs/distribution/marketplaces.md)
+  and [`docs/distribution/migration.md`](docs/distribution/migration.md);
+- security or external effects: [`docs/security/trust-model.md`](docs/security/trust-model.md)
+  and [`docs/security/effect-model.md`](docs/security/effect-model.md).
 
-## Development workflow
+## Change workflow
 
-Use this lifecycle for a new skill or a substantial redesign. For a small, well-scoped fix, keep
-the same checks but compress the planning and commit steps proportionally.
+1. Inspect the working tree, history, closest implementation, and relevant official platform docs.
+2. Fetch before branching. Never reset, stash, or overwrite unrelated work.
+3. Keep stable plugin and skill identifiers. Record supported renames in `schemas/migrations.json`.
+4. Implement deterministic capabilities before their model-facing router.
+5. Keep ordinary `SKILL.md` files near 100–250 lines and below the 500-line hard limit.
+6. Keep plugin packages self-contained. Do not distribute cross-package symlinks.
+7. Put runtime state in XDG or platform data/cache directories, never in the clone or plugin root.
+8. Validate behavior, manifests, references, help output, evals, and repository cleanliness.
+9. Commit logical milestones without unrelated files. Push only after separate explicit approval.
 
-1. **Inspect before changing anything.** Read this file and `docs/skill-authoring.md`, then inspect
-   the closest existing skills, scripts, references, and eval contracts. Check `git status`, the
-   current branch, remotes, and recent commit style. Preserve every unrelated local change.
-2. **Synchronize safely and isolate the work.** Fetch the remote first. Use `git pull --ff-only`
-   only when the current branch and worktree make that safe; otherwise report the state instead of
-   stashing, resetting, or overwriting user work. Create a dedicated feature branch before edits.
-3. **Turn the request into a design.** Extract concrete trigger and non-trigger examples,
-   acceptance criteria, capabilities, effect classes, authentication boundaries, failure modes,
-   target agents, and context/output budgets. Inspect current official API documentation and
-   deprecation notices for every external integration rather than relying on model memory.
-4. **Brainstorm and plan.** Compare viable approaches, then propose the skill tree, routing table,
-   deterministic scripts, selectively loaded references, eval cases, and test strategy. Surface
-   material tradeoffs or unresolved requirements and get the user's approval before implementation.
-5. **Implement the approved scope completely.** Build deterministic capabilities first, then write
-   `SKILL.md` as their compact router. Add only resources justified by the accepted use cases. Make
-   small logical commits during substantial work, following the repository's existing commit style
-   and never including unrelated files.
-6. **Verify behavior, not only structure.** Run `./skill validate <name>`, credential-free `--help`
-   checks, unit tests, and realistic read-only smoke tests. Exercise `--dry-run` for writes and exact
-   target checks for destructive operations. Install for every declared target agent and, for a
-   substantial or fragile skill, test it from a fresh session before calling it complete.
-7. **Deliver deliberately.** Review the final diff and working tree, summarize verification and
-   residual risks, and create the final local commit. A push, pull request, comment, upload, or any
-   other external write still requires separate explicit confirmation of the exact target. After
-   confirmation, push the feature branch and report the resulting URL or remote state.
-
-The request and approved clarifications are the acceptance contract. A finished skill must satisfy
-all of them; do not silently omit a difficult capability or leave placeholders for a later version.
-Ask about decisions that materially change scope, security, cost, or external effects. Resolve
-minor implementation details from repository conventions and verified platform behavior.
-
-Architecture has priority over prose volume. Give the model only the non-obvious decisions it needs,
-and move repeated, fragile, or credential-sensitive behavior into scripts. Enforce important safety
-properties in code where practical: validate targets, constrain hosts or origins, prevent credential
-forwarding across redirects, bound and redact output, avoid automatic retries of mutations, and
-provide dry-run or confirmation mechanisms for writes. Prompt instructions alone are not a security
-boundary.
-
-## The Agent Skills format
-
-A skill is a directory under `skills/<name>/` containing:
-
-```text
-skills/<name>/
-  SKILL.md            required — frontmatter + instructions
-  skill.yaml          optional — repository target-agent metadata
-  scripts/             optional — deterministic code the skill runs
-    tests/              optional — credential-free unit tests for helpers
-  references/          optional — detail loaded on demand, not at activation
-  assets/               optional — output templates and static files
-  agents/openai.yaml    optional — Codex-only UI metadata, see below
-```
-
-This mirrors the open **Agent Skills** standard (agentskills.io) implemented natively
-by both Codex and Claude Code. Only `SKILL.md` with `name` and `description` frontmatter
-is required; everything else is convention.
-
-### `SKILL.md` frontmatter
-
-```yaml
----
-name: skill-name
-description: What this does and when to use it, one or two sentences.
----
-```
-
-- `name` — kebab-case, must match the parent directory name exactly.
-- `description` — the single most important field. State **what** the skill does and
-  **when** to use it (trigger conditions). This is what the agent reads to decide whether
-  to activate the skill, before it ever reads the body — vague descriptions ("helps with
-  git things") are the most common reason a skill never gets used. Don't restrict wording
-  to one agent ("Use when the user asks Codex to...") — write it so it reads naturally for
-  any agent.
-
-Keep portable Agent Skills frontmatter limited to `name` and `description`. Put repository
-target metadata in `skill.yaml` when a skill supports only a subset of agents:
-
-```yaml
-targets: [codex]
-```
-
-Omit `skill.yaml` when both Codex and Claude are supported. The CLI still accepts legacy
-`agents: [codex, claude]` frontmatter for backward compatibility, but new and migrated skills
-must use the sidecar.
-
-Other optional frontmatter is agent-specific and safely ignored by agents that don't
-recognize it:
-
-- **Claude Code** reads extra keys straight from this same frontmatter: `allowed-tools`
-  (restrict tool access), `disable-model-invocation` (require explicit `/skill-name`
-  instead of auto-triggering), `context: fork`, `effort` (`low`/`medium`/`high`), `hooks`.
-  Add these directly to `SKILL.md` when a skill needs them — no side file.
-- **Codex** reads UI metadata from a separate `agents/openai.yaml` file (see below), not
-  from `SKILL.md` frontmatter.
-
-### Body content and progressive disclosure
-
-Keep `SKILL.md`'s body short (roughly under 500 lines) — it's loaded in full whenever the
-skill activates. Anything bulky (long reference tables, API field docs, setup edge cases)
-belongs in `references/*.md` and should only be pointed to from the body ("Read
-`references/setup.md` for Windows-specific paths"), not inlined. Scripts belong in
-`scripts/` — prefer a script over inline shell/API calls whenever the operation is
-deterministic, credential-sensitive, or repeated (see `skills/gitlab-workflow/scripts/gitlab_api.py`
-for the pattern this repo follows: read a token from env/file, never print it, emit
-compact JSON for the agent to summarize).
-
-Target 200 lines for `SKILL.md`; 500 lines is a hard limit. For multi-capability skills,
-add an `Intent -> reference -> script -> effect` routing table and read only the selected
-reference. Keep references one level below `SKILL.md`. Put schemas in `references/` when
-the model must reason about them; reserve `assets/` for files used in generated output.
-
-Resolve the installed skill directory before running helpers. Never assume the current
-working directory is this repository, and never commit maintainer-specific absolute paths.
-
-Scripts must provide credential-free `--help`, compact machine-readable stdout, diagnostics
-on stderr, bounded collection output, non-zero failure exits, and explicit write/destructive
-commands. See `docs/skill-authoring.md` for the full contract.
-
-### Codex extension: `agents/openai.yaml`
-
-Optional. Add it when a skill should present nicely in Codex's UI or `$name` mention:
-
-```yaml
-interface:
-  display_name: "Human-Readable Name"
-  short_description: "One line, shown in skill pickers"
-  default_prompt: "Use $skill-name to ..."
-```
-
-Claude Code ignores this file entirely. Do not add it to a Claude-only skill.
-
-## Writing a good description
-
-- State what the skill does and exactly when it should trigger, in plain language.
-- Be specific, not generic: "Refactor Python functions to async/await" beats "help with
-  Python."
-- Don't hardcode one agent's name into the description or body unless the skill is
-  genuinely agent-specific (and targeted accordingly in `skill.yaml`).
-- If the skill has a "gotchas" section, prioritize real problems you've hit over
-  hypothetical ones — that's the highest-value content in the whole file.
-
-## Security rules (apply to every skill)
-
-- Never commit secrets. Read tokens from environment variables or files outside the repo
-  (`~/.gitlab_token`, `~/.config/<namespace>/...`), never inline them in prompts, code
-  blocks, or committed files.
-- Prefer official APIs and scoped tokens over browser/session-cookie automation.
-- Ask for separate, explicit confirmation before any write action against an external
-  system (push, comment, file upload, secret set, etc.) — read actions don't need this.
-- Don't bypass 2FA, CAPTCHA, or access restrictions.
-
-## Adding a new skill: checklist
-
-1. Run `./skill new <name> --description "... Use when ..."` with only the required
-   `--resources`. It creates Codex UI metadata automatically when Codex is targeted.
-2. Replace the scaffold in `SKILL.md`; add `skill.yaml` only for a restricted target set.
-3. Put any deterministic/credential-handling logic in `scripts/`, called from the body.
-4. Add `agents/openai.yaml` only if the skill should target Codex's UI.
-5. Run `./skill list` — confirm the new skill shows up with the right per-agent status
-   columns and a sane description.
-6. Run `./skill install <name>` (optionally `--agent codex` or `--agent claude` to test
-   one target at a time) and confirm the symlink lands where expected
-   (`~/.agents/skills` for Codex, `~/.claude/skills` for Claude Code, both overridable via
-   `YUZURU_CODEX_SKILLS_DIR` / `YUZURU_CLAUDE_SKILLS_DIR`).
-7. Add credential-free tests under `scripts/tests/`; run `python3 scripts/run_tests.py` and
-   `python3 scripts/smoke_scripts.py`.
-8. Add `evals/<name>.json` when triggering is ambiguous or the skill has side effects.
-9. Update the skill table in `README.md`.
-
-### Minimal template
-
-```markdown
----
-name: my-new-skill
-description: What it does. Use when the user asks to <trigger condition>.
----
-
-# My New Skill
-
-## Overview
-
-One paragraph: what this skill is for and the one script/workflow it wraps.
-
-## Workflow
-
-1. Step one.
-2. Step two, referencing `scripts/my_script.py` for the deterministic part.
-
-## Guardrails
-
-- Rules specific to this skill's write actions, if any.
-```
+External writes require explicit authorization; destructive writes require exact target
+confirmation. Never commit credentials or bypass native plugin managers, 2FA, policy, sandboxing,
+or user-disabled state.

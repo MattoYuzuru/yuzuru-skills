@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "product-agent",
+  "displayName": "Product Agent",
+  "version": "0.1.0",
+  "description": "Proportional product requirements, MVP scope, and behavioral acceptance criteria.",
+  "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["product", "requirements", "prd"],
+  "skills": "./skills/"
+}

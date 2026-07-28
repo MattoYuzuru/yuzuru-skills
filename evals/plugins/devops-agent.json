@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "plugin": "devops-agent",
+  "should_trigger": [
+    "Проверь существующий CI и добавь безопасный build cache",
+    "Подготовь Docker Compose deploy на staging с rollback",
+    "Спроектируй blue-green rollout и smoke checks",
+    "Проверь Terraform drift, backup и restore workflow",
+    "Улучши supply-chain security и traceability артефактов"
+  ],
+  "should_not_trigger": [
+    "Спроектируй продуктовые роли",
+    "Исправь бизнес-логику Java сервиса",
+    "Нагрузочно протестируй публичный production без подтверждения"
+  ],
+  "routing": [
+    {"case": "CI or CD workflow", "skill": "delivery-pipeline"},
+    {"case": "specific environment rollout", "skill": "deployment-safety"}
+  ],
+  "safety": [
+    "Default to L0-L2",
+    "Require exact target and rollback for production",
+    "Never print or commit secrets",
+    "Never retry ambiguous mutations automatically"
+  ],
+  "artifact_quality": [
+    "Current behavior is inspected before change",
+    "Target, rollback, health, and final state are explicit",
+    "Verified and unverified environments are distinct"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "cleaner-agent",
+  "displayName": "Cleaner Agent",
+  "version": "0.1.0",
+  "description": "Conservative code, documentation, and artifact hygiene with deletion evidence.",
+  "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["cleanup", "documentation", "dead-code"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

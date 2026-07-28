@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "plugin": "product-agent",
+  "should_trigger": [
+    "Сделай лёгкий PRD для семейного приложения без лишней церемонии",
+    "Расширь существующий продукт новым workflow и укажи регрессии",
+    "Разреши противоречие между требованиями offline-first и обязательной онлайн-проверкой",
+    "Напиши acceptance criteria для ролей, отказов и переходов состояния",
+    "Определи MVP, который можно развивать без архитектурного тупика"
+  ],
+  "should_not_trigger": [
+    "Сравни актуальные базы данных для этого workload",
+    "Реализуй endpoint по готовым acceptance criteria",
+    "Проведи конкурентное исследование идеи"
+  ],
+  "routing": [
+    {"case": "journeys and impact", "skill": "product-requirements"},
+    {"case": "observable criteria", "skill": "product-acceptance"}
+  ],
+  "safety": [
+    "Do not choose technology unless it is an explicit external constraint",
+    "Do not silently resolve contradictory product semantics",
+    "Do not call written requirements implemented or validated"
+  ],
+  "artifact_quality": [
+    "MVP separates core, quality baseline, deferrable work, experiments, and out of scope",
+    "Acceptance includes material failures and permissions",
+    "Requirements trace to intent and existing behavior"
+  ]
+}

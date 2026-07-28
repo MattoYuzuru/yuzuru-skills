@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MattoYuzuru/yuzuru-skills/schemas/artifacts/artifact-metadata.schema.json",
+  "title": "Yuzuru Artifact Metadata",
+  "type": "object",
+  "required": ["artifact"],
+  "additionalProperties": false,
+  "properties": {
+    "artifact": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "title",
+        "status",
+        "created_at",
+        "updated_at",
+        "owners",
+        "source_tasks",
+        "supersedes",
+        "superseded_by",
+        "assumptions",
+        "unresolved_questions",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "type": {"type": "string", "minLength": 1, "maxLength": 64},
+        "title": {"type": "string", "minLength": 1, "maxLength": 240},
+        "status": {
+          "enum": ["draft", "proposed", "accepted", "implemented", "validated", "superseded", "archived"]
+        },
+        "created_at": {"type": "string", "format": "date-time"},
+        "updated_at": {"type": "string", "format": "date-time"},
+        "owners": {"type": "array", "items": {"type": "string"}, "maxItems": 50},
+        "source_tasks": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
+        "supersedes": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
+        "superseded_by": {"type": ["string", "null"]},
+        "assumptions": {"type": "array", "items": {"type": "string"}, "maxItems": 200},
+        "unresolved_questions": {"type": "array", "items": {"type": "string"}, "maxItems": 200},
+        "evidence": {"type": "array", "items": {"type": "string"}, "maxItems": 500}
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Defensive Security Review"
+  short_description: "Validate authorized security findings"
+  default_prompt: "Use $defensive-security-review to inspect this authorized target defensively."

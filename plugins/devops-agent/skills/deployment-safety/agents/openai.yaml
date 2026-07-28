@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deployment Safety"
+  short_description: "Controlled deployment, rollback, and verification"
+  default_prompt: "Use $deployment-safety to complete this workflow with evidence."

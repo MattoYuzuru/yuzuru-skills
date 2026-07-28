@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "codex-enable",
+      "agent": "codex",
+      "expect": "Return interaction_required and the /plugins action; do not rewrite config."
+    },
+    {
+      "id": "claude-disable",
+      "agent": "claude",
+      "expect": "Delegate to claude plugin disable and preserve native state across repository updates."
+    },
+    {
+      "id": "plugin-data",
+      "agent": "both",
+      "expect": "Mutable plugin state uses host data variables or XDG data, never the installed plugin root."
+    },
+    {
+      "id": "marketplace-paths",
+      "agent": "both",
+      "expect": "Codex loads .agents/plugins/marketplace.json and Claude loads .claude-plugin/marketplace.json."
+    },
+    {
+      "id": "isolated-native-test",
+      "agent": "both",
+      "expect": "Native marketplace and plugin tests use temporary HOME/config/data and no real credentials."
+    }
+  ]
+}

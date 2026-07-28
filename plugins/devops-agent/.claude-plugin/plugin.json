@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "devops-agent",
+  "displayName": "DevOps Agent",
+  "version": "0.1.0",
+  "description": "Repository-adaptive delivery, infrastructure, deployment, and operational safety.",
+  "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["devops", "ci-cd", "deployment"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

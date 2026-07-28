@@ -57,6 +57,29 @@ class NewSkillTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertFalse((skills_dir / "claude-example" / "agents").exists())
 
+    def test_dry_run_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            skills_dir = Path(directory) / "skills"
+            skills_dir.mkdir()
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "new_skill.py"),
+                    "planned-example",
+                    "--description",
+                    "Plan an example workflow. Use when the user requests it.",
+                    "--skills-dir",
+                    str(skills_dir),
+                    "--dry-run",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn('"status":"dry_run"', result.stdout)
+            self.assertFalse((skills_dir / "planned-example").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

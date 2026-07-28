@@ -1,0 +1,4 @@
+interface:
+  display_name: "Delivery Pipeline"
+  short_description: "Safe CI and CD pipeline design and review"
+  default_prompt: "Use $delivery-pipeline to complete this workflow with evidence."

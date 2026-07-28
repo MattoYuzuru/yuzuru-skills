@@ -70,6 +70,7 @@ def main() -> int:
         help="comma-separated target agents: codex,claude (default: both)",
     )
     parser.add_argument("--skills-dir", type=Path, required=True, help=argparse.SUPPRESS)
+    parser.add_argument("--dry-run", action="store_true", help="validate and list files without writing")
     args = parser.parse_args()
 
     if not NAME_RE.fullmatch(args.name) or len(args.name) > 64:
@@ -82,6 +83,26 @@ def main() -> int:
     skill_dir = args.skills_dir / args.name
     if skill_dir.exists():
         parser.error(f"skill already exists: {skill_dir}")
+
+    planned = [skill_dir / "SKILL.md"]
+    planned.extend(skill_dir / resource for resource in args.resources)
+    if set(args.targets) != ALLOWED_TARGETS:
+        planned.append(skill_dir / "skill.yaml")
+    if "codex" in args.targets:
+        planned.append(skill_dir / "agents" / "openai.yaml")
+    if args.dry_run:
+        print(
+            json.dumps(
+                {
+                    "status": "dry_run",
+                    "effect": "local-write",
+                    "would_create": [str(path) for path in planned],
+                },
+                ensure_ascii=False,
+                separators=(",", ":"),
+            )
+        )
+        return 0
 
     skill_dir.mkdir(parents=True)
     for resource in args.resources:

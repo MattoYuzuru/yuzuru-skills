@@ -1,0 +1,14 @@
+{
+  "evidence_bundle": {
+    "work_package": "",
+    "revision": "",
+    "commands": [],
+    "tests": [],
+    "artifacts": [],
+    "findings": [],
+    "limitations": [],
+    "verified_environments": [],
+    "unverified_environments": [],
+    "release_ready": false
+  }
+}

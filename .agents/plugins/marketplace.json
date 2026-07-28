@@ -1,0 +1,116 @@
+{
+  "name": "yuzuru-engineering",
+  "interface": {
+    "displayName": "Yuzuru Engineering"
+  },
+  "plugins": [
+    {
+      "name": "discovery-agent",
+      "source": {
+        "source": "local",
+        "path": "./plugins/discovery-agent"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Research"
+    },
+    {
+      "name": "product-agent",
+      "source": {
+        "source": "local",
+        "path": "./plugins/product-agent"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "architecture-agent",
+      "source": {
+        "source": "local",
+        "path": "./plugins/architecture-agent"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "devops-agent",
+      "source": {
+        "source": "local",
+        "path": "./plugins/devops-agent"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "harness-agent",
+      "source": {
+        "source": "local",
+        "path": "./plugins/harness-agent"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "sde-agent",
+      "source": {
+        "source": "local",
+        "path": "./plugins/sde-agent"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "frontend-agent",
+      "source": {
+        "source": "local",
+        "path": "./plugins/frontend-agent"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "sre-agent",
+      "source": {
+        "source": "local",
+        "path": "./plugins/sre-agent"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "cleaner-agent",
+      "source": {
+        "source": "local",
+        "path": "./plugins/cleaner-agent"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
