@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/guard_command.py\"",
+            "timeout": 5,
+            "statusMessage": "Checking broad destructive command targets"
+          }
+        ]
+      }
+    ]
+  }
+}

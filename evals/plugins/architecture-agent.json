@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "plugin": "architecture-agent",
+  "should_trigger": [
+    "Спроектируй локальное single-user приложение без распределённой сложности",
+    "Сделай HLD мессенджера регионального масштаба",
+    "Сравни архитектуры видеоплатформы и зафиксируй consistency semantics",
+    "Разработай архитектуру food delivery сервиса",
+    "Спроектируй банковский workflow с аудитом и идемпотентностью",
+    "Оцени LLM inference и distributed compute platform",
+    "Спланируй миграцию с PostgreSQL после измеренного capacity trigger",
+    "Подготовь рост с миллиона до пятидесяти пяти миллионов пользователей",
+    "Проверь кодовую базу, где документация расходится с реализацией"
+  ],
+  "should_not_trigger": [
+    "Исправь одну строку Kotlin-кода",
+    "Напиши PRD для семейного приложения",
+    "Выполни утверждённый production deploy"
+  ],
+  "routing": [
+    {"case": "workload and scale", "skill": "architecture-capacity"},
+    {"case": "compatibility and cutover", "skill": "architecture-migration"}
+  ],
+  "safety": [
+    "Do not treat guessed workload as measured",
+    "Do not execute infrastructure or data migration",
+    "Do not claim a formal threat model without performing one"
+  ],
+  "artifact_quality": [
+    "Candidates have real tradeoffs and migration paths",
+    "Important operations define consistency and failure semantics",
+    "Capacity formulas and uncertainty are visible",
+    "One reconciled architecture resolves specialist conflicts"
+  ]
+}

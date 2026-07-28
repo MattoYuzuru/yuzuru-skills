@@ -1,0 +1,22 @@
+{
+  "name": "devops-agent",
+  "version": "0.1.0",
+  "description": "Repository-adaptive delivery, infrastructure, deployment, and operational safety.",
+  "author": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru"
+  },
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["devops", "ci-cd", "deployment"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "DevOps Agent",
+    "shortDescription": "Build and verify safe delivery workflows",
+    "longDescription": "Inspect existing delivery behavior before changing CI, infrastructure, rollout, rollback, backups, or observability.",
+    "developerName": "MattoYuzuru",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Use DevOps Agent to inspect this delivery system and make a bounded safe improvement."]
+  }
+}
