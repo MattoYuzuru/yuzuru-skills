@@ -62,6 +62,36 @@ class YuzuruCliTests(unittest.TestCase):
             self.assertFalse(destination.exists())
             self.assertFalse(destination.is_symlink())
 
+    def test_list_uses_compact_skill_descriptions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = self.run_cli(self.environment(Path(directory)), "list", "--kind", "skill")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("KIND   NAME", result.stdout)
+            self.assertIn("Inspect and export LMS homework safely", result.stdout)
+            self.assertNotIn("exporting unfinished assignments", result.stdout)
+            skill_lines = [line for line in result.stdout.splitlines() if line.startswith("skill")]
+            self.assertTrue(skill_lines)
+            self.assertLessEqual(max(map(len, skill_lines)), 128)
+
+    def test_skill_summary_has_compact_frontmatter_fallback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            skill = Path(directory)
+            (skill / "SKILL.md").write_text(
+                "---\n"
+                "name: fallback-skill\n"
+                "description: A deliberately long canonical capability description that needs "
+                "to remain compact in terminal output. Use when a detailed trigger applies.\n"
+                "---\n",
+                encoding="utf-8",
+            )
+
+            summary = yuzuru_cli.skill_summary(skill)
+
+            self.assertLessEqual(len(summary), 64)
+            self.assertTrue(summary.endswith("..."))
+            self.assertNotIn("Use when", summary)
+
     def test_refuses_unmanaged_conflict(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

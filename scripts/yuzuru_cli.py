@@ -264,6 +264,53 @@ def frontmatter(path: Path) -> dict[str, str]:
     return values
 
 
+def quoted_yaml_field(path: Path, key: str) -> str | None:
+    if not path.is_file():
+        return None
+    match = re.search(
+        rf"^\s+{re.escape(key)}:\s*(\".*\")\s*$",
+        path.read_text(encoding="utf-8"),
+        re.MULTILINE,
+    )
+    if not match:
+        return None
+    try:
+        value = json.loads(match.group(1))
+    except json.JSONDecodeError:
+        return None
+    return value if isinstance(value, str) else None
+
+
+def compact_description(value: str, *, limit: int = 64) -> str:
+    value = " ".join(value.split()).strip().rstrip(".")
+    if len(value) <= limit:
+        return value
+    return value[: limit - 3].rstrip() + "..."
+
+
+def skill_summary(path: Path) -> str:
+    ui_summary = quoted_yaml_field(path / "agents" / "openai.yaml", "short_description")
+    if ui_summary:
+        return compact_description(ui_summary)
+    description = frontmatter(path / "SKILL.md").get("description", "")
+    capability = re.split(r"\bUse when\b", description, maxsplit=1, flags=re.IGNORECASE)[0]
+    return compact_description(capability)
+
+
+def print_table(headers: tuple[str, ...], rows: list[tuple[str, ...]]) -> None:
+    widths = [
+        max(len(headers[index]), *(len(row[index]) for row in rows))
+        for index in range(len(headers))
+    ]
+    for row in [headers, *rows]:
+        print(
+            "  ".join(
+                value.ljust(widths[index]) if index < len(row) - 1 else value
+                for index, value in enumerate(row)
+            ).rstrip()
+        )
+
+
 def parse_inline_list(raw: str) -> list[str]:
     return [item.strip() for item in raw.strip().strip("[]").split(",") if item.strip()]
 
@@ -350,8 +397,7 @@ def select_skills(names: list[str]) -> list[str]:
         raise CliError("interactive skill install requires a terminal or explicit NAME/all")
     print("Available standalone skills:")
     for index, name in enumerate(available, start=1):
-        description = frontmatter(SKILLS_DIR / name / "SKILL.md").get("description", "")
-        print(f"{index:2}. {name:30} {description}")
+        print(f"{index:2}. {name:30} {skill_summary(SKILLS_DIR / name)}")
     raw = input("Install names separated by spaces, or 'all' (empty cancels): ").strip()
     if not raw:
         return []
@@ -361,8 +407,9 @@ def select_skills(names: list[str]) -> list[str]:
 def cmd_list(args: argparse.Namespace) -> int:
     registry = load_registry()
     kinds = (args.kind,) if args.kind else ("skill", "plugin")
+    rendered = False
     if "skill" in kinds:
-        print("KIND   CODEX       CLAUDE      NAME                         DESCRIPTION")
+        skill_rows: list[tuple[str, ...]] = []
         for path in skill_dirs():
             agents = skill_agents(path)
             statuses = {}
@@ -370,21 +417,34 @@ def cmd_list(args: argparse.Namespace) -> int:
                 statuses[agent] = (
                     link_status(agent, path.name, registry)[0] if agent in agents else "-"
                 )
-            description = frontmatter(path / "SKILL.md").get("description", "")
             if args.agent and args.agent not in agents:
                 continue
-            print(
-                f"skill  {statuses['codex']:<11} {statuses['claude']:<11} "
-                f"{path.name:<28} {description}"
+            skill_rows.append(
+                (
+                    "skill",
+                    path.name,
+                    statuses["codex"],
+                    statuses["claude"],
+                    skill_summary(path),
+                )
             )
+        print_table(("KIND", "NAME", "CODEX", "CLAUDE", "DESCRIPTION"), skill_rows)
+        rendered = True
     if "plugin" in kinds:
-        print("KIND   NAME                         VERSION   DESCRIPTION")
+        if rendered:
+            print()
+        plugin_rows: list[tuple[str, ...]] = []
         for path in plugin_dirs():
             manifest = plugin_manifest(path)
-            print(
-                f"plugin {path.name:<28} {str(manifest.get('version', '-')):<9} "
-                f"{manifest.get('description', '')}"
+            plugin_rows.append(
+                (
+                    "plugin",
+                    path.name,
+                    str(manifest.get("version", "-")),
+                    str(manifest.get("description", "")),
+                )
             )
+        print_table(("KIND", "NAME", "VERSION", "DESCRIPTION"), plugin_rows)
     return 0
 
 
