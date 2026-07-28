@@ -1,0 +1,21 @@
+{
+  "name": "discovery-agent",
+  "version": "0.1.0",
+  "description": "Evidence-based opportunity discovery for products and major features.",
+  "author": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru"
+  },
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["discovery", "research", "product"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Discovery Agent",
+    "shortDescription": "Research and challenge a product or feature idea",
+    "longDescription": "Preserve intent, research alternatives and regional constraints, and synthesize an honest opportunity recommendation.",
+    "developerName": "MattoYuzuru",
+    "category": "Research",
+    "capabilities": ["Read"],
+    "defaultPrompt": ["Use Discovery Agent to assess this idea with evidence and explicit uncertainty."]
+  }
+}

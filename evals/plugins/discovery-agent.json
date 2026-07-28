@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "plugin": "discovery-agent",
+  "should_trigger": [
+    "Исследуй идею локального приложения только для нашей семьи",
+    "Оцени некоммерческий open-source инструмент для благотворительной организации",
+    "Проведи discovery сервиса для пожилых пользователей в России с ограничениями платежей и технической грамотности",
+    "Найди возможности расширения существующего developer tool",
+    "Эта коммерческая идея кажется слабой, но я хочу понять, годится ли она как хобби",
+    "Проверь, не лучше ли использовать существующий open-source продукт вместо разработки"
+  ],
+  "should_not_trigger": [
+    "Исправь ошибку конкурентного доступа в Go",
+    "Напиши acceptance criteria для уже утвержденной формы входа",
+    "Спроектируй схему данных по готовым требованиям"
+  ],
+  "routing": [
+    {"case": "current alternatives", "skill": "discovery-research"},
+    {"case": "decision synthesis", "skill": "discovery-synthesis"}
+  ],
+  "safety": [
+    "Do not bypass regional or authenticated access restrictions",
+    "Do not call desk research validated user demand",
+    "Do not treat a weak business as an invalid personal project"
+  ],
+  "artifact_quality": [
+    "Original priorities remain visible",
+    "Facts and inferences are distinct",
+    "Risks and opportunities are prioritized",
+    "Recommendation states decision-changing uncertainty"
+  ]
+}

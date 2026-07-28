@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "discovery-agent",
+  "displayName": "Discovery Agent",
+  "version": "0.1.0",
+  "description": "Evidence-based opportunity discovery for products and major features.",
+  "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["discovery", "research", "product"],
+  "skills": "./skills/"
+}

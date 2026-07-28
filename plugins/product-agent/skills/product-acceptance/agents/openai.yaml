@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product Acceptance"
+  short_description: "Testable behavior and failure acceptance criteria"
+  default_prompt: "Use $product-acceptance to complete this workflow with evidence."

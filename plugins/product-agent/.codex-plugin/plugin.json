@@ -1,0 +1,21 @@
+{
+  "name": "product-agent",
+  "version": "0.1.0",
+  "description": "Proportional product requirements, MVP scope, and behavioral acceptance criteria.",
+  "author": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru"
+  },
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["product", "requirements", "prd"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Product Agent",
+    "shortDescription": "Define product behavior and evolvable MVP scope",
+    "longDescription": "Turn discovery evidence into precise requirements, journeys, acceptance criteria, metrics, and architecture handoff.",
+    "developerName": "MattoYuzuru",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Use Product Agent to define this product without choosing implementation technology."]
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Discovery Agent"
+  short_description: "Evidence-based product and feature discovery"
+  default_prompt: "Use $discovery-agent to complete this workflow with evidence."

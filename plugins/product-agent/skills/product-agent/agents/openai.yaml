@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product Agent"
+  short_description: "Implementable product requirements and scope"
+  default_prompt: "Use $product-agent to complete this workflow with evidence."
