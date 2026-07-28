@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Agent"
+  short_description: "Improve repository readiness for coding agents"
+  default_prompt: "Use $harness-agent to complete this workflow with evidence."

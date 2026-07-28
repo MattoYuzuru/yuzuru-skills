@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/check_pollution.py\"",
+            "timeout": 5,
+            "statusMessage": "Checking for common repository runtime artifacts"
+          }
+        ]
+      }
+    ]
+  }
+}

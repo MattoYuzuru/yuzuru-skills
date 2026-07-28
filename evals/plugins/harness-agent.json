@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "plugin": "harness-agent",
+  "should_trigger": [
+    "Агенты постоянно читают не те документы, создай docs/NAVIGATOR.md",
+    "Построй machine-readable inventory skills, plugins, MCP, hooks и команд",
+    "Нормализуй AGENTS.md и CLAUDE.md без дублирования",
+    "Оцени, нужен ли этому большому репозиторию vector search",
+    "Измерь улучшение agent readiness на реальной задаче"
+  ],
+  "should_not_trigger": [
+    "Исправь одну опечатку в документации",
+    "Реализуй backend feature",
+    "Удали временные файлы после десяти итераций"
+  ],
+  "routing": [
+    {"case": "docs and instructions", "skill": "repository-navigation"},
+    {"case": "tools and health", "skill": "capability-inventory"}
+  ],
+  "safety": [
+    "Do not expose credential values",
+    "Do not store mutable indexes in Git",
+    "Do not invent before-and-after measurements"
+  ],
+  "artifact_quality": [
+    "Navigator links rather than duplicates",
+    "Inventory separates installed, enabled, authenticated, and healthy",
+    "New intelligence tooling has evidence and maintenance bounds"
+  ]
+}

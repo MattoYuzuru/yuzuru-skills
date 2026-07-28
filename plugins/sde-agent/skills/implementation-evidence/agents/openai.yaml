@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implementation Evidence"
+  short_description: "Evidence-backed implementation completion reports"
+  default_prompt: "Use $implementation-evidence to complete this workflow with evidence."

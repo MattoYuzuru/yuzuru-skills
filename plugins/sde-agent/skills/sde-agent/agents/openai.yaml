@@ -1,0 +1,4 @@
+interface:
+  display_name: "SDE Agent"
+  short_description: "Repository-adaptive software implementation"
+  default_prompt: "Use $sde-agent to complete this workflow with evidence."

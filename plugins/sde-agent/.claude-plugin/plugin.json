@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "sde-agent",
+  "displayName": "SDE Agent",
+  "version": "0.1.0",
+  "description": "Repository-adaptive software implementation, testing, debugging, and evidence.",
+  "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["software-engineering", "implementation", "debugging"],
+  "skills": "./skills/"
+}
