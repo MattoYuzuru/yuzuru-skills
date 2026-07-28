@@ -1,0 +1,73 @@
+{
+  "name": "yuzuru-engineering",
+  "owner": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru/yuzuru-skills"
+  },
+  "description": "Portable engineering skills and cross-agent plugins for product-to-production workflows.",
+  "plugins": [
+    {
+      "name": "discovery-agent",
+      "source": "./plugins/discovery-agent",
+      "description": "Evidence-based opportunity discovery for products and major features.",
+      "category": "research",
+      "tags": ["discovery", "regional-fit", "competitors"]
+    },
+    {
+      "name": "product-agent",
+      "source": "./plugins/product-agent",
+      "description": "Proportional product requirements, MVP scope, and behavioral acceptance criteria.",
+      "category": "productivity",
+      "tags": ["prd", "requirements", "acceptance"]
+    },
+    {
+      "name": "architecture-agent",
+      "source": "./plugins/architecture-agent",
+      "description": "System architecture, component contracts, capacity modeling, and migration planning.",
+      "category": "development",
+      "tags": ["architecture", "capacity", "migration"]
+    },
+    {
+      "name": "devops-agent",
+      "source": "./plugins/devops-agent",
+      "description": "Repository-adaptive delivery, infrastructure, deployment, and operational safety.",
+      "category": "development",
+      "tags": ["devops", "ci-cd", "deployment"]
+    },
+    {
+      "name": "harness-agent",
+      "source": "./plugins/harness-agent",
+      "description": "Repository navigation, capability inventory, and agent-readiness improvements.",
+      "category": "development",
+      "tags": ["agents", "documentation", "navigation"]
+    },
+    {
+      "name": "sde-agent",
+      "source": "./plugins/sde-agent",
+      "description": "Repository-adaptive software implementation, testing, debugging, and evidence.",
+      "category": "development",
+      "tags": ["implementation", "debugging", "testing"]
+    },
+    {
+      "name": "frontend-agent",
+      "source": "./plugins/frontend-agent",
+      "description": "Distinctive UX direction, frontend architecture, implementation, and visual verification.",
+      "category": "development",
+      "tags": ["frontend", "ux", "accessibility"]
+    },
+    {
+      "name": "sre-agent",
+      "source": "./plugins/sre-agent",
+      "description": "Independent software verification, reliability, performance, security, and release evidence.",
+      "category": "development",
+      "tags": ["sre", "reliability", "security"]
+    },
+    {
+      "name": "cleaner-agent",
+      "source": "./plugins/cleaner-agent",
+      "description": "Conservative code, documentation, and artifact hygiene with deletion evidence.",
+      "category": "development",
+      "tags": ["cleanup", "documentation", "dead-code"]
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "workflows": [
+    {
+      "id": "local-family-application",
+      "prompt": "Take a private family application from idea to a small verified implementation.",
+      "expected_plugins": ["discovery-agent", "product-agent", "architecture-agent", "sde-agent", "sre-agent"],
+      "handoff": "Proportional opportunity notes become observable requirements, a simple local architecture, a bounded work package, and independent evidence.",
+      "completion_evidence": "Do not require commercial metrics, cloud scale, or all artifact templates."
+    },
+    {
+      "id": "regional-commercial-product",
+      "prompt": "Assess and define a regional product with payment, legal, language, and infrastructure constraints.",
+      "expected_plugins": ["discovery-agent", "product-agent", "architecture-agent"],
+      "handoff": "Regional evidence and assumptions remain traceable into requirements and architecture constraints.",
+      "completion_evidence": "Facts, inferences, unresolved legal questions, and untested assumptions remain distinct."
+    },
+    {
+      "id": "existing-feature",
+      "prompt": "Expand an existing system with a new workflow and preserve current behavior.",
+      "expected_plugins": ["discovery-agent", "product-agent", "sde-agent", "sre-agent"],
+      "handoff": "Feature opportunities become impact-traced requirements, focused implementation, and regression verification.",
+      "completion_evidence": "Changed and unchanged behavior, regressions, commands, and limitations are recorded."
+    },
+    {
+      "id": "architecture-migration",
+      "prompt": "Migrate a storage architecture after a measured capacity trigger without downtime.",
+      "expected_plugins": ["architecture-agent", "devops-agent", "sde-agent", "sre-agent"],
+      "handoff": "An accepted ADR and migration contract drive implementation, rollout, rollback, and verification.",
+      "completion_evidence": "Compatibility, backfill, consistency checks, cutover, rollback, and decommissioning are explicit."
+    },
+    {
+      "id": "sde-then-sre",
+      "prompt": "Implement an authorized bounded feature, then independently verify the completion claim.",
+      "expected_plugins": ["sde-agent", "sre-agent"],
+      "handoff": "The SDE evidence bundle identifies revision, behavior, tests, limitations, and expected E2E path.",
+      "completion_evidence": "The verifier reconstructs requirements and does not accept the implementation claim as proof."
+    },
+    {
+      "id": "frontend-productionization",
+      "prompt": "Prototype a distinctive frontend direction and turn the approved concept into production UI.",
+      "expected_plugins": ["product-agent", "frontend-agent", "sde-agent", "sre-agent"],
+      "handoff": "Approved flow and direction become production architecture with mocks removed and testable states.",
+      "completion_evidence": "Responsive, accessibility, performance, visual, loading, error, and empty states are verified."
+    },
+    {
+      "id": "deployment-preparation",
+      "prompt": "Prepare a reversible staging deployment and its verification plan.",
+      "expected_plugins": ["architecture-agent", "devops-agent", "sre-agent"],
+      "handoff": "Topology and quality constraints define exact target, rollout, rollback, health, and verification.",
+      "completion_evidence": "Preparation is not reported as deployed or production-verified."
+    },
+    {
+      "id": "harness-normalization",
+      "prompt": "Reduce repeated repository exploration and normalize agent-facing documentation.",
+      "expected_plugins": ["harness-agent", "cleaner-agent"],
+      "handoff": "Measured navigation friction informs canonical docs; superseded duplicates are reviewed conservatively.",
+      "completion_evidence": "Navigator links canonical sources and no invented telemetry is presented."
+    },
+    {
+      "id": "cleanup-after-iterations",
+      "prompt": "Reconcile and compact artifacts after ten implementation iterations.",
+      "expected_plugins": ["cleaner-agent", "harness-agent", "sre-agent"],
+      "handoff": "Current evidence distinguishes obsolete debris from unresolved findings and historical rationale.",
+      "completion_evidence": "Approved deletion is recoverable, links pass, and existing indexes are refreshed."
+    }
+  ]
+}
