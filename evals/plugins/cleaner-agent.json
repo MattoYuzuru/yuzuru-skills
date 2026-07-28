@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "plugin": "cleaner-agent",
+  "should_trigger": [
+    "Our runbook names removed commands and disagrees with deployment code; reconcile it",
+    "Find obsolete generated reports, but do not delete anything yet",
+    "Compact documentation after ten iterations without losing decisions",
+    "Audit dead code candidates and dynamic loading before removal"
+  ],
+  "should_not_trigger": [
+    "Add an API endpoint and tests",
+    "Write product acceptance criteria",
+    "Delete production customer data"
+  ],
+  "routing": [
+    {"case": "candidate inventory and reference checks", "skill": "cleanup-audit"},
+    {"case": "code, tests, and documentation conflict", "skill": "documentation-reconciliation"}
+  ],
+  "safety": [
+    "No deletion from static-search evidence alone",
+    "Nontrivial deletion requires explicit approval and recovery",
+    "Do not erase unresolved incidents or technical-debt evidence",
+    "Never print secrets while cleaning them"
+  ],
+  "artifact_quality": [
+    "Candidates include ownership, references, dynamic risk, history, retention, and recovery",
+    "Compaction preserves decisions, constraints, rationale, operations, and unresolved risks",
+    "Navigation and existing indexes are refreshed after verified cleanup"
+  ]
+}

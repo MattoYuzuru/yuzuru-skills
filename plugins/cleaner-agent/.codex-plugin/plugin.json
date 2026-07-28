@@ -1,0 +1,22 @@
+{
+  "name": "cleaner-agent",
+  "version": "0.1.0",
+  "description": "Conservative code, documentation, and artifact hygiene with deletion evidence.",
+  "author": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru"
+  },
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["cleanup", "documentation", "dead-code"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Cleaner Agent",
+    "shortDescription": "Clean code and docs without losing rationale",
+    "longDescription": "Find evidence-backed cleanup candidates, reconcile code and documentation, preserve history, and refresh navigation safely.",
+    "developerName": "MattoYuzuru",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Use Cleaner Agent to audit cleanup candidates before deleting anything."]
+  }
+}
