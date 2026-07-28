@@ -1,0 +1,14 @@
+{
+  "evidence_bundle": {
+    "work_package": "WP-0001",
+    "revision": "uncommitted-example",
+    "commands": [],
+    "tests": [],
+    "artifacts": [],
+    "findings": [],
+    "limitations": ["This example contains no execution evidence."],
+    "verified_environments": [],
+    "unverified_environments": ["Target environment"],
+    "release_ready": false
+  }
+}

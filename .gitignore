@@ -21,8 +21,25 @@ secrets/
 # Runtime artifacts
 __pycache__/
 *.pyc
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+coverage/
 node_modules/
 dist/
 build/
+target/
+.gradle/
+.tox/
+.nox/
+.playwright/
+playwright-report/
+test-results/
+*.log
 .cache/
 tmp/

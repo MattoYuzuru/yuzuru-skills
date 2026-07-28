@@ -1,0 +1,17 @@
+{
+  "artifact": {
+    "id": "example-prd",
+    "type": "prd",
+    "title": "Example product requirements",
+    "status": "draft",
+    "created_at": "2026-07-28T00:00:00Z",
+    "updated_at": "2026-07-28T00:00:00Z",
+    "owners": [],
+    "source_tasks": [],
+    "supersedes": [],
+    "superseded_by": null,
+    "assumptions": [],
+    "unresolved_questions": [],
+    "evidence": []
+  }
+}

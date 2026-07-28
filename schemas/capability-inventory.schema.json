@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Agent Capability Inventory",
+  "type": "object",
+  "required": ["revision", "generated_from", "capabilities", "truncated"],
+  "additionalProperties": false,
+  "properties": {
+    "revision": {"type": "string", "minLength": 1},
+    "generated_from": {"type": "string", "minLength": 1},
+    "truncated": {"type": "boolean"},
+    "capabilities": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "trigger",
+          "invoke",
+          "effect",
+          "credentials",
+          "health",
+          "documentation",
+          "platforms"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["skill", "plugin", "mcp", "hook", "script", "command", "integration"]},
+          "trigger": {"type": "string", "minLength": 1},
+          "invoke": {"type": "string", "minLength": 1},
+          "effect": {"enum": ["read", "local-write", "external-write", "destructive", "mixed", "unknown"]},
+          "credentials": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
+          "health": {"enum": ["healthy", "degraded", "missing", "unknown"]},
+          "documentation": {"type": "string", "minLength": 1},
+          "platforms": {
+            "type": "array",
+            "items": {"enum": ["codex", "claude", "portable"]},
+            "minItems": 1,
+            "maxItems": 3
+          }
+        }
+      }
+    }
+  }
+}

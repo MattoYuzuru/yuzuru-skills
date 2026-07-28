@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MattoYuzuru/yuzuru-skills/schemas/artifacts/work-package.schema.json",
+  "title": "Yuzuru Work Package",
+  "type": "object",
+  "required": ["work_package"],
+  "additionalProperties": false,
+  "properties": {
+    "work_package": {
+      "type": "object",
+      "required": [
+        "id",
+        "objective",
+        "requirements",
+        "architecture_decisions",
+        "allowed_repositories",
+        "allowed_paths",
+        "forbidden_actions",
+        "acceptance_checks",
+        "evidence_required"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "objective": {"type": "string", "minLength": 1},
+        "requirements": {"type": "array", "items": {"type": "string"}, "maxItems": 500},
+        "architecture_decisions": {"type": "array", "items": {"type": "string"}, "maxItems": 200},
+        "allowed_repositories": {"type": "array", "items": {"type": "string"}, "maxItems": 50},
+        "allowed_paths": {"type": "array", "items": {"type": "string"}, "maxItems": 200},
+        "forbidden_actions": {"type": "array", "items": {"type": "string"}, "maxItems": 200},
+        "acceptance_checks": {"type": "array", "items": {"type": "string"}, "maxItems": 500},
+        "evidence_required": {"type": "array", "items": {"type": "string"}, "maxItems": 500}
+      }
+    }
+  }
+}

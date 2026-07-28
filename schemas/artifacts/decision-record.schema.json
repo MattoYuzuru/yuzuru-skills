@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MattoYuzuru/yuzuru-skills/schemas/artifacts/decision-record.schema.json",
+  "title": "Yuzuru Decision Record",
+  "type": "object",
+  "required": ["decision"],
+  "additionalProperties": false,
+  "properties": {
+    "decision": {
+      "type": "object",
+      "required": [
+        "id",
+        "status",
+        "context",
+        "decision",
+        "rationale",
+        "alternatives",
+        "consequences",
+        "risks",
+        "validation"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Z]+-[0-9]{4,}$"},
+        "status": {"enum": ["proposed", "accepted", "rejected", "superseded", "deprecated"]},
+        "context": {"type": "string", "minLength": 1},
+        "decision": {"type": "string", "minLength": 1},
+        "rationale": {"type": "string", "minLength": 1},
+        "alternatives": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
+        "consequences": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
+        "risks": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
+        "validation": {"type": "array", "items": {"type": "string"}, "maxItems": 100}
+      }
+    }
+  }
+}
