@@ -7,6 +7,5 @@
   "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
   "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
   "keywords": ["devops", "ci-cd", "deployment"],
-  "skills": "./skills/",
-  "hooks": "./hooks/hooks.json"
+  "skills": "./skills/"
 }
