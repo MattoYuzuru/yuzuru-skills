@@ -24,14 +24,13 @@ class InstallerTests(unittest.TestCase):
             check=False,
         )
 
-    def test_installs_both_launchers(self):
+    def test_installs_yuzuru_launcher(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             bin_dir = root / "bin"
             result = self.run_installer(root / "home", bin_dir)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(os.readlink(bin_dir / "yuzuru"), str(ROOT / "yuzuru"))
-            self.assertEqual(os.readlink(bin_dir / "skill"), str(ROOT / "skill"))
 
     def test_repairs_only_dangling_launcher_links(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -39,7 +38,6 @@ class InstallerTests(unittest.TestCase):
             bin_dir = root / "bin"
             bin_dir.mkdir()
             (bin_dir / "yuzuru").symlink_to("/previous/yuzuru-skills/yuzuru")
-            (bin_dir / "skill").symlink_to("/previous/yuzuru-skills/skill")
             result = self.run_installer(root / "home", bin_dir)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("repaired stale symlink", result.stdout)

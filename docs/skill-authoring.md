@@ -174,7 +174,7 @@ Add a contract when triggering is ambiguous or the skill can cause side effects:
 
 Use at least two realistic positive and negative trigger examples. Keep capability names stable and
 kebab-cased. Confirmation must be `none` for reads, `explicit` for writes, and `exact` for
-destructive actions. `./skill validate` checks this contract; behavioral runners may consume it
+destructive actions. `yuzuru skill validate` checks this contract; behavioral runners may consume it
 later without changing the installed skill format.
 
 ## Writing Style
@@ -189,11 +189,11 @@ knowledge the agent already has. Prefer one representative example over several 
 
 1. Collect concrete trigger and non-trigger examples.
 2. Define capabilities and classify their effects.
-3. Create the skill with `./skill new <name>`.
+3. Create the skill with `yuzuru skill new <name>`.
 4. Implement deterministic scripts before documenting repeated command sequences.
 5. Write `SKILL.md` as a router over those capabilities.
 6. Add only the references required by identified tasks.
-7. Run `./skill validate <name>`.
+7. Run `yuzuru skill validate <name>`.
 8. Run `python3 scripts/smoke_scripts.py`, `python3 scripts/run_tests.py`, and at least one realistic
    read-only task.
 9. Add trigger/effect eval cases for ambiguous or external-system skills.
@@ -223,5 +223,5 @@ knowledge the agent already has. Prefer one representative example over several 
 - Are all secrets outside the repository?
 - Are credential-bearing hosts exact HTTPS origins with cross-origin redirects blocked?
 - Are read retries bounded and mutation retries disabled or provably idempotent?
-- Does `./skill validate` pass?
+- Does `yuzuru skill validate` pass?
 - Was at least one realistic workflow smoke-tested?

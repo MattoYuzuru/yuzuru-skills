@@ -28,7 +28,7 @@ jobs:
                   ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
           PY
       - name: Check shell helpers
-        run: shellcheck yuzuru skill install.sh skills/google-ai-search/scripts/*.sh
+        run: shellcheck yuzuru install.sh skills/google-ai-search/scripts/*.sh
       - name: Check credential-free help
         run: python3 scripts/smoke_scripts.py
       - name: Run helper unit tests

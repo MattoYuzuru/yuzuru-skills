@@ -152,7 +152,7 @@ Describe the capability and its scope in one short paragraph.
 
     print(f"created: {skill_dir}")
     print("next: replace the template text, add only required resources, then run:")
-    print(f"  ./skill validate {args.name}")
+    print(f"  yuzuru skill validate {args.name}")
     return 0
 
 
