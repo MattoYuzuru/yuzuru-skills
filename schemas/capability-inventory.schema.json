@@ -36,9 +36,9 @@
           "documentation": {"type": "string", "minLength": 1},
           "platforms": {
             "type": "array",
-            "items": {"enum": ["codex", "claude", "portable"]},
+            "items": {"enum": ["codex", "claude", "dsh", "portable"]},
             "minItems": 1,
-            "maxItems": 3
+            "maxItems": 4
           }
         }
       }

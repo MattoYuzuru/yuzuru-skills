@@ -8,6 +8,8 @@ scripts, hooks, and MCP definitions before installation.
 - The repository stores no credentials, session cookies, user config, or enabled state.
 - Native platform managers own marketplace registration, plugin cache, installation, and enabled
   state.
+- DeepSeek Harness profile state and bundle ordering are owned by `dsh plugin --profile`; Yuzuru
+  bundles contain no install scripts or credentials.
 - Plugin scripts resolve exact local targets and reject path traversal.
 - Hooks receive minimal event data, do not log secrets, and never call production systems.
 - External writes require explicit authorization; destructive operations require the exact target.
@@ -25,4 +27,5 @@ managers. Scripts must not echo them, forward them across origins, or embed them
 
 Marketplace entries use local package paths in this source repository. Remote consumers should pin
 trusted refs or reviewed releases. Third-party dependency installation must be isolated, locked,
-and explicit. This first release adds no MCP server or runtime dependency.
+and explicit. A local DSH bundle is a pnpm dependency and therefore requires review before install;
+Yuzuru's config-only bundles add no lifecycle scripts, MCP server, or runtime dependency.

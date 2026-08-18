@@ -28,6 +28,7 @@ Use this page to choose the smallest relevant context.
 - `plugins/<id>/skills/`: canonical behavior shipped by one plugin.
 - `plugins/<id>/.codex-plugin/plugin.json`: Codex package adapter.
 - `plugins/<id>/.claude-plugin/plugin.json`: Claude Code package adapter.
+- `skills/package.json` and `plugins/<id>/package.json`: DeepSeek Harness profile bundles.
 - `.agents/plugins/marketplace.json`: Codex repository marketplace.
 - `.claude-plugin/marketplace.json`: Claude Code marketplace.
 - `schemas/`: stable artifact, migration, manifest, and hook contracts.

@@ -12,7 +12,7 @@ from pathlib import Path
 
 NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 ALLOWED_RESOURCES = {"scripts", "references", "assets"}
-ALLOWED_TARGETS = {"codex", "claude"}
+ALLOWED_TARGETS = {"codex", "claude", "dsh"}
 
 
 def parse_resources(value: str) -> list[str]:
@@ -29,7 +29,7 @@ def parse_targets(value: str) -> list[str]:
     targets = [item.strip() for item in value.split(",") if item.strip()]
     unknown = sorted(set(targets) - ALLOWED_TARGETS)
     if unknown or not targets:
-        expected = "codex,claude"
+        expected = "codex,claude,dsh"
         detail = f"unknown targets: {', '.join(unknown)}; " if unknown else ""
         raise argparse.ArgumentTypeError(f"{detail}expected a non-empty subset of {expected}")
     return list(dict.fromkeys(targets))
@@ -66,8 +66,8 @@ def main() -> int:
     parser.add_argument(
         "--targets",
         type=parse_targets,
-        default=["codex", "claude"],
-        help="comma-separated target agents: codex,claude (default: both)",
+        default=["codex", "claude", "dsh"],
+        help="comma-separated target agents: codex,claude,dsh (default: all)",
     )
     parser.add_argument("--skills-dir", type=Path, required=True, help=argparse.SUPPRESS)
     parser.add_argument("--dry-run", action="store_true", help="validate and list files without writing")

@@ -1,0 +1,8 @@
+- insert:
+    - id: yuzuru-skill-filesystem-cleaner-agent
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: yuzuru-cleaner-agent
+        includeDefaultRoots: false
+        customSkillDirs:
+          - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('node_modules/yuzuru-cleaner-agent/skills/', baseUrl))"

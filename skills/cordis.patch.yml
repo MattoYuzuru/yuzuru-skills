@@ -1,0 +1,8 @@
+- insert:
+    - id: yuzuru-skill-filesystem-standalone
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: yuzuru-standalone-skills
+        includeDefaultRoots: false
+        customSkillDirs:
+          - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('node_modules/yuzuru-standalone-skills/', baseUrl))"

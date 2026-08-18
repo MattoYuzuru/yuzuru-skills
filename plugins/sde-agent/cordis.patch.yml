@@ -1,0 +1,8 @@
+- insert:
+    - id: yuzuru-skill-filesystem-sde-agent
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: yuzuru-sde-agent
+        includeDefaultRoots: false
+        customSkillDirs:
+          - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('node_modules/yuzuru-sde-agent/skills/', baseUrl))"

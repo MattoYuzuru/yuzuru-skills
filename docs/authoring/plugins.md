@@ -6,6 +6,7 @@ Every `plugins/<id>/` package contains:
 
 - `.codex-plugin/plugin.json`;
 - `.claude-plugin/plugin.json`;
+- `package.json` and `cordis.patch.yml` for DeepSeek Harness;
 - `plugin-version.json`, the canonical version source;
 - `README.md`;
 - one primary orchestration skill and focused supporting skills;
@@ -26,7 +27,9 @@ start with `./`, remain inside the plugin root, and exist.
    file paths, not the default directory.
 7. Add hooks only for deterministic invariants and test them with fixture input.
 8. Add matching marketplace entries and eval contracts.
-9. Run `yuzuru plugin validate <id>`, repository tests, and official host validation when present.
+9. Keep the DSH adapter config-only: one private package, no lifecycle scripts, one uniquely named
+   isolated `@deepseek-ai/dsh-skill-filesystem` provider, and a package-relative `node_modules` path.
+10. Run `yuzuru plugin validate <id>`, repository tests, and official host validation when present.
 
 ## Versioning and identity
 
@@ -34,7 +37,8 @@ Plugin names are external API. Renames require an append-only entry in `schemas/
 Display names may change independently.
 
 `plugin-version.json` is authoritative. Run `python3 scripts/sync_plugin_versions.py --check` in CI
-or omit `--check` during an intentional release update. Do not manually diverge the two manifests.
+or omit `--check` during an intentional release update. Do not manually diverge the two manifests
+or the DSH `package.json` version.
 
 ## Packaging boundaries
 
@@ -44,3 +48,8 @@ one host can dereference them; packages must remain portable to every supported 
 
 No plugin declares an MCP server unless a real persistent or authenticated tool exists and is
 tested. Roadmap capabilities stay in documentation and out of manifests.
+
+The DSH bundle mounts the existing `skills/` directory; it does not turn each skill into a Cordis
+runtime plugin. Add a Cordis implementation only for a real service, provider, or tool capability.
+Keep `includeDefaultRoots: false` so multiple installed Yuzuru bundles do not rescan host and project
+roots. Full skill bodies remain progressively loaded by the native skill consumer.
