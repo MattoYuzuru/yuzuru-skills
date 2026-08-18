@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import sys
 import unittest
+from pathlib import Path
+
+
+SCRIPT_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SCRIPT_DIR))
 
 import search
 
@@ -41,7 +47,19 @@ class SearchTests(unittest.TestCase):
         with self.assertRaises(argparse.ArgumentTypeError):
             search.bounded_query("")
         with self.assertRaises(argparse.ArgumentTypeError):
+            search.bounded_query("x" * 2001)
+        with self.assertRaises(argparse.ArgumentTypeError):
             search.bounded_int(1, 10)("11")
+
+    def test_no_candidates_returns_a_structured_error(self) -> None:
+        args = argparse.Namespace(query="q")
+        result = search.parse_response(
+            {"promptFeedback": {"blockReason": "SAFETY"}},
+            args,
+        )
+        self.assertEqual(result["answer"], "")
+        self.assertEqual(result["sources"], [])
+        self.assertIn("SAFETY", result["error"])
 
 
 if __name__ == "__main__":

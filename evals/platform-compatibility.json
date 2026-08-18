@@ -25,6 +25,11 @@
       "id": "isolated-native-test",
       "agent": "both",
       "expect": "Native marketplace and plugin tests use temporary HOME/config/data and no real credentials."
+    },
+    {
+      "id": "dsh-profile-bundle",
+      "agent": "dsh",
+      "expect": "Install a config-only bundle through the native profile manager, mount one isolated skill provider, and keep canonical SKILL.md content progressively loaded without copies."
     }
   ]
 }

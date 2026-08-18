@@ -1,6 +1,6 @@
 # Yuzuru Engineering Extensions
 
-Yuzuru is a cross-agent extension monorepo for Codex and Claude Code. It ships portable standalone
+Yuzuru is a cross-agent extension monorepo for Codex, Claude Code, and DeepSeek Harness. It ships portable standalone
 Agent Skills, nine independently installable engineering plugins, thin vendor adapters, deterministic
 helpers, repository marketplaces, schemas, hooks, eval contracts, and a safe local CLI.
 
@@ -20,6 +20,9 @@ yuzuru marketplace add --agent codex
 yuzuru marketplace add --agent claude
 yuzuru plugin install sde-agent --agent codex
 yuzuru plugin install sde-agent --agent claude
+
+# DeepSeek Harness uses its native profile manager; see the distribution guide.
+pnpm dsh plugin --profile web add "$PWD/skills" "$PWD/plugins/sde-agent"
 ```
 
 `install.sh` links `yuzuru` and the backward-compatible `skill` launcher into
@@ -82,7 +85,7 @@ rebase, re-enable plugins, or overwrite unmanaged installations.
 | `sre-agent` | Independent behavioral, reliability, performance, security, E2E, and release verification. |
 | `cleaner-agent` | Conservative documentation, code, and artifact hygiene with deletion evidence. |
 
-Each package under `plugins/<id>/` has one logical identity, dual manifests, a primary orchestration
+Each package under `plugins/<id>/` has one logical identity, thin host manifests and a DSH bundle, a primary orchestration
 skill, focused supporting skills, scripts or hooks only where justified, a Claude specialist adapter,
 README, and eval contract. No package relies on symlinks outside its directory.
 
@@ -96,13 +99,14 @@ README, and eval contract. No package relies on symlinks outside its directory.
 | `google-ai-search` | Token-efficient public research with Google Search grounding. |
 | `google-sheets-workflow` | Google Sheets/Drive reads, controlled writes, formulas, and structure. |
 | `jira-workflow` | Jira issue discovery, creation, linking, quality checks, and transitions. |
+| `russian-editorial-style` | Evidence-aware Russian editing across technical, long-form, business, and short-form genres. |
 | `search-workflow` | Fast routing across local source, files, structured data, documents, and archives. |
 | `write-kotlin` | Repository-adaptive Kotlin implementation and refactoring. |
 
 Existing skill paths are unchanged. Managed stale links caused by moving the clone can be diagnosed
 and repaired with `yuzuru doctor --repair`; unmanaged files and symlinks are never replaced.
 
-## Marketplaces and lifecycle
+## Marketplaces, profiles, and lifecycle
 
 The catalogs are committed source files:
 
@@ -113,6 +117,10 @@ Native equivalents and enable/disable/uninstall details are in
 [Marketplace installation](docs/distribution/marketplaces.md). Version resolution and the canonical
 per-plugin version source are in [Releasing](docs/distribution/releasing.md). No cache, enabled state,
 credentials, or user configuration belongs in Git.
+
+DeepSeek Harness installs the config-only `package.json` bundles from `skills/` and each
+`plugins/<id>/` through `dsh plugin --profile`. Each bundle mounts exactly one isolated
+`dsh-skill-filesystem` provider and references canonical skill files without copying them.
 
 ## Authoring and validation
 

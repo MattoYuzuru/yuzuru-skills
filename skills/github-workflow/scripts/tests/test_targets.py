@@ -4,6 +4,7 @@ import subprocess
 import unittest
 
 from github_workflow.errors import GitHubError
+from github_workflow.project_targets import parse_project_url
 from github_workflow.targets import parse_repository, redact_url, resolve_repository
 
 
@@ -44,6 +45,16 @@ class TargetTests(unittest.TestCase):
         with self.assertRaises(GitHubError) as caught:
             resolve_repository(None, runner=runner)
         self.assertIn("ambiguous", caught.exception.message)
+
+    def test_parse_user_and_organization_project_urls(self) -> None:
+        user = parse_project_url("https://github.com/users/octo/projects/4/views/2")
+        organization = parse_project_url("https://github.com/orgs/acme/projects/7")
+        self.assertEqual((user.owner, user.owner_type, user.number, user.view_number), ("octo", "user", 4, 2))
+        self.assertEqual((organization.owner, organization.owner_type), ("acme", "organization"))
+
+    def test_project_url_rejects_repository_project_syntax(self) -> None:
+        with self.assertRaises(GitHubError):
+            parse_project_url("https://github.com/octo/repo/projects/4")
 
 
 if __name__ == "__main__":

@@ -17,6 +17,12 @@ Integration tests use temporary HOME, XDG config/cache/data, and agent directori
 real user settings or credentials. Official platform validation runs only when the corresponding
 CLI exists; absence is a reported skip, not an offline-suite failure.
 
+DSH static validation checks package identity/version, the bundle declaration, unique provider IDs,
+isolated roots, package-relative skill paths, and absence of lifecycle scripts. Native lifecycle
+testing uses a temporary `DSH_HOME`, installs a local bundle through `dsh plugin --profile`, dumps
+effective configuration, removes the bundle, and verifies that the profile remains bootable. It
+must not read the real Harness home or credentials.
+
 Run the optional native lifecycle test with:
 
 ```bash

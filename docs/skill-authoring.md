@@ -78,7 +78,7 @@ after activation. Avoid marketing language and generic phrases such as "helps wi
 Repository target metadata belongs in `skill.yaml`:
 
 ```yaml
-targets: [codex, claude]
+targets: [codex, claude, dsh]
 ```
 
 Omit `skill.yaml` when both agents are supported. Legacy `agents:` frontmatter remains accepted for

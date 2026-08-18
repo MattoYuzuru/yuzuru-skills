@@ -1,0 +1,7 @@
+{
+  "name": "yuzuru-devops-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DeepSeek Harness bundle for the Yuzuru devops-agent plugin skills.",
+  "dsh": {"bundle": {"patch": "./cordis.patch.yml"}}
+}

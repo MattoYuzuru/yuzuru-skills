@@ -18,7 +18,7 @@ LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 RESOURCE_RE = re.compile(r"`((?:references|scripts|assets)/[^`]+)`")
 ABSOLUTE_PATH_RE = re.compile(r"(?:/Users/|/home/)[^\s`]+")
 RUNTIME_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", "node_modules"}
-ALLOWED_TARGETS = {"codex", "claude"}
+ALLOWED_TARGETS = {"codex", "claude", "dsh"}
 EFFECT_CONFIRMATION = {"read": "none", "write": "explicit", "destructive": "exact"}
 FORBIDDEN_REPOSITORY_FILES = {
     ".env",
@@ -135,7 +135,7 @@ def validate_openai_metadata(skill_dir: Path, name: str, result: Result) -> None
 
 def parse_target_list(value: str, source: str, result: Result) -> list[str]:
     if not value.startswith("[") or not value.endswith("]"):
-        result.errors.append(f"{source} must use an inline list such as [codex, claude]")
+        result.errors.append(f"{source} must use an inline list such as [codex, claude, dsh]")
         return []
     targets = [item.strip() for item in value[1:-1].split(",") if item.strip()]
     if not targets:
@@ -167,7 +167,7 @@ def validate_target_metadata(skill_dir: Path, frontmatter: dict[str, str], resul
         return
     entries = [line for line in lines if line.strip() and not line.lstrip().startswith("#")]
     if len(entries) != 1 or not entries[0].startswith("targets:"):
-        result.errors.append("skill.yaml must contain only targets: [codex, claude]")
+        result.errors.append("skill.yaml must contain only targets: [codex, claude, dsh]")
         return
     parse_target_list(entries[0].split(":", 1)[1].strip(), "skill.yaml targets", result)
 

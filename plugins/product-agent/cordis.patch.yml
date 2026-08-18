@@ -1,0 +1,8 @@
+- insert:
+    - id: yuzuru-skill-filesystem-product-agent
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: yuzuru-product-agent
+        includeDefaultRoots: false
+        customSkillDirs:
+          - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('node_modules/yuzuru-product-agent/skills/', baseUrl))"

@@ -1,0 +1,7 @@
+{
+  "name": "yuzuru-architecture-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DeepSeek Harness bundle for the Yuzuru architecture-agent plugin skills.",
+  "dsh": {"bundle": {"patch": "./cordis.patch.yml"}}
+}

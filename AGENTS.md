@@ -2,7 +2,7 @@
 
 This repository is a cross-agent monorepo for standalone Agent Skills and installable plugins.
 Portable behavior lives in `SKILL.md`, `references/`, `scripts/`, `assets/`, and shared schemas.
-Claude Code and Codex manifests, hooks, and agent adapters must remain thin.
+Claude Code, Codex, and DeepSeek Harness manifests, bundles, hooks, and agent adapters must remain thin.
 
 Start at [`docs/NAVIGATOR.md`](docs/NAVIGATOR.md). Load only the standard relevant to the change:
 

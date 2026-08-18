@@ -92,7 +92,7 @@ def platform_contract(errors: list[str]) -> int:
     if not isinstance(value, dict) or value.get("version") != 1 or not isinstance(cases, list):
         errors.append("evals/platform-compatibility.json: invalid contract")
         return 0
-    required = {"codex-enable", "claude-disable", "plugin-data", "marketplace-paths"}
+    required = {"codex-enable", "claude-disable", "plugin-data", "marketplace-paths", "dsh-profile-bundle"}
     ids = {item.get("id") for item in cases if isinstance(item, dict)}
     missing = required - ids
     if missing:

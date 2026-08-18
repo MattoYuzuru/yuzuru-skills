@@ -1,29 +1,23 @@
 # Platform Compatibility
 
-Verified against Codex CLI 0.145.0 and Claude Code 2.1.197 on 2026-07-28, plus current official
-OpenAI and Anthropic documentation.
+Verified against Codex CLI 0.145.0, Claude Code 2.1.197, and DeepSeek Harness 0.1.0-rc.7, plus
+current official platform documentation.
 
-| Capability | Codex / OpenAI | Claude Code | Repository strategy |
-|---|---|---|---|
-| Agent Skills | `SKILL.md`, implicit and `$name` invocation | `SKILL.md`, implicit and `/plugin:skill` invocation | One portable skill tree |
-| Skill UI metadata | `agents/openai.yaml` | Skill frontmatter | Optional Codex metadata only |
-| Disable standalone skill | `[[skills.config]]` in Codex config | Native skill/plugin state | CLI does not rewrite user policy |
-| Plugin manifest | `.codex-plugin/plugin.json`, required | `.claude-plugin/plugin.json`, optional but supplied | Dual thin manifests |
-| Repo marketplace | `.agents/plugins/marketplace.json` | `.claude-plugin/marketplace.json` | Same stable IDs and source paths |
-| Install/uninstall CLI | `codex plugin add/remove` | `claude plugin install/uninstall` | Delegated to native managers |
-| Enable/disable CLI | Interactive `/plugins` browser in tested CLI | `claude plugin enable/disable` | Codex returns `interaction_required` |
-| Custom agents | Personal/project TOML; plugin-bundled custom agents not documented | Plugin `agents/*.md` supported | Portable delegation policy plus Claude adapters |
-| Subagents | Prompt/skill requested; local custom TOML | Agent tool and plugin agents | Parent owns synthesis and permissions |
-| Hooks | Plugin `hooks/hooks.json`; trust review required | Plugin hooks supported | Only deterministic, bounded hooks |
-| Hook root/data | `PLUGIN_ROOT`, `PLUGIN_DATA`; Claude aliases also set | `CLAUDE_PLUGIN_ROOT`, `CLAUDE_PLUGIN_DATA` | Scripts accept both |
-| MCP | `.mcp.json` in a plugin | `.mcp.json` in a plugin | None in v1; no fictional server |
-| Writable data | Host-provided plugin data directory | Persistent plugin data directory | Never write plugin root |
-| Plugin cache | `~/.codex/plugins/cache/...` | `~/.claude/plugins/cache/...` | Package is self-contained |
-| Local validation | Repository validator; no tested `codex plugin validate` command | `claude plugin validate --strict` | Structural validation always; Claude official validation when present |
-| Local development | Marketplace + new session; installed copy is cached | `--plugin-dir`, marketplace, `/reload-plugins` | Isolated home integration tests |
-| Live reload | Skills detected; plugin changes generally need reinstall/new session | Skill edits reload; other components need `/reload-plugins` | Docs state component-specific behavior |
-| Version resolution | Explicit manifest version used here | Manifest, marketplace, then Git SHA | One `plugin-version.json` per plugin |
-| OS | macOS, Linux, Windows host-dependent | macOS, Linux, Windows host-dependent | Python stdlib; no shell-only plugin runtime |
+| Capability | Codex / OpenAI | Claude Code | DeepSeek Harness | Repository strategy |
+|---|---|---|---|---|
+| Agent Skills | `SKILL.md`, implicit and `$name` invocation | `SKILL.md`, implicit and `/plugin:skill` invocation | Native skill registry and progressive loading | One portable skill tree |
+| Skill UI metadata | `agents/openai.yaml` | Skill frontmatter | Skill frontmatter | Optional Codex metadata only |
+| Disable standalone skill | `[[skills.config]]` | Native skill/plugin state | Remove/override profile bundle | Do not rewrite user policy |
+| Plugin manifest | `.codex-plugin/plugin.json` | `.claude-plugin/plugin.json` | `package.json` plus `cordis.patch.yml` | Thin host adapters |
+| Distribution catalog | Repository marketplace | Repository marketplace | Profile dependencies and bundle layers | Native managers own installed state |
+| Install/uninstall | `codex plugin add/remove` | `claude plugin install/uninstall` | `dsh plugin --profile ... add/remove` | Delegate to native managers |
+| Custom agents | Personal/project TOML | Plugin `agents/*.md` | Agent presets and subagent providers | Portable delegation policy, host adapters only where proven |
+| Hooks | Plugin hooks | Plugin hooks | Cordis event plugins, no direct parity claim | Adapt semantics explicitly |
+| MCP | Plugin `.mcp.json` | Plugin `.mcp.json` | MCP client plugin when configured | No fictional server or implicit enablement |
+| Writable data | Host plugin data | Host plugin data | Harness home/profile state | Never write package roots |
+| Live reload | Component-dependent | Component-dependent | Provider watcher for skills; bundle changes require restart | Document component behavior |
+| Version source | Host manifest | Host manifest | DSH package manifest | `plugin-version.json` remains authoritative |
+| OS | Host-dependent | Host-dependent | Node-supported host platforms | Portable content; host adapters declare limits |
 
 ## Material limitations
 
@@ -37,6 +31,15 @@ portable delegation policy needed on Codex and future hosts.
 Neither marketplace file is runtime state. Installation, enabled state, credentials, caches, and
 plugin data remain owned by the native host.
 
+DeepSeek Harness remains a developer preview. A Yuzuru config-only bundle activates one isolated
+`dsh-skill-filesystem` provider at profile boot and watches the canonical package skill directory.
+The model receives a catalog first and loads full skill bodies only on invocation; “everything is a
+plugin” does not justify copying skill text into Cordis plugins or a permanent system prompt.
+
+DSH bundle paths resolve through the profile's `node_modules`, so local absolute paths appear only
+in machine-owned pnpm dependencies. Claude/Codex hooks, agents, and MCP declarations are not assumed
+compatible with Cordis events, agent presets, or providers.
+
 ## Official sources
 
 Schema and behavior decisions were checked against:
@@ -49,7 +52,10 @@ Schema and behavior decisions were checked against:
 - Anthropic [plugin reference](https://code.claude.com/docs/en/plugins-reference),
   [plugin marketplaces](https://code.claude.com/docs/en/plugin-marketplaces),
   [skills](https://code.claude.com/docs/en/skills), and
-  [custom subagents](https://code.claude.com/docs/en/sub-agents).
+  [custom subagents](https://code.claude.com/docs/en/sub-agents);
+- DeepSeek Harness [architecture](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md),
+  [bundle publishing](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.md),
+  and [filesystem skill provider](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/skill/skill-filesystem/README.md).
 
 The installed CLIs remain the authority for executable command availability. Native isolated tests
 record the tested versions and must be rerun when platform behavior changes.

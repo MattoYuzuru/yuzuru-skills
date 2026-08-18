@@ -7,10 +7,12 @@ from types import SimpleNamespace
 
 from github_workflow.client import Response
 from github_workflow.commands import (
+    _bounded_review_files,
     actions_command,
     issue_command,
     mutation,
     normalize_pr,
+    pr_command,
     project_command,
     repository_command,
 )
@@ -111,6 +113,59 @@ class CommandTests(unittest.TestCase):
         projects, _ = project_command("project-list", args, client, TARGET)
         self.assertEqual(projects[0]["title"], "Roadmap")
         self.assertIn("organization", client.calls[0][1])
+
+    def test_project_count_forwards_native_filter_as_a_variable(self) -> None:
+        client = FakeClient(graphql_data={
+            "user": {"projectV2": {"items": {"totalCount": 14, "nodes": [], "pageInfo": {}}}}
+        })
+        args = SimpleNamespace(
+            project="https://github.com/users/octo/projects/4/views/1",
+            owner=None,
+            owner_type=None,
+            project_number=None,
+            view_number=None,
+            query='status:"In review" is:open',
+            host="github.com",
+        )
+        result, _ = project_command("project-count", args, client, None)
+        self.assertEqual(result["count"], 14)
+        self.assertEqual(client.calls[0][2]["query"], args.query)
+
+    def test_own_pull_request_approval_is_rejected_before_mutation(self) -> None:
+        class OwnPullClient(FakeClient):
+            def request(self, method, path, **kwargs):
+                self.calls.append((method, path, kwargs))
+                if path == "/user":
+                    data = {"login": "octo"}
+                else:
+                    data = {"head": {"sha": "abc"}, "user": {"login": "octo"}}
+                return Response(data, 200, {}, "https://api.github.com/test")
+
+        args = SimpleNamespace(
+            number=7,
+            event="approve",
+            expected_head_sha="abc",
+            body=None,
+            body_file=None,
+            dry_run=True,
+            confirm_write=False,
+        )
+        client = OwnPullClient()
+        with self.assertRaises(GitHubError) as caught:
+            pr_command("pr-review-submit", args, client, TARGET)
+        self.assertIn("own pull request", caught.exception.message)
+        self.assertFalse(any(call[0] == "POST" for call in client.calls))
+
+    def test_review_context_bounds_aggregate_patch_bytes(self) -> None:
+        files, budget = _bounded_review_files([
+            {"filename": "one.py", "patch": "абвг"},
+            {"filename": "two.py", "patch": "second"},
+        ], 5)
+        self.assertLessEqual(len(files[0]["patch"].encode("utf-8")), 5)
+        self.assertTrue(files[0]["patch_truncated"])
+        self.assertIsNone(files[1]["patch"])
+        self.assertTrue(budget["truncated"])
+        self.assertEqual(budget["returned_patch_bytes"], 4)
 
     def test_actions_mutation_dry_runs_do_not_read_unrelated_ids(self) -> None:
         cases = [

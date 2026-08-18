@@ -37,6 +37,14 @@ def add_destructive(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--confirm-target", help="exact target string shown by --dry-run")
 
 
+def add_project_locator(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--project", help="Projects V2 URL, including an optional /views/NUMBER suffix")
+    parser.add_argument("--owner", help="project owner login")
+    parser.add_argument("--owner-type", choices=("user", "organization"))
+    parser.add_argument("--project-number", type=int, help="Projects V2 number")
+    parser.add_argument("--view-number", type=int, help="optional project view number")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="GitHub workflow helper using local Git plus REST and GraphQL APIs without MCP"
@@ -115,10 +123,37 @@ def build_parser() -> argparse.ArgumentParser:
     project_list.add_argument("--owner-type", choices=("user", "organization"), default="user")
     add_limit(project_list)
 
+    project_read = sub.add_parser("project-read", help="read one Projects V2 project and its counts")
+    add_project_locator(project_read)
+
+    project_fields = sub.add_parser("project-field-list", help="list project fields and writable options")
+    add_project_locator(project_fields)
+
+    project_views = sub.add_parser("project-view-list", help="list project views and filters")
+    add_project_locator(project_views)
+    add_limit(project_views, 100)
+
+    project_items = sub.add_parser("project-item-list", help="list normalized project items with field values")
+    add_project_locator(project_items)
+    project_items.add_argument("--query", help="native GitHub Projects filter query")
+    project_items.add_argument("--after", help="GraphQL cursor from a previous page")
+    project_items.add_argument("--archived", choices=("active", "archived", "all"), default="active")
+    add_limit(project_items)
+
+    project_count = sub.add_parser("project-count", help="count items using a native GitHub Projects filter")
+    add_project_locator(project_count)
+    project_count.add_argument("--query", help="native GitHub Projects filter query")
+
+    project_stats = sub.add_parser("project-stats", help="group project items by a field or built-in dimension")
+    add_project_locator(project_stats)
+    project_stats.add_argument("--query", help="native GitHub Projects filter query")
+    project_stats.add_argument("--group-by", required=True, help="field name, content-type, repository, or created")
+    project_stats.add_argument("--bucket", choices=("day", "week", "month"), default="month")
+    project_stats.add_argument("--archived", choices=("active", "archived", "all"), default="active")
+    project_stats.add_argument("--scan-limit", type=int, default=1000)
+
     project_add = sub.add_parser("project-add-item", help="add an issue or pull request to Projects V2")
-    project_add.add_argument("--owner", help="project owner; defaults to repository owner")
-    project_add.add_argument("--owner-type", choices=("user", "organization"), default="user")
-    project_add.add_argument("--project-number", type=int, required=True)
+    add_project_locator(project_add)
     item = project_add.add_mutually_exclusive_group(required=True)
     item.add_argument("--issue-number", type=int)
     item.add_argument("--pull-number", type=int)
@@ -126,10 +161,14 @@ def build_parser() -> argparse.ArgumentParser:
     add_write(project_add)
 
     project_field = sub.add_parser("project-field-set", help="set one Projects V2 item field")
-    project_field.add_argument("--project-id", required=True)
+    add_project_locator(project_field)
+    project_field.add_argument("--project-id")
     project_field.add_argument("--item-id", required=True)
-    project_field.add_argument("--field-id", required=True)
+    field = project_field.add_mutually_exclusive_group(required=True)
+    field.add_argument("--field-id")
+    field.add_argument("--field", help="exact case-insensitive project field name")
     value = project_field.add_mutually_exclusive_group(required=True)
+    value.add_argument("--value", help="resolve a text/number/date/select/iteration value by field type")
     value.add_argument("--text")
     value.add_argument("--value-number", type=float)
     value.add_argument("--date")
@@ -155,6 +194,33 @@ def build_parser() -> argparse.ArgumentParser:
 
     pr_checks = sub.add_parser("pr-checks", help="summarize checks and commit statuses for a pull request")
     pr_checks.add_argument("number", type=int)
+
+    pr_reviews = sub.add_parser("pr-reviews", help="list normalized pull request reviews")
+    pr_reviews.add_argument("number", type=int)
+    add_limit(pr_reviews, 100)
+
+    pr_rules = sub.add_parser("pr-rules", help="read active rules and merge methods for the base branch")
+    pr_rules.add_argument("number", type=int)
+
+    pr_readiness = sub.add_parser("pr-readiness", help="evaluate checks, reviews, threads, rules, and merge method")
+    pr_readiness.add_argument("number", type=int)
+    pr_readiness.add_argument("--method", choices=("merge", "squash", "rebase"), default="squash")
+
+    pr_context = sub.add_parser("pr-review-context", help="collect a bounded immutable review context")
+    pr_context.add_argument("number", type=int)
+    pr_context.add_argument("--method", choices=("merge", "squash", "rebase"), default="squash")
+    pr_context.add_argument("--max-files", type=int, default=100)
+    pr_context.add_argument(
+        "--max-bytes", type=int, default=65536,
+        help="maximum aggregate UTF-8 patch bytes to return (1024-1048576)",
+    )
+
+    pr_review = sub.add_parser("pr-review-submit", help="publish a review at an expected head SHA")
+    pr_review.add_argument("number", type=int)
+    pr_review.add_argument("--event", choices=("approve", "request-changes", "comment"), required=True)
+    pr_review.add_argument("--expected-head-sha", required=True)
+    add_body(pr_review)
+    add_write(pr_review)
 
     pr_create = sub.add_parser("pr-create", help="create a pull request")
     pr_create.add_argument("--title", required=True)
@@ -190,7 +256,6 @@ def build_parser() -> argparse.ArgumentParser:
     pr_merge.add_argument("--expected-head-sha", required=True)
     pr_merge.add_argument("--title")
     pr_merge.add_argument("--message")
-    pr_merge.add_argument("--allow-non-green", action="store_true", help="allow merge without green checks after explicit approval")
     add_destructive(pr_merge)
 
     branch_delete = sub.add_parser("branch-delete", help="delete a remote branch through the Git refs API")
@@ -300,14 +365,17 @@ def main(argv: list[str] | None = None) -> int:
             emit_success(args.command, data, response=response)
             return 0
 
-        target = resolve_repository(args.repo, cwd=args.cwd, default_host=args.host)
-        if target.host != args.host.casefold():
+        project_only = args.command.startswith("project-") and not args.repo
+        target = None if project_only else resolve_repository(args.repo, cwd=args.cwd, default_host=args.host)
+        if target and target.host != args.host.casefold():
             raise GitHubError(
                 f"repository host {target.host} differs from --host {args.host}; pass the matching --host explicitly",
                 kind="validation",
             )
-        if hasattr(args, "owner") and args.owner is None:
+        if hasattr(args, "owner") and args.owner is None and target:
             args.owner = target.owner
+        if args.command == "project-list" and not args.owner:
+            raise GitHubError("project-list requires --owner or --repo", kind="validation")
         data, response = dispatch(args.command, args, client, target)
         pagination = {"returned": len(data)} if isinstance(data, list) else None
         emit_success(args.command, data, target=target, response=response, pagination=pagination)

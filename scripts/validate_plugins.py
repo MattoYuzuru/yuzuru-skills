@@ -45,6 +45,7 @@ HOOK_EVENTS = {
     "SessionEnd",
     "Setup",
 }
+DSH_PLUGIN_NAME = "@deepseek-ai/dsh-skill-filesystem"
 
 
 @dataclass
@@ -168,6 +169,83 @@ def validate_hooks(plugin: Path, result: Result) -> None:
                     result.errors.append(f"hooks/hooks.json {event} timeout must be 1..120")
 
 
+def validate_dsh_bundle(plugin: Path, expected_version: str, result: Result) -> None:
+    manifest_path = plugin / "package.json"
+    patch_path = plugin / "cordis.patch.yml"
+    if not manifest_path.is_file():
+        result.errors.append("missing package.json DeepSeek Harness bundle manifest")
+        return
+    manifest = load_json(manifest_path, result)
+    if not isinstance(manifest, dict):
+        return
+    expected_name = f"yuzuru-{plugin.name}"
+    if manifest.get("name") != expected_name:
+        result.errors.append(f"package.json name must equal {expected_name}")
+    if manifest.get("version") != expected_version:
+        result.errors.append(f"package.json version drift: expected {expected_version}")
+    if manifest.get("private") is not True:
+        result.errors.append("package.json must be private until a DSH publishing policy exists")
+    if "scripts" in manifest:
+        result.errors.append("config-only DSH bundles must not declare lifecycle scripts")
+    dsh = manifest.get("dsh")
+    bundle = dsh.get("bundle") if isinstance(dsh, dict) else None
+    if not isinstance(bundle, dict) or bundle.get("patch") != "./cordis.patch.yml":
+        result.errors.append("package.json must declare dsh.bundle.patch as ./cordis.patch.yml")
+    if not patch_path.is_file():
+        result.errors.append("missing cordis.patch.yml DeepSeek Harness bundle patch")
+        return
+    patch = patch_path.read_text(encoding="utf-8")
+    expected_id = f"yuzuru-skill-filesystem-{plugin.name}"
+    required = (
+        f"id: {expected_id}",
+        f"providerName: yuzuru-{plugin.name}",
+        DSH_PLUGIN_NAME,
+        "includeDefaultRoots: false",
+        f"node_modules/{expected_name}/skills/",
+    )
+    for value in required:
+        if value not in patch:
+            result.errors.append(f"cordis.patch.yml missing required value: {value}")
+    if patch.count(DSH_PLUGIN_NAME) != 1:
+        result.errors.append("cordis.patch.yml must mount exactly one isolated skill provider")
+    if "/Users/" in patch or re.search(r"/home/[^ <`]+", patch):
+        result.errors.append("cordis.patch.yml contains a maintainer-specific path")
+
+
+def validate_standalone_dsh_bundle() -> list[str]:
+    errors: list[str] = []
+    manifest_path = ROOT / "skills" / "package.json"
+    patch_path = ROOT / "skills" / "cordis.patch.yml"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return [f"standalone DSH package.json is invalid: {exc}"]
+    if manifest.get("name") != "yuzuru-standalone-skills":
+        errors.append("standalone DSH package name must equal yuzuru-standalone-skills")
+    if manifest.get("private") is not True or "scripts" in manifest:
+        errors.append("standalone DSH package must be private and config-only")
+    dsh = manifest.get("dsh")
+    bundle = dsh.get("bundle") if isinstance(dsh, dict) else None
+    if not isinstance(bundle, dict) or bundle.get("patch") != "./cordis.patch.yml":
+        errors.append("standalone DSH package must declare dsh.bundle.patch")
+    try:
+        patch = patch_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        return [*errors, f"standalone DSH cordis.patch.yml is invalid: {exc}"]
+    for value in (
+        "id: yuzuru-skill-filesystem-standalone",
+        "providerName: yuzuru-standalone-skills",
+        DSH_PLUGIN_NAME,
+        "includeDefaultRoots: false",
+        "node_modules/yuzuru-standalone-skills/",
+    ):
+        if value not in patch:
+            errors.append(f"standalone DSH patch missing required value: {value}")
+    if patch.count(DSH_PLUGIN_NAME) != 1:
+        errors.append("standalone DSH patch must mount exactly one isolated skill provider")
+    return errors
+
+
 def validate_eval(plugin: Path, result: Result) -> None:
     path = ROOT / "evals" / "plugins" / f"{plugin.name}.json"
     if not path.is_file():
@@ -203,6 +281,7 @@ def validate_package(plugin: Path) -> Result:
         for label, manifest in (("codex", codex), ("claude", claude)):
             if manifest.get("version") != expected:
                 result.errors.append(f"{label} manifest version drift: expected {expected}")
+        validate_dsh_bundle(plugin, expected, result)
     if codex.get("description") != claude.get("description"):
         result.errors.append("dual manifest descriptions must match")
 
@@ -262,7 +341,7 @@ def marketplace_ids(path: Path, result: Result) -> tuple[list[str], dict[str, st
 
 
 def cross_validate(results: list[Result]) -> list[str]:
-    errors: list[str] = []
+    errors: list[str] = validate_standalone_dsh_bundle()
     synthetic = Result(plugin="marketplaces")
     codex_names, codex_sources = marketplace_ids(
         ROOT / ".agents" / "plugins" / "marketplace.json", synthetic

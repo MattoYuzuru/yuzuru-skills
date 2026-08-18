@@ -1,6 +1,6 @@
 ---
 name: github-workflow
-description: GitHub repository, issue, pull request, and Actions workflow through local Git plus GitHub REST and GraphQL APIs without MCP. Use when the user asks to inspect or update a GitHub repository, manage issues or pull requests, push a feature branch, check or retry GitHub Actions, or carry a change from a local checkout to a verified GitHub PR.
+description: GitHub repository, issue, Projects V2, pull request, review, merge, and Actions workflow through local Git plus GitHub REST and GraphQL APIs without MCP. Use when the user asks to inspect or update GitHub, work with a project board, manage issues or pull requests, review or merge a PR, push a feature branch, check or retry Actions, or carry a local change to a verified GitHub PR.
 ---
 
 # GitHub Workflow
@@ -35,8 +35,10 @@ those stages.
 2. Inspect the repository, local status, branch, remotes, and relevant GitHub object.
 3. Preserve unrelated local changes; use the repository's own tests.
 4. For a mutation, run `--dry-run` and show its exact target and effect.
-5. Obtain explicit confirmation for each external write. Obtain exact confirmation
-   for destructive operations.
+5. Obtain explicit confirmation for each external write. Natural language such
+   as “merge PR #17 squash” is valid authorization when the repository and PR
+   are unambiguous. A short “merge it” is valid only for the unchanged exact
+   preview most recently shown in the conversation.
 6. Execute once. Do not automatically retry a mutating request.
 7. Read the object again when the helper does not already verify it.
 8. Return compact state, IDs, URLs, checks, and any partial failure.
@@ -52,6 +54,10 @@ those stages.
   by an explicit coding task. Inspect before `pull --ff-only` changes the checkout.
 - Accept a pre-authorized batch only when the user named every target and action;
   never extend it silently.
+- Bind review and merge authorization to repository, PR number, head SHA, and
+  merge method. A changed SHA expires authorization and requires a new preview.
+- A subagent verdict is review evidence, never user authorization or a separate
+  GitHub identity.
 
 ## Guardrails
 
