@@ -43,14 +43,47 @@ Projects V2 uses GraphQL, not the REST Projects Classic endpoints:
 ```bash
 python3 scripts/github.py --repo owner/repo project-list \
   --owner OWNER --owner-type user
+python3 scripts/github.py project-read \
+  --project https://github.com/users/OWNER/projects/4/views/1
+python3 scripts/github.py project-field-list \
+  --project https://github.com/users/OWNER/projects/4
+python3 scripts/github.py project-view-list \
+  --project https://github.com/users/OWNER/projects/4
+python3 scripts/github.py project-item-list \
+  --project https://github.com/users/OWNER/projects/4 \
+  --query 'status:"In review" is:open' --limit 20
+python3 scripts/github.py project-count \
+  --project https://github.com/users/OWNER/projects/4 \
+  --query 'status:Backlog created:>=2026-08-01'
+python3 scripts/github.py project-stats \
+  --project https://github.com/users/OWNER/projects/4 \
+  --group-by Status --scan-limit 1000
 python3 scripts/github.py --repo owner/repo project-add-item \
-  --owner OWNER --owner-type user --project-number 2 --issue-number 42 --dry-run
-python3 scripts/github.py --repo owner/repo project-field-set \
-  --project-id PVT_ID --item-id PVTI_ID --field-id PVTSSF_ID \
-  --single-select-option-id OPTION_ID --dry-run
+  --project https://github.com/users/OWNER/projects/4 --issue-number 42 --dry-run
+python3 scripts/github.py project-field-set \
+  --project https://github.com/users/OWNER/projects/4 \
+  --item-id PVTI_ID --field Status --value "In review" --dry-run
 ```
 
-Use `--owner-type organization` for organization projects. Adding an issue/PR and
-setting its project field are separate mutations; GitHub cannot combine them. Report
-partial success instead of hiding a created issue or added item when the second step
-fails. Obtain `read:project` for reads and `project` for writes when using a classic PAT.
+Project URLs under `/users/` and `/orgs/` are first-class targets and may include
+`/views/NUMBER`; project-only reads do not require a repository checkout. `--query`
+is passed as a GraphQL variable to GitHub's native Projects filter engine. Use
+`project-count` for an exact cheap count and `project-stats` for bounded grouping;
+an `exact: false` result means the scan limit was reached.
+
+The URL view number records the user's intended context, but GitHub's API does
+not expose the complete interactive view configuration as an executable query.
+Do not claim that a URL suffix applies the browser view's filters, grouping, or
+slicing. Pass an explicit `--query`; treat Status field options as workflow
+values rather than assuming every saved view renders them as board columns.
+
+`project-field-list` returns field and option IDs. `project-field-set --field
+--value` resolves text, number, date, single-select, and iteration values by exact
+case-insensitive names and rejects ambiguity. Moving a card means setting its
+`Status` field. Assignees, labels, milestones, repository, and other issue/PR
+properties must be changed through their owning APIs, not project field mutation.
+
+Adding an issue/PR and setting its project field are separate mutations; GitHub
+cannot combine them. Report partial success instead of hiding a created issue or
+added item when a later step fails. Obtain `read:project` for reads and `project`
+for writes when using a classic PAT.

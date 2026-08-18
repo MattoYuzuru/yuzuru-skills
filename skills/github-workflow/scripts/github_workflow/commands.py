@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 import urllib.parse
+from collections import Counter
 from pathlib import Path
 from typing import Any, Callable
 
@@ -16,12 +17,22 @@ from .client import GitHubClient, Response
 from .errors import GitHubError
 from .graphql import (
     ADD_PROJECT_ITEM,
+    PR_REVIEW_STATE,
+    PROJECT_FIELDS_ORGANIZATION,
+    PROJECT_FIELDS_USER,
     PROJECT_ID_ORGANIZATION,
     PROJECT_ID_USER,
+    PROJECT_ITEMS_ORGANIZATION,
+    PROJECT_ITEMS_USER,
     PROJECT_LIST_ORGANIZATION,
     PROJECT_LIST_USER,
+    PROJECT_READ_ORGANIZATION,
+    PROJECT_READ_USER,
+    PROJECT_VIEWS_ORGANIZATION,
+    PROJECT_VIEWS_USER,
     SET_PROJECT_FIELD,
 )
+from .project_targets import ProjectTarget, resolve_project_target
 from .targets import RepositoryTarget, git_remote_urls, parse_repository, redact_url
 
 
@@ -47,6 +58,43 @@ def _pr_path(target: RepositoryTarget, number: int) -> str:
 
 def _select(value: dict[str, Any], fields: tuple[str, ...]) -> dict[str, Any]:
     return {field: value.get(field) for field in fields}
+
+
+def _bounded_review_files(files: list[dict[str, Any]], max_bytes: int) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Keep file metadata while bounding aggregate UTF-8 patch content."""
+    remaining = max_bytes
+    used = 0
+    returned: list[dict[str, Any]] = []
+    truncated_files = 0
+    omitted_patch_files = 0
+    for item in files:
+        normalized = _select(
+            item, ("sha", "filename", "status", "additions", "deletions", "changes", "patch", "blob_url"),
+        )
+        patch = normalized.get("patch")
+        if isinstance(patch, str):
+            encoded = patch.encode("utf-8")
+            if remaining <= 0:
+                normalized["patch"] = None
+                normalized["patch_omitted"] = True
+                omitted_patch_files += 1
+            elif len(encoded) > remaining:
+                normalized["patch"] = encoded[:remaining].decode("utf-8", errors="ignore")
+                normalized["patch_truncated"] = True
+                truncated_files += 1
+                used += len(normalized["patch"].encode("utf-8"))
+                remaining = 0
+            else:
+                remaining -= len(encoded)
+                used += len(encoded)
+        returned.append(normalized)
+    return returned, {
+        "max_patch_bytes": max_bytes,
+        "returned_patch_bytes": used,
+        "truncated_patch_files": truncated_files,
+        "omitted_patch_files": omitted_patch_files,
+        "truncated": bool(truncated_files or omitted_patch_files),
+    }
 
 
 def _user(value: Any) -> str | None:
@@ -365,7 +413,129 @@ def _project_id(client: GitHubClient, owner: str, owner_type: str, number: int) 
     return str(project["id"]), response
 
 
-def project_command(command: str, args: Any, client: GitHubClient, target: RepositoryTarget) -> tuple[Any, Response | None]:
+def _project_node(response: Response, project: ProjectTarget) -> dict[str, Any]:
+    container = _project(response.data, project.owner_type)
+    value = container.get("projectV2") if isinstance(container, dict) else None
+    if not isinstance(value, dict):
+        raise GitHubError(f"Project V2 {project.owner}#{project.number} was not found", kind="not-found")
+    return value
+
+
+def _project_document(project: ProjectTarget, user: str, organization: str) -> str:
+    return organization if project.owner_type == "organization" else user
+
+
+def _project_fields(client: GitHubClient, project: ProjectTarget) -> tuple[list[dict[str, Any]], Response]:
+    document = _project_document(project, PROJECT_FIELDS_USER, PROJECT_FIELDS_ORGANIZATION)
+    response = client.graphql(
+        document,
+        {"owner": project.owner, "number": project.number, "first": 100},
+    )
+    connection = _project_node(response, project).get("fields", {})
+    nodes = connection.get("nodes", []) if isinstance(connection, dict) else []
+    return [item for item in nodes if isinstance(item, dict)], response
+
+
+def _normalize_project_item(value: dict[str, Any]) -> dict[str, Any]:
+    content = value.get("content") if isinstance(value.get("content"), dict) else {}
+    repository = content.get("repository") if isinstance(content.get("repository"), dict) else {}
+    author = content.get("author") if isinstance(content.get("author"), dict) else {}
+    fields: dict[str, Any] = {}
+    field_ids: dict[str, Any] = {}
+    nodes = value.get("fieldValues", {}).get("nodes", []) if isinstance(value.get("fieldValues"), dict) else []
+    for field_value in nodes:
+        if not isinstance(field_value, dict):
+            continue
+        field = field_value.get("field") if isinstance(field_value.get("field"), dict) else {}
+        name = field.get("name")
+        field_id = field.get("id")
+        scalar = next(
+            (
+                field_value.get(key)
+                for key in ("name", "text", "number", "date", "title")
+                if field_value.get(key) is not None
+            ),
+            None,
+        )
+        if scalar is None and isinstance(field_value.get("repository"), dict):
+            scalar = field_value["repository"].get("nameWithOwner")
+        if scalar is None and isinstance(field_value.get("milestone"), dict):
+            scalar = field_value["milestone"].get("title")
+        if scalar is None:
+            for plural, label in (("labels", "name"), ("users", "login")):
+                connection = field_value.get(plural)
+                if isinstance(connection, dict):
+                    scalar = [
+                        node.get(label) for node in connection.get("nodes", [])
+                        if isinstance(node, dict) and node.get(label)
+                    ]
+                    break
+        if name:
+            fields[str(name)] = scalar
+        if field_id:
+            field_ids[str(field_id)] = scalar
+    return {
+        "item_id": value.get("id"),
+        "archived": value.get("isArchived"),
+        "item_created_at": value.get("createdAt"),
+        "item_updated_at": value.get("updatedAt"),
+        "content": {
+            "type": content.get("__typename") or "Redacted",
+            "id": content.get("id"),
+            "number": content.get("number"),
+            "title": content.get("title"),
+            "body": content.get("body") if content.get("__typename") == "DraftIssue" else None,
+            "url": content.get("url"),
+            "state": content.get("state"),
+            "draft": content.get("isDraft"),
+            "repository": repository.get("nameWithOwner"),
+            "author": author.get("login"),
+            "created_at": content.get("createdAt"),
+            "updated_at": content.get("updatedAt"),
+            "closed_at": content.get("closedAt"),
+            "merged_at": content.get("mergedAt"),
+        },
+        "fields": fields,
+        "fields_by_id": field_ids,
+    }
+
+
+def _project_items_page(
+    client: GitHubClient,
+    project: ProjectTarget,
+    *,
+    first: int,
+    after: str | None,
+    query: str | None,
+) -> tuple[dict[str, Any], Response]:
+    if not 1 <= first <= 100:
+        raise GitHubError("project page size must be between 1 and 100", kind="validation")
+    document = _project_document(project, PROJECT_ITEMS_USER, PROJECT_ITEMS_ORGANIZATION)
+    response = client.graphql(
+        document,
+        {"owner": project.owner, "number": project.number, "first": first, "after": after, "query": query},
+    )
+    connection = _project_node(response, project).get("items", {})
+    if not isinstance(connection, dict):
+        raise GitHubError("Project V2 items response is invalid", kind="graphql")
+    return connection, response
+
+
+def _archive_matches(item: dict[str, Any], mode: str) -> bool:
+    if mode == "all":
+        return True
+    return bool(item.get("archived")) == (mode == "archived")
+
+
+def _match_named(values: list[dict[str, Any]], name: str, label: str) -> dict[str, Any]:
+    matches = [item for item in values if str(item.get("name", "")).casefold() == name.casefold()]
+    if len(matches) != 1:
+        detail = "not found" if not matches else "ambiguous"
+        raise GitHubError(f"{label} {name!r} is {detail}", kind="validation")
+    return matches[0]
+
+
+def project_command(command: str, args: Any, client: GitHubClient, target: RepositoryTarget | None) -> tuple[Any, Response | None]:
     if command == "project-list":
         if not 1 <= args.limit <= 100:
             raise GitHubError("--limit must be between 1 and 100", kind="validation")
@@ -374,11 +544,122 @@ def project_command(command: str, args: Any, client: GitHubClient, target: Repos
         container = _project(response.data, args.owner_type)
         projects = container.get("projectsV2", {}).get("nodes", []) if isinstance(container, dict) else []
         return projects, response
+    project = resolve_project_target(args, expected_host=getattr(args, "host", "github.com"))
+    if command == "project-read":
+        document = _project_document(project, PROJECT_READ_USER, PROJECT_READ_ORGANIZATION)
+        response = client.graphql(document, {"owner": project.owner, "number": project.number})
+        value = _project_node(response, project)
+        return {
+            **_select(value, ("id", "number", "title", "shortDescription", "readme", "url", "public", "closed", "createdAt", "updatedAt")),
+            "owner": project.owner,
+            "owner_type": project.owner_type,
+            "view_number": project.view_number,
+            "item_count": value.get("items", {}).get("totalCount"),
+            "field_count": value.get("fields", {}).get("totalCount"),
+            "view_count": value.get("views", {}).get("totalCount"),
+        }, response
+    if command == "project-field-list":
+        fields, response = _project_fields(client, project)
+        return fields, response
+    if command == "project-view-list":
+        document = _project_document(project, PROJECT_VIEWS_USER, PROJECT_VIEWS_ORGANIZATION)
+        response = client.graphql(
+            document,
+            {"owner": project.owner, "number": project.number, "first": args.limit},
+        )
+        connection = _project_node(response, project).get("views", {})
+        return connection.get("nodes", []) if isinstance(connection, dict) else [], response
+    if command == "project-count":
+        connection, response = _project_items_page(
+            client, project, first=1, after=None, query=args.query,
+        )
+        return {"project": project.label, "query": args.query, "count": connection.get("totalCount")}, response
+    if command == "project-item-list":
+        connection, response = _project_items_page(
+            client, project, first=args.limit, after=args.after, query=args.query,
+        )
+        normalized = [
+            _normalize_project_item(item) for item in connection.get("nodes", []) if isinstance(item, dict)
+        ]
+        normalized = [item for item in normalized if _archive_matches(item, args.archived)]
+        page = connection.get("pageInfo", {})
+        return {
+            "project": project.label,
+            "query": args.query,
+            "total_count": connection.get("totalCount"),
+            "items": normalized,
+            "page_info": page,
+        }, response
+    if command == "project-stats":
+        if not 1 <= args.scan_limit <= 10000:
+            raise GitHubError("--scan-limit must be between 1 and 10000", kind="validation")
+        items: list[dict[str, Any]] = []
+        cursor: str | None = None
+        total_count: int | None = None
+        response: Response | None = None
+        while len(items) < args.scan_limit:
+            connection, response = _project_items_page(
+                client,
+                project,
+                first=min(100, args.scan_limit - len(items)),
+                after=cursor,
+                query=args.query,
+            )
+            total_count = connection.get("totalCount")
+            items.extend(
+                _normalize_project_item(item)
+                for item in connection.get("nodes", []) if isinstance(item, dict)
+            )
+            page = connection.get("pageInfo", {})
+            cursor = page.get("endCursor")
+            if not page.get("hasNextPage") or not cursor:
+                break
+        items = [item for item in items if _archive_matches(item, args.archived)]
+        counts: Counter[str] = Counter()
+        for item in items:
+            content = item["content"]
+            if args.group_by == "content-type":
+                value = content.get("type")
+            elif args.group_by == "repository":
+                value = content.get("repository")
+            elif args.group_by == "created":
+                created = content.get("created_at") or item.get("item_created_at") or ""
+                value = created[:10] if args.bucket == "day" else created[:7]
+                if args.bucket == "week" and len(created) >= 10:
+                    from datetime import date
+                    parsed = date.fromisoformat(created[:10])
+                    iso = parsed.isocalendar()
+                    value = f"{iso.year}-W{iso.week:02d}"
+            else:
+                value = item["fields"].get(args.group_by)
+            if isinstance(value, list):
+                counts.update(str(part) for part in value)
+            else:
+                counts[str(value) if value not in {None, ""} else "(none)"] += 1
+        if args.group_by not in {"content-type", "repository", "created"}:
+            fields, _ = _project_fields(client, project)
+            field = _match_named(fields, args.group_by, "project field")
+            for option in field.get("options", []) or []:
+                if isinstance(option, dict) and option.get("name"):
+                    counts.setdefault(str(option["name"]), 0)
+        exact = total_count is not None and len(items) >= total_count
+        return {
+            "project": project.label,
+            "query": args.query,
+            "group_by": args.group_by,
+            "bucket": args.bucket if args.group_by == "created" else None,
+            "total_count": total_count,
+            "scanned": len(items),
+            "exact": exact,
+            "counts": dict(sorted(counts.items())),
+        }, response
     if command == "project-add-item":
-        project_id, lookup = _project_id(client, args.owner, args.owner_type, args.project_number)
+        project_id, lookup = _project_id(client, project.owner, project.owner_type, project.number)
         if args.node_id:
             content_id = args.node_id
         else:
+            if target is None:
+                raise GitHubError("project-add-item with issue/pull number requires --repo", kind="validation")
             path = _pr_path(target, args.pull_number) if args.pull_number else _issue_path(target, args.issue_number)
             content = client.request("GET", path)
             content_id = content.data.get("node_id")
@@ -393,6 +674,41 @@ def project_command(command: str, args: Any, client: GitHubClient, target: Repos
         response = client.graphql(ADD_PROJECT_ITEM, {"project": project_id, "content": content_id}, mutation=True)
         return response.data.get("addProjectV2ItemById", {}).get("item"), response
     if command == "project-field-set":
+        project_id = args.project_id
+        field_id = args.field_id
+        resolved_value = args.value
+        resolved_type: str | None = None
+        if not project_id:
+            project_id, _ = _project_id(client, project.owner, project.owner_type, project.number)
+        if args.field:
+            fields, _ = _project_fields(client, project)
+            field = _match_named(fields, args.field, "project field")
+            field_id = field.get("id")
+            resolved_type = field.get("dataType")
+            if resolved_value is None:
+                raise GitHubError("--field requires --value", kind="validation")
+            if resolved_type == "SINGLE_SELECT":
+                option = _match_named(field.get("options", []), resolved_value, "field option")
+                args.single_select_option_id = option.get("id")
+            elif resolved_type == "ITERATION":
+                configuration = field.get("configuration", {})
+                options = [
+                    *configuration.get("iterations", []),
+                    *configuration.get("completedIterations", []),
+                ] if isinstance(configuration, dict) else []
+                option = _match_named(options, resolved_value, "iteration")
+                args.iteration_id = option.get("id")
+            elif resolved_type == "NUMBER":
+                try:
+                    args.value_number = float(resolved_value)
+                except ValueError as exc:
+                    raise GitHubError("NUMBER field value must be numeric", kind="validation") from exc
+            elif resolved_type == "DATE":
+                args.date = resolved_value
+            elif resolved_type == "TEXT":
+                args.text = resolved_value
+            else:
+                raise GitHubError(f"field type {resolved_type} is not writable by this command", kind="validation")
         values = {
             "text": args.text,
             "number": args.value_number,
@@ -403,7 +719,9 @@ def project_command(command: str, args: Any, client: GitHubClient, target: Repos
         selected = {key: value for key, value in values.items() if value is not None}
         if len(selected) != 1:
             raise GitHubError("provide exactly one project field value", kind="validation")
-        variables = {"project": args.project_id, "item": args.item_id, "field": args.field_id, "value": selected}
+        if not field_id:
+            raise GitHubError("provide --field-id or --field", kind="validation")
+        variables = {"project": project_id, "item": args.item_id, "field": field_id, "value": selected}
         if args.dry_run:
             return {"dry_run": True, "effect": "write", "variables": variables}, None
         if not args.confirm_write:
@@ -425,6 +743,167 @@ def _git(arguments: list[str], cwd: str, *, allow_failure: bool = False) -> str:
         message = result.stderr.strip() or "git command failed"
         raise GitHubError(message[:1000], kind="validation")
     return result.stdout
+
+
+def _normalize_review(value: dict[str, Any]) -> dict[str, Any]:
+    return {
+        **_select(value, ("id", "node_id", "state", "body", "commit_id", "submitted_at", "html_url")),
+        "reviewer": _user(value.get("user")),
+    }
+
+
+def _pr_rules(
+    client: GitHubClient,
+    target: RepositoryTarget,
+    pr: dict[str, Any],
+) -> tuple[dict[str, Any], Response]:
+    base = pr.get("base", {}).get("ref")
+    if not base:
+        raise GitHubError("pull request base branch is missing", kind="github")
+    encoded = urllib.parse.quote(str(base), safe="")
+    rules_response = client.request("GET", _repo_path(target, f"/rules/branches/{encoded}"))
+    repository = client.request("GET", _repo_path(target))
+    rules = rules_response.data if isinstance(rules_response.data, list) else []
+    required_checks: list[str] = []
+    strict = False
+    review_threads_required = False
+    merge_queue_required = False
+    pull_request_parameters: dict[str, Any] = {}
+    for rule in rules:
+        if not isinstance(rule, dict):
+            continue
+        parameters = rule.get("parameters") if isinstance(rule.get("parameters"), dict) else {}
+        if rule.get("type") == "required_status_checks":
+            required_checks.extend(
+                str(item.get("context"))
+                for item in parameters.get("required_status_checks", [])
+                if isinstance(item, dict) and item.get("context")
+            )
+            strict = bool(parameters.get("strict_required_status_checks_policy"))
+        elif rule.get("type") == "pull_request":
+            pull_request_parameters.update(parameters)
+        elif rule.get("type") == "required_review_thread_resolution":
+            review_threads_required = True
+        elif rule.get("type") == "merge_queue":
+            merge_queue_required = True
+    allowed_methods = [
+        method for method, key in (
+            ("merge", "allow_merge_commit"),
+            ("squash", "allow_squash_merge"),
+            ("rebase", "allow_rebase_merge"),
+        ) if repository.data.get(key)
+    ]
+    review_threads_required = review_threads_required or bool(
+        pull_request_parameters.get("required_review_thread_resolution")
+    )
+    rule_methods = pull_request_parameters.get("allowed_merge_methods")
+    if isinstance(rule_methods, list) and rule_methods:
+        allowed_methods = [method for method in allowed_methods if method in rule_methods]
+    return {
+        "base": base,
+        "active_rules": rules,
+        "required_checks": sorted(set(required_checks)),
+        "strict_required_checks": strict,
+        "review_threads_required": review_threads_required,
+        "merge_queue_required": merge_queue_required,
+        "pull_request": pull_request_parameters,
+        "allowed_merge_methods": allowed_methods,
+    }, rules_response
+
+
+def _pr_readiness(
+    client: GitHubClient,
+    target: RepositoryTarget,
+    number: int,
+    method: str,
+) -> tuple[dict[str, Any], Response]:
+    pr_response = client.request("GET", _pr_path(target, number))
+    pr = pr_response.data
+    sha = pr.get("head", {}).get("sha")
+    if not sha:
+        raise GitHubError("pull request head SHA is missing", kind="github")
+    rules, _ = _pr_rules(client, target, pr)
+    checks, _ = _collect_checks(client, target, sha)
+    graph = client.graphql(
+        PR_REVIEW_STATE,
+        {"owner": target.owner, "repo": target.repo, "number": number, "first": 100},
+    )
+    repository = graph.data.get("repository") if isinstance(graph.data, dict) else None
+    review = repository.get("pullRequest") if isinstance(repository, dict) else None
+    if not isinstance(review, dict):
+        raise GitHubError("pull request review state was not found", kind="graphql")
+    threads = review.get("reviewThreads", {})
+    thread_nodes = threads.get("nodes", []) if isinstance(threads, dict) else []
+    unresolved = sum(1 for item in thread_nodes if isinstance(item, dict) and not item.get("isResolved"))
+
+    check_states: dict[str, bool] = {}
+    optional_failures: list[str] = []
+    for item in checks["check_runs"]:
+        name = item.get("name")
+        success = item.get("status") == "completed" and item.get("conclusion") in {"success", "neutral", "skipped"}
+        if name and name not in check_states:
+            check_states[str(name)] = success
+        if name and not success:
+            optional_failures.append(str(name))
+    for item in checks["statuses"]:
+        name = item.get("context")
+        success = item.get("state") == "success"
+        if name and name not in check_states:
+            check_states[str(name)] = success
+        if name and not success:
+            optional_failures.append(str(name))
+    required = rules["required_checks"]
+    missing = [name for name in required if name not in check_states]
+    failing = [name for name in required if name in check_states and not check_states[name]]
+    optional_failures = sorted(set(optional_failures) - set(required))
+
+    blockers: list[dict[str, Any]] = []
+    if pr.get("state") != "open" or pr.get("merged"):
+        blockers.append({"kind": "state", "detail": "pull request is not open and unmerged"})
+    if pr.get("draft"):
+        blockers.append({"kind": "draft", "detail": "pull request is a draft"})
+    if pr.get("mergeable") is False or review.get("mergeStateStatus") == "DIRTY":
+        blockers.append({"kind": "conflict", "detail": "pull request has merge conflicts"})
+    if review.get("reviewDecision") in {"CHANGES_REQUESTED", "REVIEW_REQUIRED"}:
+        blockers.append({"kind": "review", "detail": review.get("reviewDecision")})
+    if rules["review_threads_required"] and unresolved:
+        blockers.append({"kind": "review-threads", "detail": f"{unresolved} unresolved thread(s)"})
+    if missing:
+        blockers.append({"kind": "required-checks-missing", "contexts": missing})
+    if failing:
+        blockers.append({"kind": "required-checks-non-green", "contexts": failing})
+    if rules["strict_required_checks"] and review.get("mergeStateStatus") == "BEHIND":
+        blockers.append({"kind": "behind", "detail": "strict rules require an up-to-date base"})
+    if method not in rules["allowed_merge_methods"]:
+        blockers.append({"kind": "merge-method", "detail": f"{method} is not enabled"})
+    if rules["merge_queue_required"]:
+        blockers.append({"kind": "merge-queue", "detail": "branch rules require merge queue"})
+    unknown = (
+        pr.get("mergeable") is None
+        or review.get("mergeStateStatus") == "UNKNOWN"
+        or bool(threads.get("pageInfo", {}).get("hasNextPage"))
+        or graph.partial
+    )
+    ready: bool | None = None if unknown else not blockers
+    return {
+        "ready": ready,
+        "head_sha": sha,
+        "base": pr.get("base", {}).get("ref"),
+        "mergeable": pr.get("mergeable"),
+        "merge_state_status": review.get("mergeStateStatus"),
+        "review_decision": review.get("reviewDecision"),
+        "unresolved_review_threads": unresolved,
+        "required_checks": required,
+        "required_checks_missing": missing,
+        "required_checks_non_green": failing,
+        "optional_non_green_checks": optional_failures,
+        "strict_required_checks": rules["strict_required_checks"],
+        "allowed_merge_methods": rules["allowed_merge_methods"],
+        "requested_merge_method": method,
+        "merge_queue_required": rules["merge_queue_required"],
+        "blockers": blockers,
+        "warnings": ["optional checks are non-green"] if optional_failures else [],
+    }, pr_response
 
 
 def pr_command(command: str, args: Any, client: GitHubClient, target: RepositoryTarget) -> tuple[Any, Response | None]:
@@ -463,6 +942,73 @@ def pr_command(command: str, args: Any, client: GitHubClient, target: Repository
         if not sha:
             raise GitHubError("pull request head SHA is missing", kind="github")
         return _collect_checks(client, target, sha)
+    if command == "pr-reviews":
+        items, response = client.paginate(_pr_path(target, args.number) + "/reviews", limit=args.limit)
+        normalized = [_normalize_review(item) for item in items]
+        latest: dict[str, dict[str, Any]] = {}
+        for item in normalized:
+            reviewer = item.get("reviewer")
+            if reviewer:
+                latest[str(reviewer)] = item
+        return {"reviews": normalized, "latest_by_reviewer": latest}, response
+    if command == "pr-rules":
+        response = client.request("GET", _pr_path(target, args.number))
+        rules, rules_response = _pr_rules(client, target, response.data)
+        return rules, rules_response
+    if command == "pr-readiness":
+        return _pr_readiness(client, target, args.number, args.method)
+    if command == "pr-review-context":
+        if not 1 <= args.max_files <= 100:
+            raise GitHubError("--max-files must be between 1 and 100", kind="validation")
+        if not 1024 <= args.max_bytes <= 1048576:
+            raise GitHubError("--max-bytes must be between 1024 and 1048576", kind="validation")
+        pr_response = client.request("GET", _pr_path(target, args.number))
+        files, _ = client.paginate(_pr_path(target, args.number) + "/files", limit=args.max_files)
+        reviews, _ = client.paginate(_pr_path(target, args.number) + "/reviews", limit=100)
+        readiness, _ = _pr_readiness(client, target, args.number, args.method)
+        bounded_files, patch_budget = _bounded_review_files(files, args.max_bytes)
+        return {
+            "pull_request": normalize_pr(pr_response.data),
+            "head_sha": pr_response.data.get("head", {}).get("sha"),
+            "files": bounded_files,
+            "patch_budget": patch_budget,
+            "reviews": [_normalize_review(item) for item in reviews],
+            "readiness": readiness,
+            "review_contract": {
+                "verdicts": ["approve", "request_changes", "comment"],
+                "head_sha_must_match": True,
+                "subagent_verdict_is_evidence_not_user_authorization": True,
+            },
+        }, pr_response
+    if command == "pr-review-submit":
+        current = client.request("GET", _pr_path(target, args.number))
+        actual_sha = current.data.get("head", {}).get("sha")
+        if actual_sha != args.expected_head_sha:
+            raise GitHubError(f"expected head SHA does not match current PR head: {actual_sha}", kind="validation")
+        body = read_body(args)
+        if args.event in {"request-changes", "comment"} and not body:
+            raise GitHubError(f"{args.event} review requires --body or --body-file", kind="validation")
+        if args.event == "approve":
+            viewer = client.request("GET", "/user").data.get("login")
+            author = current.data.get("user", {}).get("login")
+            if viewer and author and str(viewer).casefold() == str(author).casefold():
+                raise GitHubError(
+                    "GitHub does not allow an author to approve their own pull request; return a local approve-recommended verdict instead",
+                    kind="validation",
+                )
+        payload: dict[str, Any] = {
+            "event": args.event.replace("-", "_").upper(),
+            "commit_id": args.expected_head_sha,
+        }
+        if body is not None:
+            payload["body"] = body
+        data, response = mutation(
+            client, args, target, "POST", _pr_path(target, args.number) + "/reviews", payload,
+        )
+        if response:
+            reviews, verified = client.paginate(_pr_path(target, args.number) + "/reviews", limit=100)
+            return {"submitted": _normalize_review(data), "reviews": [_normalize_review(item) for item in reviews]}, verified
+        return data, response
     if command == "pr-create":
         body = read_body(args)
         head_owner, head_branch = validate_pr_head(client, target, args.head)
@@ -518,20 +1064,17 @@ def pr_command(command: str, args: Any, client: GitHubClient, target: Repository
             return normalize_pr(verified.data), verified
         return data, response
     if command == "pr-merge":
-        exact = f"{target.full_name}#{args.number}"
         current = client.request("GET", _pr_path(target, args.number))
         actual_sha = current.data.get("head", {}).get("sha")
         if actual_sha != args.expected_head_sha:
             raise GitHubError(f"expected head SHA does not match current PR head: {actual_sha}", kind="validation")
-        checks, _ = _collect_checks(client, target, actual_sha)
-        green_checks = all(
-            item.get("status") == "completed" and item.get("conclusion") in {"success", "neutral", "skipped"}
-            for item in checks["check_runs"]
-        )
-        green_statuses = all(item.get("state") == "success" for item in checks["statuses"])
-        has_signal = bool(checks["check_runs"] or checks["statuses"])
-        if not args.allow_non_green and (not has_signal or not green_checks or not green_statuses):
-            raise GitHubError("pull request checks are missing, pending, or non-green; inspect pr-checks or use --allow-non-green after explicit approval", kind="validation")
+        readiness, _ = _pr_readiness(client, target, args.number, args.method)
+        if readiness["ready"] is not True:
+            raise GitHubError(
+                f"pull request is not ready for direct merge: {readiness['blockers'] or 'readiness is unknown'}",
+                kind="validation",
+            )
+        exact = f"{target.full_name}#{args.number}@{args.expected_head_sha} via {args.method}"
         payload = {"merge_method": args.method, "sha": args.expected_head_sha}
         if args.title is not None:
             payload["commit_title"] = args.title
@@ -671,13 +1214,15 @@ def actions_command(command: str, args: Any, client: GitHubClient, target: Repos
     raise GitHubError(f"unsupported Actions command: {command}", kind="validation")
 
 
-def dispatch(command: str, args: Any, client: GitHubClient, target: RepositoryTarget) -> tuple[Any, Response | None]:
+def dispatch(command: str, args: Any, client: GitHubClient, target: RepositoryTarget | None) -> tuple[Any, Response | None]:
+    if command.startswith("project-"):
+        return project_command(command, args, client, target)
+    if target is None:
+        raise GitHubError(f"{command} requires --repo or a resolvable local Git remote", kind="validation")
     if command.startswith("repo-"):
         return repository_command(command, args, client, target)
     if command.startswith("issue-") or command in {"label-list", "milestone-list"}:
         return issue_command(command, args, client, target)
-    if command.startswith("project-"):
-        return project_command(command, args, client, target)
     if command.startswith("pr-") or command == "branch-delete":
         return pr_command(command, args, client, target)
     if command.startswith(("workflow-", "run-", "job-")):
