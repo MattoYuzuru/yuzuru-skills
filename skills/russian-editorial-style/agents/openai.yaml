@@ -1,0 +1,4 @@
+interface:
+  display_name: "Russian Editorial Style"
+  short_description: "Evidence-aware Russian editing across genres"
+  default_prompt: "Use $russian-editorial-style to edit this Russian text for its audience and purpose while preserving facts, intent, and voice."
