@@ -25,8 +25,8 @@ yuzuru plugin install sde-agent --agent claude
 pnpm dsh plugin --profile web add "$PWD/skills" "$PWD/plugins/sde-agent"
 ```
 
-`install.sh` links `yuzuru` and the backward-compatible `skill` launcher into
-`${YUZURU_BIN_DIR:-~/.local/bin}`. It does not install or enable capabilities by itself.
+`install.sh` links `yuzuru` into `${YUZURU_BIN_DIR:-~/.local/bin}`. It does not
+install or enable capabilities by itself.
 
 Standalone skills use managed symlinks in `~/.agents/skills` and `~/.claude/skills`; override them
 with `YUZURU_CODEX_SKILLS_DIR` and `YUZURU_CLAUDE_SKILLS_DIR`. Plugins remain under their native
@@ -55,18 +55,6 @@ yuzuru doctor --repair
 Claude exposes non-interactive plugin enable/disable commands. Current Codex exposes this control in
 the interactive `/plugins` view; `yuzuru plugin enable|disable ... --agent codex` reports
 `interaction_required` and never rewrites Codex configuration.
-
-The legacy commands remain available:
-
-```bash
-skill list
-skill install NAME
-skill uninstall NAME
-skill new NAME --description "What it does. Use when ..."
-skill validate NAME
-skill update
-skill doctor
-```
 
 Updates refuse a dirty tree and use only `git pull --ff-only`. They never reset, stash, merge,
 rebase, re-enable plugins, or overwrite unmanaged installations.

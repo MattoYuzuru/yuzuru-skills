@@ -11,13 +11,12 @@ usage() {
 Usage:
   ./install.sh [--bin-dir ~/.local/bin] [--force] [--dry-run]
 
-Installs `yuzuru` and the backward-compatible `skill` launcher by symlinking
-the repository scripts into a user bin directory. It does not install skills
-or plugins by itself.
+Installs the `yuzuru` launcher by symlinking the repository script into a user
+bin directory. It does not install skills or plugins by itself.
 
 A dangling destination with a recognizable `yuzuru-skills/<launcher>` target
 is repaired automatically. --force is required for any other symlink target.
---dry-run reports the exact launcher actions without changing the bin directory.
+--dry-run reports the exact launcher action without changing the bin directory.
 EOF
 }
 
@@ -103,7 +102,6 @@ install_launcher() {
 }
 
 install_launcher yuzuru
-install_launcher skill
 
 case ":${PATH}:" in
   *":${BIN_DIR}:"*)

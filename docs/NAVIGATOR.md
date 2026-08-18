@@ -34,7 +34,7 @@ Use this page to choose the smallest relevant context.
 - `schemas/`: stable artifact, migration, manifest, and hook contracts.
 - `evals/`: repository-only trigger, routing, safety, and handoff contracts.
 - `scripts/`: repository validation and authoring tools.
-- `yuzuru`: canonical CLI; `skill` is the compatibility launcher.
+- `yuzuru`: the only repository CLI launcher.
 
 Generated reports, dependency environments, indexes, credentials, logs, screenshots, and session
 state belong outside this repository.

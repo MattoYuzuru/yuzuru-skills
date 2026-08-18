@@ -218,6 +218,15 @@ class YuzuruCliTests(unittest.TestCase):
             self.assertEqual(payload["status"], "interaction_required")
             self.assertIn("/plugins", payload["next_action"])
 
+    def test_doctor_tracks_only_the_yuzuru_launcher(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bin_dir = Path(directory) / "bin"
+            with mock.patch.dict(os.environ, {"YUZURU_BIN_DIR": str(bin_dir)}, clear=False):
+                states, repaired, conflicts = yuzuru_cli.launcher_states(False)
+            self.assertEqual(set(states), {"yuzuru"})
+            self.assertEqual(repaired, [])
+            self.assertEqual(conflicts, [])
+
     def test_update_refuses_dirty_tree_before_git_pull(self):
         with mock.patch.object(yuzuru_cli, "git_output", return_value=" M local-file"):
             with self.assertRaisesRegex(yuzuru_cli.CliError, "repository has local changes"):

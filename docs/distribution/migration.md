@@ -3,13 +3,8 @@
 Top-level `skills/<name>/` paths remain unchanged. Existing symlinks continue to resolve after an
 ordinary pull in the same clone.
 
-`skill` remains a compatibility launcher for:
-
-```text
-list, install, uninstall, update, doctor, new, validate
-```
-
-`yuzuru skill ...` is the canonical command tree. The installer creates both launchers.
+`yuzuru skill ...` is the canonical command tree, and the installer creates the
+single `yuzuru` launcher.
 
 ## Managed links
 

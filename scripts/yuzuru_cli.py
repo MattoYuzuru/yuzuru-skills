@@ -766,7 +766,7 @@ def launcher_states(repair: bool) -> tuple[dict[str, dict[str, str]], list[str],
     states: dict[str, dict[str, str]] = {}
     repaired: list[str] = []
     conflicts: list[str] = []
-    for name in ("yuzuru", "skill"):
+    for name in ("yuzuru",):
         destination = bin_dir / name
         source = ROOT / name
         state = "available"
