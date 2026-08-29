@@ -9,5 +9,6 @@
 7. Review path portability, runtime cleanliness, secret handling, and completion language.
 8. Create local Conventional Commit-compatible commits.
 
-Pushes, pull requests, comments, uploads, marketplace publication, and external writes require
-separate explicit confirmation even when the local implementation is already approved.
+Follow the task-scoped authorization model in `AGENTS.md` for pushes, pull requests, comments,
+uploads, publication, and other external writes. Do not invent a second approval loop for effects
+already covered by an unchanged finite mandate.

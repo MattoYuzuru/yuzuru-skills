@@ -10,7 +10,8 @@
     "Все проверки прошли, замержи PR squash-методом, разрешаю",
     "Почему упал этот GitHub Actions run?",
     "Дождись CI для pull request и покажи failed jobs",
-    "Проведи фичу от новой ветки до зеленого GitHub PR"
+    "Проведи фичу от новой ветки до зеленого GitHub PR",
+    "Реализуй issue end to end и сам squash-merge получившийся PR после зеленого CI без повторных подтверждений"
   ],
   "should_not_trigger": [
     "Объясни разницу между merge и rebase",

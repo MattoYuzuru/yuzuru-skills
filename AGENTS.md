@@ -26,8 +26,11 @@ Start at [`docs/NAVIGATOR.md`](docs/NAVIGATOR.md). Load only the standard releva
 6. Keep plugin packages self-contained. Do not distribute cross-package symlinks.
 7. Put runtime state in XDG or platform data/cache directories, never in the clone or plugin root.
 8. Validate behavior, manifests, references, help output, evals, and repository cleanliness.
-9. Commit logical milestones without unrelated files. Push only after separate explicit approval.
+9. Commit logical milestones without unrelated files. Push only when the user explicitly authorized
+   that repository/branch or an end-to-end workflow that necessarily includes the push.
 
-External writes require explicit authorization; destructive writes require exact target
-confirmation. Never commit credentials or bypass native plugin managers, 2FA, policy, sandboxing,
-or user-disabled state.
+External writes require explicit authorization. One task-scoped authorization may cover a finite,
+unambiguous workflow and its deterministically derived IDs; preview and verify each effect without
+asking again unless scope or risk changes. Destructive writes still require the exact target and
+action before execution. Never commit credentials or bypass native plugin managers, 2FA, policy,
+sandboxing, or user-disabled state.

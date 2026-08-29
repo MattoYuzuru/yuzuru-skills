@@ -34,11 +34,11 @@ those stages.
 1. Resolve the installed skill directory and target repository.
 2. Inspect the repository, local status, branch, remotes, and relevant GitHub object.
 3. Preserve unrelated local changes; use the repository's own tests.
-4. For a mutation, run `--dry-run` and show its exact target and effect.
-5. Obtain explicit confirmation for each external write. Natural language such
-   as “merge PR #17 squash” is valid authorization when the repository and PR
-   are unambiguous. A short “merge it” is valid only for the unchanged exact
-   preview most recently shown in the conversation.
+4. Determine whether authorization is interactive or a task-scoped mandate. Record
+   the repository/work item, outcome, allowed lifecycle effects, and stop conditions.
+5. For a mutation, run `--dry-run` and surface its exact target and effect. Execute
+   without pausing when an unchanged mandate covers it; otherwise obtain explicit
+   confirmation. A short “merge it” covers only the unchanged preview just shown.
 6. Execute once. Do not automatically retry a mutating request.
 7. Read the object again when the helper does not already verify it.
 8. Return compact state, IDs, URLs, checks, and any partial failure.
@@ -47,15 +47,20 @@ those stages.
 
 - Run reads without confirmation when they are already in user scope.
 - Treat push, About/topic changes, issue/PR/Project changes, workflow dispatch,
-  and reruns as external writes. Require a separate explicit confirmation.
+  and reruns as external writes that require explicit authorization.
 - Treat issue/PR close, PR merge, run cancel, branch deletion, and force updates
   as destructive. Require the exact target and action.
 - Treat branch creation, file edits, tests, and commits as local work authorized
   by an explicit coding task. Inspect before `pull --ff-only` changes the checkout.
-- Accept a pre-authorized batch only when the user named every target and action;
-  never extend it silently.
-- Bind review and merge authorization to repository, PR number, head SHA, and
-  merge method. A changed SHA expires authorization and requires a new preview.
+- A request to carry a bounded repository change end to end may authorize its
+  feature-branch pushes, PR creation/updates, CI remediation, repository-required
+  work-item updates, and merge when the user explicitly includes merge or shipping.
+  Generated branch, PR, run, and SHA identifiers remain inside that finite mandate.
+- Bind every review and merge request to the current repository, PR number, head
+  SHA, and method. In-scope agent-authored follow-up commits do not expire a task
+  mandate; an unrelated target, material scope change, or another actor's change does.
+- Do not infer production deployment, branch deletion, force update, PR/issue close,
+  or unrelated publication from ordinary end-to-end development authorization.
 - A subagent verdict is review evidence, never user authorization or a separate
   GitHub identity.
 
