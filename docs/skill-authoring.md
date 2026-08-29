@@ -151,8 +151,13 @@ Classify every capability:
 Instructions are not a security boundary. Enforce read-only behavior with credentials, API scopes,
 database roles, sandboxing, and server-side validation.
 
-One approval may authorize an exact finite batch. Record its targets and payloads before execution,
-never expand it, journal partial results, and re-read state before recovering from ambiguous writes.
+Authorization may be interactive for one effect or task-scoped for a finite workflow. A task-scoped
+mandate is explicit when the user names the repository or work item, desired outcome, and lifecycle
+effects such as push, pull request, CI remediation, or merge. Branch names, PR numbers, and head SHAs
+created by that workflow may be resolved later without another approval. Preview and bind every
+mutation to the resolved target, journal partial results, and re-read state after it. Ask again only
+when the scope, target, effect class, or risk materially changes, or another actor changes the target.
+Never extend a mandate to unrelated work or retry an ambiguous mutation.
 
 ## Evaluation Contract
 

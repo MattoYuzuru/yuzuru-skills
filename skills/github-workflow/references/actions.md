@@ -38,9 +38,11 @@ python3 scripts/github.py --repo owner/repo run-cancel RUN_ID --dry-run
 ```
 
 Use `run-rerun` for the entire run. Rerun and dispatch are writes and require
-`--confirm-write`. Cancel is destructive and requires `--confirm-destructive` plus
-the exact target `owner/repo:run:RUN_ID`.
+authorization plus `--confirm-write`; an end-to-end mandate covers one bounded rerun
+of a clearly transient required check, but not an unrelated workflow dispatch. Cancel
+is destructive and requires `--confirm-destructive` plus the exact target
+`owner/repo:run:RUN_ID`.
 
-Do not repeatedly rerun a failing job. Diagnose logs, change code, push after approval,
-and watch the newly triggered run. Never retry mutating HTTP calls automatically;
-their first outcome may be unknown.
+Do not repeatedly rerun a failing job. Diagnose logs, change code, push under the
+current authorization, and watch the newly triggered run. Never retry mutating HTTP
+calls automatically; their first outcome may be unknown.

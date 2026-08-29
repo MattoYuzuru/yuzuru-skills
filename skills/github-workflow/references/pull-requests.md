@@ -30,7 +30,8 @@ python3 scripts/github.py --repo owner/repo pr-create \
 ```
 
 If `--base` is omitted, the helper reads the default branch. It rejects a duplicate
-open head/base PR. After confirmation, use `--confirm-write` and return the verified PR.
+open head/base PR. When an end-to-end mandate covers PR creation, use `--confirm-write`
+after the preview without another pause; otherwise ask first. Return the verified PR.
 
 Use `pr-update NUMBER` for title, body, base, or reopening. Use
 `pr-metadata-update NUMBER` for assignees, labels, and milestone; PR metadata is
@@ -75,8 +76,11 @@ a changed SHA and own-author approval, sends a review once, then re-reads review
   SHA and method.
 - The helper's exact target is `owner/repo#NUMBER@SHA via METHOD`. A natural
   instruction naming an unambiguous PR and method, or “merge it” after that exact
-  unchanged preview, authorizes the action; users need not repeat a magic token.
-- If the SHA changes, authorization expires. Preview and confirm again.
+  unchanged preview, authorizes an interactive merge.
+- A task-scoped mandate that explicitly includes merging its resulting PR remains
+  authorization as the agent creates that PR and adds in-scope follow-up commits.
+  Always preview and execute against the current SHA; ask again only if the target,
+  method, scope, or risk changes, or another actor changes the PR.
 - If rules require merge queue, do not call direct merge.
 - Delete a feature branch separately with `branch-delete` and target
   `owner/repo@branch` only when the user requests cleanup.

@@ -27,7 +27,8 @@ reads the repository again after a successful update.
 5. Create a focused feature branch from the intended base.
 6. Edit, test, inspect the diff, and stage only task files.
 7. Commit coherent checkpoints with clear one-line messages.
-8. Show exact remote and branch, then ask before `git push -u REMOTE BRANCH`.
+8. Show the exact remote and branch. Push without another pause when a task-scoped
+   mandate covers delivery; otherwise ask before `git push -u REMOTE BRANCH`.
 9. After push, use `pr-candidate` and the PR route.
 
 Do not wrap these Git commands in the API helper. Preserve the user's Git credential
@@ -35,9 +36,10 @@ configuration. Never put tokens in remote URLs or output.
 
 ## Push And Cleanup
 
-Push is an external write even when a coding task authorized local edits and commits.
-Require explicit confirmation of remote and branch. Never push directly to the
-default upstream branch unless the user explicitly names it.
+Push is an external write. A task-scoped delivery mandate covers the resolved feature
+branch and subsequent in-scope CI-fix pushes to that branch; otherwise require explicit
+confirmation of remote and branch. Never push directly to the default upstream branch
+unless the user explicitly names that effect.
 
 Do not use `--force`. If history repair is explicitly required, show the lease target
 and require exact destructive confirmation before `--force-with-lease`.
