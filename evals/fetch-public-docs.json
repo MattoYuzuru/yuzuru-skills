@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Прямая загрузка документации заблокирована шлюзом, достань её через настроенный bridge",
+    "Fetch these public documentation URLs through Sky Bridge",
+    "TLS timeout не даёт открыть официальный docs-сайт, используй fetch-public-docs"
+  ],
+  "should_not_trigger": [
+    "Открой обычную публичную страницу напрямую",
+    "Обойди 403 на приватной странице",
+    "Скачай данные из внутренней системы с моими cookies"
+  ],
+  "capabilities": [
+    {"name": "public-docs-fetch", "effect": "read", "confirmation": "none"}
+  ]
+}

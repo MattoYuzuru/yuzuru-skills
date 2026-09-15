@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fetch Public Docs"
+  short_description: "Fetch blocked public docs through a safe bridge"
+  default_prompt: "Use $fetch-public-docs after direct access to public documentation is blocked."

@@ -82,13 +82,16 @@ README, and eval contract. No package relies on symlinks outside its directory.
 | Skill | Purpose |
 |---|---|
 | `central-university-lms` | Headless LMS inspection and safe homework/status workflows. |
+| `fetch-public-docs` | Retrieve blocked public documentation through a configured allowlisted bridge. |
 | `github-workflow` | GitHub repositories, issues, pull requests, Projects, Actions, and local Git. |
 | `gitlab-workflow` | GitLab repositories, merge requests, discussions, pipelines, and fork delivery. |
 | `google-ai-search` | Token-efficient public research with Google Search grounding. |
 | `google-sheets-workflow` | Google Sheets/Drive reads, controlled writes, formulas, and structure. |
 | `jira-workflow` | Jira issue discovery, creation, linking, quality checks, and transitions. |
+| `meeting-artifacts-workflow` | Find evidence, decisions, and follow-ups in meeting artifacts through a compatible connector. |
 | `russian-editorial-style` | Evidence-aware Russian editing across technical, long-form, business, and short-form genres. |
 | `search-workflow` | Fast routing across local source, files, structured data, documents, and archives. |
+| `team-messenger-workflow` | Read, search, summarize, and safely update a user-configured team messenger. |
 | `write-kotlin` | Repository-adaptive Kotlin implementation and refactoring. |
 
 Existing skill paths are unchanged. Managed stale links caused by moving the clone can be diagnosed
