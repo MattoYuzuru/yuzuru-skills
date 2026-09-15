@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Найди вчерашнее обсуждение релиза в командном мессенджере",
+    "Отправь это сообщение в канал проекта",
+    "Собери обязательства и дедлайны из этого треда",
+    "Поставь реакцию на сообщение и закрепи его"
+  ],
+  "should_not_trigger": [
+    "Напиши текст сообщения, но никуда его не отправляй",
+    "Найди письмо в моей почте",
+    "Суммаризуй приложенный локальный Markdown-файл"
+  ],
+  "capabilities": [
+    {"name": "account-read", "effect": "read", "confirmation": "none"},
+    {"name": "history-read", "effect": "read", "confirmation": "none"},
+    {"name": "message-search", "effect": "read", "confirmation": "none"},
+    {"name": "message-send", "effect": "write", "confirmation": "explicit"},
+    {"name": "message-reply", "effect": "write", "confirmation": "explicit"},
+    {"name": "reaction-update", "effect": "write", "confirmation": "explicit"},
+    {"name": "pin-update", "effect": "write", "confirmation": "explicit"},
+    {"name": "channel-update", "effect": "write", "confirmation": "explicit"},
+    {"name": "message-delete", "effect": "destructive", "confirmation": "exact"},
+    {"name": "channel-archive", "effect": "destructive", "confirmation": "exact"}
+  ]
+}

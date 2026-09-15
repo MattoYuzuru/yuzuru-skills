@@ -1,0 +1,4 @@
+interface:
+  display_name: "Meeting Artifacts Workflow"
+  short_description: "Find evidence in meeting summaries and transcripts"
+  default_prompt: "Use $meeting-artifacts-workflow to inspect meeting artifacts safely."

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Найди в записях встреч, что решили по запуску",
+    "Покажи action items из вчерашнего созвона",
+    "Найди упоминания миграции в транскриптах встреч",
+    "Summarize the decisions from this meeting recording"
+  ],
+  "should_not_trigger": [
+    "Запиши новую встречу в календарь",
+    "Сделай транскрипцию локального аудиофайла",
+    "Найди обсуждение в текстовом канале мессенджера"
+  ],
+  "capabilities": [
+    {"name": "session-read", "effect": "read", "confirmation": "none"},
+    {"name": "meeting-list", "effect": "read", "confirmation": "none"},
+    {"name": "artifact-search", "effect": "read", "confirmation": "none"},
+    {"name": "artifact-read", "effect": "read", "confirmation": "none"},
+    {"name": "artifact-refresh", "effect": "read", "confirmation": "none"},
+    {"name": "authenticate", "effect": "write", "confirmation": "explicit"},
+    {"name": "sign-out", "effect": "destructive", "confirmation": "exact"}
+  ]
+}

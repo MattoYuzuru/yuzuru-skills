@@ -1,0 +1,4 @@
+interface:
+  display_name: "Team Messenger Workflow"
+  short_description: "Read, search, summarize, and post team messages"
+  default_prompt: "Use $team-messenger-workflow to handle this messenger request safely."
