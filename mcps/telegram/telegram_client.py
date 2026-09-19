@@ -213,7 +213,7 @@ CAPABILITIES: dict[str, Any] = {
     "thread.list": False, "thread.get": "conditional", "thread.reply": "conditional",
     "topic.list": True, "topic.get": True, "topic.create": True, "topic.update": True,
     "unread.inspect": True, "mentions.inspect": True, "reaction.read": True, "reaction.write": True, "pin.read": True, "pin.write": True,
-    "attachment.read": True, "attachment.send": True, "membership.list": "conditional", "membership.add": "conditional", "membership.remove": "conditional", "schedule.message": "conditional",
+    "attachment.metadata": True, "attachment.download": True, "attachment.send": True, "membership.list": "conditional", "membership.add": "conditional", "membership.remove": "conditional", "schedule.message": "conditional",
 }
 
 
@@ -353,9 +353,25 @@ class TelegramOperations:
         value = self.td.request({"@type": "getFile", "file_id": int(require(a, "file_id"))})
         return {"file_id": str(value.get("id")), "size": value.get("size"), "expected_size": value.get("expected_size"), "local": {"can_download": (value.get("local") or {}).get("can_be_downloaded"), "downloaded": (value.get("local") or {}).get("is_downloading_completed")}, "remote": {"uploading": (value.get("remote") or {}).get("is_uploading_active")}}
 
-    def send_message(self, a: dict[str, Any]) -> Any:
+    def download_file(self, a: dict[str, Any]) -> Any:
+        file_id = int(require(a, "file_id")); max_bytes = int(a.get("max_bytes") or 50 * 1024 * 1024)
+        if not 1 <= max_bytes <= 100 * 1024 * 1024:
+            raise TelegramError("INVALID_ARGUMENT", "max_bytes must be between 1 and 104857600")
+        metadata = self.td.request({"@type": "getFile", "file_id": file_id})
+        expected = int(metadata.get("expected_size") or metadata.get("size") or 0)
+        if expected > max_bytes:
+            raise TelegramError("INVALID_ARGUMENT", f"file exceeds {max_bytes} bytes")
+        value = self.td.request({"@type": "downloadFile", "file_id": file_id, "priority": 1, "offset": 0, "limit": 0, "synchronous": True})
+        local = value.get("local") or {}; path = str(local.get("path") or "")
+        if not local.get("is_downloading_completed") or not path:
+            raise TelegramError("PROVIDER_UNAVAILABLE", "TDLib did not complete the bounded download")
+        size = Path(path).stat().st_size
+        if size > max_bytes:
+            raise TelegramError("INVALID_ARGUMENT", f"downloaded file exceeds {max_bytes} bytes")
+        return {"file_id": str(value.get("id")), "path": path, "size": size, "cache_managed": True}
+
+    def _send_content(self, a: dict[str, Any], content: dict[str, Any]) -> Any:
         sending_id = secrets.randbelow(2_000_000_000) + 1
-        content = {"@type": "inputMessageText", "text": {"@type": "formattedText", "text": str(require(a, "text")), "entities": []}, "link_preview_options": None, "clear_draft": True}
         request = {"@type": "sendMessage", "chat_id": int(require(a, "conversation_id")), "message_thread_id": int(a.get("thread_id") or 0), "reply_to": {"@type": "inputMessageReplyToMessage", "message_id": int(a["reply_to_message_id"]), "quote": None, "checklist_task_id": 0} if a.get("reply_to_message_id") else None, "options": {"@type": "messageSendOptions", "disable_notification": bool(a.get("silent", False)), "from_background": False, "protect_content": False, "update_order_of_installed_sticker_sets": False, "scheduling_state": a.get("scheduling_state"), "sending_id": sending_id, "only_preview": False}, "reply_markup": None, "input_message_content": content}
         temporary = self.td.request(request, mutation=True)
         old_id = temporary.get("id")
@@ -364,7 +380,20 @@ class TelegramOperations:
             error = update.get("error") or {}; raise TelegramError("PROVIDER_UNAVAILABLE", str(error.get("message") or "send failed")[:300], details={"provider_code": error.get("code")})
         return normalize_message(update.get("message") or temporary)
 
+    def send_message(self, a: dict[str, Any]) -> Any:
+        content = {"@type": "inputMessageText", "text": {"@type": "formattedText", "text": str(require(a, "text")), "entities": []}, "link_preview_options": None, "clear_draft": True}
+        return self._send_content(a, content)
+
     reply_message = send_message
+
+    def send_file(self, a: dict[str, Any]) -> Any:
+        path = Path(str(require(a, "path"))).expanduser().resolve(); max_bytes = int(a.get("max_bytes") or 50 * 1024 * 1024)
+        if not path.is_file():
+            raise TelegramError("INVALID_ARGUMENT", "attachment path must be an existing file")
+        if not 1 <= max_bytes <= 100 * 1024 * 1024 or path.stat().st_size > max_bytes:
+            raise TelegramError("INVALID_ARGUMENT", f"attachment exceeds the allowed {max_bytes} bytes")
+        content = {"@type": "inputMessageDocument", "document": {"@type": "inputFileLocal", "path": str(path)}, "thumbnail": None, "disable_content_type_detection": False, "caption": {"@type": "formattedText", "text": str(a.get("caption") or ""), "entities": []}}
+        return self._send_content(a, content)
 
     def edit_message(self, a: dict[str, Any]) -> Any:
         content = {"@type": "inputMessageText", "text": {"@type": "formattedText", "text": str(require(a, "text")), "entities": []}, "link_preview_options": None, "clear_draft": False}

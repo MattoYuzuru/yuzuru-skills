@@ -127,6 +127,16 @@ class OperationTests(unittest.TestCase):
         self.assertEqual(result["result"]["message_id"], "100")
         self.assertTrue(td.calls[-1][1])
 
+    def test_send_file_uses_native_document_content(self) -> None:
+        td = FakeTd()
+        td.responses["sendMessage"] = {"id": -9, "chat_id": 1, "content": {"@type": "messageDocument"}}
+        td.updates = [{"@type": "updateMessageSendSucceeded", "old_message_id": -9, "message": {"id": 10, "chat_id": 1, "date": 1, "content": {"@type": "messageDocument"}}}]
+        with tempfile.NamedTemporaryFile() as item:
+            result = TelegramOperations(td, check_authorization=False).call("telegram_send_file", {"conversation_id": "1", "path": item.name})
+        send = [request for request, _ in td.calls if request.get("@type") == "sendMessage"][0]
+        self.assertEqual(send["input_message_content"]["@type"], "inputMessageDocument")
+        self.assertEqual(result["result"]["message_id"], "10")
+
     def test_destructive_tools_require_confirmation(self) -> None:
         tools = {item["name"]: item for item in TOOLS}
         for name in ("telegram_delete_message", "telegram_remove_members"):
