@@ -1,0 +1,7 @@
+{
+  "name": "yuzuru-telegram",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DeepSeek Harness bundle for the Yuzuru telegram plugin skills.",
+  "dsh": {"bundle": {"patch": "./cordis.patch.yml"}}
+}

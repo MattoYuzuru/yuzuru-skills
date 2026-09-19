@@ -11,6 +11,8 @@
 | `frontend-agent` | UX, visual direction, frontend architecture and implementation | Backend ownership |
 | `sre-agent` | Independent verification, reliability, performance, security evidence | Agreeing with implementation claims |
 | `cleaner-agent` | Conservative code/doc/artifact hygiene | Unapproved deletion or hidden debt |
+| `time-messenger` | Bounded TiMe reads and authorized semantic writes over API v4 | Other messengers or implicit write authorization |
+| `telegram` | Bounded Telegram user workflows over pinned TDLib | Bot API workflows or reuse of desktop session storage |
 
 Typical flow:
 

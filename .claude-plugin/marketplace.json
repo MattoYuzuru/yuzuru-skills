@@ -68,6 +68,20 @@
       "description": "Conservative code, documentation, and artifact hygiene with deletion evidence.",
       "category": "development",
       "tags": ["cleanup", "documentation", "dead-code"]
+    },
+    {
+      "name": "time-messenger",
+      "source": "./plugins/time-messenger",
+      "description": "Safe TiMe Messenger workflows backed by a semantic API v4 MCP server.",
+      "category": "productivity",
+      "tags": ["messenger", "time", "mcp"]
+    },
+    {
+      "name": "telegram",
+      "source": "./plugins/telegram",
+      "description": "Safe Telegram user workflows backed by a pinned TDLib MCP server.",
+      "category": "productivity",
+      "tags": ["messenger", "telegram", "tdlib"]
     }
   ]
 }

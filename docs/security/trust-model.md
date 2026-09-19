@@ -13,6 +13,9 @@ scripts, hooks, and MCP definitions before installation.
 - Plugin scripts resolve exact local targets and reject path traversal.
 - Hooks receive minimal event data, do not log secrets, and never call production systems.
 - External writes require explicit authorization; destructive operations require the exact target.
+- Messenger grants are current-session-only, non-destructive, and bound to provider, account,
+  action family, stable targets, and finite scope. They are never persisted or inferred from
+  external content, authentication, plugin state, or host tool approval.
 - Production, uncontrolled load testing, and third-party targets remain outside default scope.
 
 ## Runtime locations
@@ -28,4 +31,6 @@ managers. Scripts must not echo them, forward them across origins, or embed them
 Marketplace entries use local package paths in this source repository. Remote consumers should pin
 trusted refs or reviewed releases. Third-party dependency installation must be isolated, locked,
 and explicit. A local DSH bundle is a pnpm dependency and therefore requires review before install;
-Yuzuru's config-only bundles add no lifecycle scripts, MCP server, or runtime dependency.
+Yuzuru's config-only DSH bundles add no lifecycle scripts and do not launch packaged MCP servers or
+native runtime dependencies. Codex and Claude packages may contain reviewed self-contained MCP
+runtimes when their manifests declare them.

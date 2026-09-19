@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "telegram",
+  "displayName": "Telegram",
+  "version": "0.1.0",
+  "description": "Safe Telegram user workflow backed by a pinned TDLib MCP server.",
+  "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["messenger", "telegram", "tdlib", "mcp"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

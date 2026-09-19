@@ -1,0 +1,4 @@
+interface:
+  display_name: "Messenger Workflow"
+  short_description: "Read, search, summarize, and update messages safely"
+  default_prompt: "Use $messenger-workflow to handle this messenger request safely."

@@ -25,8 +25,8 @@ implementation.
 - Each plugin owns everything required at runtime under `plugins/<plugin-id>/`.
 - Repository scripts validate and install; plugin scripts execute plugin workflows.
 - Shared artifact schemas are contracts, not runtime libraries.
-- `mcps/` is a registry and future server boundary. The first release has no MCP server because
-  all requested capabilities are local workflows and do not require persistent authenticated tools.
+- `mcps/` owns canonical source and tests for authenticated semantic servers. Owning plugins copy
+  the runtime into their package so installed artifacts never depend on the monorepo or siblings.
 - `hooks/` documents shared hook policy; runtime hooks remain inside the plugin that ships them.
 
 Installed marketplaces copy packages into platform caches. A plugin may not depend on `../`,
@@ -48,5 +48,5 @@ plugin root, never from the current working directory.
 ## Extension points
 
 A future platform adapter adds its own manifest and marketplace validator while reusing existing
-skills and scripts. A future MCP server must live under `mcps/<name>/`, declare its owner plugins,
-and satisfy the MCP authoring and credential boundaries before any manifest exposes it.
+skills and scripts. A new MCP server must live under `mcps/<name>/`, declare its owner plugins, and
+satisfy the MCP authoring and credential boundaries before any manifest exposes it.

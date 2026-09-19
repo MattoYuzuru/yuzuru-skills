@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "tdlib": {
+    "version": "1.8.67",
+    "commit": "d1085f9cebc5a62379991ae1652673954f229c1f",
+    "license": "Boost-1.0"
+  },
+  "build": {
+    "cmake_version": "4.1.1",
+    "cmake_archive_sha256": "3cd1da5341618645bdc85a3b99e273f29c4d48db2f545925a658db992e61f6f9",
+    "openssl_version": "3.6.4",
+    "target": "darwin-arm64",
+    "compiler": "Apple clang 21.0.0"
+  },
+  "artifacts": {
+    "darwin-arm64/libtdjson.dylib": "25e583e40968c507ceee1d04663125466be5a9c746711a8fc6c871f0d6bfccaa",
+    "darwin-arm64/libssl.3.dylib": "9dbd6964bb91444023393e81e85fd4b88e1dc3884cdc3559e5565269723b95c4",
+    "darwin-arm64/libcrypto.3.dylib": "ded612c40983ed318bbc8b49d8a53b01df2eee833f424f06b353a0a14e8380c4"
+  }
+}

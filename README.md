@@ -1,7 +1,7 @@
 # Yuzuru Engineering Extensions
 
 Yuzuru is a cross-agent extension monorepo for Codex, Claude Code, and DeepSeek Harness. It ships portable standalone
-Agent Skills, nine independently installable engineering plugins, thin vendor adapters, deterministic
+Agent Skills, eleven independently installable plugins, thin vendor adapters, deterministic
 helpers, repository marketplaces, schemas, hooks, eval contracts, and a safe local CLI.
 
 Canonical behavior lives in each skill package. Claude agents and hooks, Codex UI metadata, dual
@@ -72,6 +72,8 @@ rebase, re-enable plugins, or overwrite unmanaged installations.
 | `frontend-agent` | UX direction, distinctive design, frontend architecture, implementation, accessibility, and visuals. |
 | `sre-agent` | Independent behavioral, reliability, performance, security, E2E, and release verification. |
 | `cleaner-agent` | Conservative documentation, code, and artifact hygiene with deletion evidence. |
+| `time-messenger` | TiMe API v4 reads and explicitly authorized writes through a semantic MCP server. |
+| `telegram` | Telegram user-account workflows through a pinned, packaged TDLib MCP server. |
 
 Each package under `plugins/<id>/` has one logical identity, thin host manifests and a DSH bundle, a primary orchestration
 skill, focused supporting skills, scripts or hooks only where justified, a Claude specialist adapter,
@@ -91,7 +93,7 @@ README, and eval contract. No package relies on symlinks outside its directory.
 | `meeting-artifacts-workflow` | Find evidence, decisions, and follow-ups in meeting artifacts through a compatible connector. |
 | `russian-editorial-style` | Evidence-aware Russian editing across technical, long-form, business, and short-form genres. |
 | `search-workflow` | Fast routing across local source, files, structured data, documents, and archives. |
-| `team-messenger-workflow` | Read, search, summarize, and safely update a user-configured team messenger. |
+| `messenger-workflow` | Read, search, summarize, and safely update a user-configured messenger. |
 | `write-kotlin` | Repository-adaptive Kotlin implementation and refactoring. |
 
 Existing skill paths are unchanged. Managed stale links caused by moving the clone can be diagnosed

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "plugin": "telegram",
+  "should_trigger": [
+    "Покажи непрочитанные сообщения Telegram и не меняй read state",
+    "Найди обсуждение релиза в архивных чатах Telegram",
+    "Ответь в этой подтверждённой Telegram-теме",
+    "Покажи закреплённые сообщения в этом Telegram-чате"
+  ],
+  "should_not_trigger": [
+    "Создай бота через Telegram Bot API",
+    "Проверь сообщения в TiMe"
+  ],
+  "routing": [
+    {"case": "TDLib runtime, login, or profile setup", "skill": "telegram-setup"},
+    {"case": "chat read or authorized mutation", "skill": "telegram"}
+  ],
+  "safety": [
+    "Read inspection never calls viewMessages",
+    "Session grants remain in memory and bind provider, account, action, and stable target",
+    "Destructive actions require exact fresh confirmation",
+    "Ambiguous sends are never retried automatically"
+  ],
+  "artifact_quality": [
+    "Chat, ordinary thread, and forum topic semantics stay distinct",
+    "Results preserve Telegram IDs and bounded pagination",
+    "Native limitations and conditional capabilities remain explicit"
+  ]
+}

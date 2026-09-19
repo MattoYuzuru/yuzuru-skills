@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Покажи непрочитанные сообщения Telegram, не меняя read state",
+    "Найди обсуждение релиза в архивных чатах Telegram",
+    "Ответь в точной форумной теме Telegram",
+    "Перешли нативно эти сообщения в подтверждённый Telegram-чат"
+  ],
+  "should_not_trigger": [
+    "Создай Telegram-бота через Bot API",
+    "Проверь канал в TiMe"
+  ],
+  "capabilities": [
+    {"name": "telegram-history-read", "effect": "read", "confirmation": "none"},
+    {"name": "telegram-topic-read", "effect": "read", "confirmation": "none"},
+    {"name": "telegram-message-send", "effect": "write", "confirmation": "explicit"},
+    {"name": "telegram-file-send", "effect": "write", "confirmation": "explicit"},
+    {"name": "telegram-member-remove", "effect": "destructive", "confirmation": "exact"},
+    {"name": "telegram-message-delete", "effect": "destructive", "confirmation": "exact"}
+  ]
+}

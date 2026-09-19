@@ -63,6 +63,20 @@
       "expected_plugins": ["cleaner-agent", "harness-agent", "sre-agent"],
       "handoff": "Current evidence distinguishes obsolete debris from unresolved findings and historical rationale.",
       "completion_evidence": "Approved deletion is recoverable, links pass, and existing indexes are refreshed."
+    },
+    {
+      "id": "time-messenger-operations",
+      "prompt": "Inspect unread TiMe discussions without changing read state, then send one approved status update to the resolved channel.",
+      "expected_plugins": ["time-messenger"],
+      "handoff": "Bounded read evidence and stable IDs produce an exact preview and current-session authorization scope.",
+      "completion_evidence": "Read state stays unchanged; the send is executed once and reported with provider result and verification."
+    },
+    {
+      "id": "telegram-native-semantics",
+      "prompt": "Inspect Telegram forum topics and a known ordinary reply thread, then prepare an authorized reply without conflating their IDs.",
+      "expected_plugins": ["telegram"],
+      "handoff": "TDLib capability evidence preserves chat, forum topic, root message, and ordinary thread distinctions.",
+      "completion_evidence": "The reply uses the exact native target, waits for final send state, and does not retry ambiguity."
     }
   ]
 }
