@@ -1,10 +1,11 @@
 {
   "version": 1,
   "should_trigger": [
-    "Найди вчерашнее обсуждение релиза в командном мессенджере",
+    "Найди вчерашнее обсуждение релиза в мессенджере",
     "Отправь это сообщение в канал проекта",
     "Собери обязательства и дедлайны из этого треда",
-    "Поставь реакцию на сообщение и закрепи его"
+    "Поставь реакцию на сообщение и закрепи его",
+    "Покажи непрочитанные сообщения, не меняя их read state"
   ],
   "should_not_trigger": [
     "Напиши текст сообщения, но никуда его не отправляй",
@@ -20,6 +21,8 @@
     {"name": "reaction-update", "effect": "write", "confirmation": "explicit"},
     {"name": "pin-update", "effect": "write", "confirmation": "explicit"},
     {"name": "channel-update", "effect": "write", "confirmation": "explicit"},
+    {"name": "read-state-update", "effect": "write", "confirmation": "explicit"},
+    {"name": "attachment-send", "effect": "write", "confirmation": "explicit"},
     {"name": "message-delete", "effect": "destructive", "confirmation": "exact"},
     {"name": "channel-archive", "effect": "destructive", "confirmation": "exact"}
   ]

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Покажи непрочитанные сообщения в TiMe, не меняя read state",
+    "Найди обсуждение релиза в TiMe",
+    "Отправь согласованный текст в точный канал TiMe",
+    "Загрузи этот файл и приложи его к сообщению TiMe"
+  ],
+  "should_not_trigger": [
+    "Проверь мои чаты Telegram",
+    "Напиши черновик сообщения без отправки"
+  ],
+  "capabilities": [
+    {"name": "time-history-read", "effect": "read", "confirmation": "none"},
+    {"name": "time-unread-read", "effect": "read", "confirmation": "none"},
+    {"name": "time-message-send", "effect": "write", "confirmation": "explicit"},
+    {"name": "time-file-send", "effect": "write", "confirmation": "explicit"},
+    {"name": "time-member-remove", "effect": "destructive", "confirmation": "exact"},
+    {"name": "time-message-delete", "effect": "destructive", "confirmation": "exact"}
+  ]
+}
