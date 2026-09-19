@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
-from typing import Callable, Sequence
+from typing import Callable, Optional, Sequence
 
 
 @dataclass(frozen=True)
@@ -78,7 +78,7 @@ TOOLS = (
 )
 
 
-Which = Callable[[str], str | None]
+Which = Callable[[str], Optional[str]]
 Probe = Callable[[str], str]
 
 
