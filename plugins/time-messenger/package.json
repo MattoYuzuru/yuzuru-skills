@@ -1,0 +1,7 @@
+{
+  "name": "yuzuru-time-messenger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DeepSeek Harness bundle for the Yuzuru time-messenger plugin skills.",
+  "dsh": {"bundle": {"patch": "./cordis.patch.yml"}}
+}

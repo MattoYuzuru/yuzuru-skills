@@ -1,0 +1,19 @@
+{
+  "name": "time-messenger",
+  "version": "0.1.0",
+  "description": "Safe TiMe Messenger workflow backed by a semantic API v4 MCP server.",
+  "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["messenger", "time", "mcp"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "TiMe Messenger",
+    "shortDescription": "Inspect and operate TiMe with scoped authorization",
+    "longDescription": "Bounded TiMe API v4 reads and explicitly authorized writes with normalized messenger semantics.",
+    "developerName": "MattoYuzuru",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Use TiMe Messenger to inspect my workspace without changing read state."]
+  }
+}

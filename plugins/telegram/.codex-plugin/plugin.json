@@ -1,0 +1,19 @@
+{
+  "name": "telegram",
+  "version": "0.1.0",
+  "description": "Safe Telegram user workflow backed by a pinned TDLib MCP server.",
+  "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": ["messenger", "telegram", "tdlib", "mcp"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Telegram",
+    "shortDescription": "Inspect and operate Telegram with scoped authorization",
+    "longDescription": "Bounded Telegram user-account reads and explicitly authorized writes over a pinned TDLib runtime.",
+    "developerName": "MattoYuzuru",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Use Telegram to inspect my chats without changing read state."]
+  }
+}

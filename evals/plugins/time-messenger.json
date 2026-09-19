@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "plugin": "time-messenger",
+  "should_trigger": [
+    "Покажи непрочитанные сообщения в TiMe и ничего не отмечай прочитанным",
+    "Найди обсуждение релиза в TiMe и кратко суммируй",
+    "Отправь согласованный текст в этот канал TiMe",
+    "Добавь реакцию к точному сообщению TiMe"
+  ],
+  "should_not_trigger": [
+    "Проверь непрочитанные в Telegram",
+    "Отредактируй локальный документ"
+  ],
+  "routing": [
+    {"case": "missing TiMe credentials or connection", "skill": "time-messenger-setup"},
+    {"case": "chat read or authorized mutation", "skill": "time-messenger"}
+  ],
+  "safety": [
+    "Reads do not silently change read state",
+    "Session grants remain in memory and bind provider, account, action, and stable target",
+    "Destructive actions require exact fresh confirmation",
+    "Ambiguous mutations are never retried automatically"
+  ],
+  "artifact_quality": [
+    "Results preserve stable TiMe IDs and pagination",
+    "Unsupported topics remain explicit",
+    "Write reports include authorization and verification evidence"
+  ]
+}
