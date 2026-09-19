@@ -1,6 +1,6 @@
 # Platform Compatibility
 
-Verified against Codex CLI 0.145.0, Claude Code 2.1.197, and DeepSeek Harness 0.1.0-rc.7, plus
+Verified against Codex CLI 0.155.1, Claude Code 2.1.278, and DeepSeek Harness 0.1.0-rc.7, plus
 current official platform documentation.
 
 | Capability | Codex / OpenAI | Claude Code | DeepSeek Harness | Repository strategy |
@@ -13,7 +13,7 @@ current official platform documentation.
 | Install/uninstall | `codex plugin add/remove` | `claude plugin install/uninstall` | `dsh plugin --profile ... add/remove` | Delegate to native managers |
 | Custom agents | Personal/project TOML | Plugin `agents/*.md` | Agent presets and subagent providers | Portable delegation policy, host adapters only where proven |
 | Hooks | Plugin hooks | Plugin hooks | Cordis event plugins, no direct parity claim | Adapt semantics explicitly |
-| MCP | Plugin `.mcp.json` | Plugin `.mcp.json` | MCP client plugin when configured | No fictional server or implicit enablement |
+| MCP | Plugin `.mcp.json` | Plugin `.mcp.json` | Skills only in Yuzuru bundles; MCP client must be configured separately | Package real tested servers; never imply DSH parity |
 | Writable data | Host plugin data | Host plugin data | Harness home/profile state | Never write package roots |
 | Live reload | Component-dependent | Component-dependent | Provider watcher for skills; bundle changes require restart | Document component behavior |
 | Version source | Host manifest | Host manifest | DSH package manifest | `plugin-version.json` remains authoritative |
@@ -31,6 +31,11 @@ portable delegation policy needed on Codex and future hosts.
 Neither marketplace file is runtime state. Installation, enabled state, credentials, caches, and
 plugin data remain owned by the native host.
 
+Host MCP/tool approval and service authentication provide technical access. They do not replace a
+skill's semantic authorization rules for external writes. Messenger session grants remain
+conversation-memory-only and cannot cross accounts, providers, targets, action families, or
+sessions.
+
 DeepSeek Harness remains a developer preview. A Yuzuru config-only bundle activates one isolated
 `dsh-skill-filesystem` provider at profile boot and watches the canonical package skill directory.
 The model receives a catalog first and loads full skill bodies only on invocation; “everything is a
@@ -38,7 +43,8 @@ plugin” does not justify copying skill text into Cordis plugins or a permanent
 
 DSH bundle paths resolve through the profile's `node_modules`, so local absolute paths appear only
 in machine-owned pnpm dependencies. Claude/Codex hooks, agents, and MCP declarations are not assumed
-compatible with Cordis events, agent presets, or providers.
+compatible with Cordis events, agent presets, or providers. The TiMe and Telegram DSH packages
+therefore expose portable workflow/setup skills but do not launch the packaged Python MCP runtime.
 
 ## Official sources
 

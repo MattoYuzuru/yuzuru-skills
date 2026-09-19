@@ -1,6 +1,6 @@
 # Marketplace Installation and Management
 
-The repository exposes the same nine stable plugin IDs from two catalogs:
+The repository exposes the same eleven stable plugin IDs from two catalogs:
 
 - Codex: `.agents/plugins/marketplace.json`;
 - Claude Code: `.claude-plugin/marketplace.json`.

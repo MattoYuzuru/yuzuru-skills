@@ -16,5 +16,10 @@ Do not convert ordinary scripts into MCP for packaging. A server requires:
 - isolated tests and documented data retention;
 - `.mcp.json` entries only after the server exists.
 
-No MCP server is justified in the first engineering-suite release. Local repository analysis,
-calculations, validation, and artifact assembly are safer as deterministic package scripts.
+The registry currently contains `time-messenger` and `telegram`. Each has an owning self-contained
+plugin, bounded semantic schemas, credential-free tests, documented authentication and state,
+explicit read/write behavior, and a real `.mcp.json` declaration. Telegram pins and vendors a
+first-party-built TDLib runtime for each supported target; unsupported targets fail closed.
+
+Local repository analysis, calculations, validation, and artifact assembly remain deterministic
+package scripts rather than MCP servers.

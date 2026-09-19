@@ -30,6 +30,21 @@
       "id": "dsh-profile-bundle",
       "agent": "dsh",
       "expect": "Install a config-only bundle through the native profile manager, mount one isolated skill provider, and keep canonical SKILL.md content progressively loaded without copies."
+    },
+    {
+      "id": "messenger-mcp-hosts",
+      "agent": "both",
+      "expect": "Codex and Claude load a real packaged .mcp.json runtime; host approval does not replace semantic authorization for writes."
+    },
+    {
+      "id": "messenger-dsh-limit",
+      "agent": "dsh",
+      "expect": "Expose portable messenger skills but state that the config-only bundle does not launch the packaged MCP runtime."
+    },
+    {
+      "id": "telegram-native-target",
+      "agent": "both",
+      "expect": "Load the checksummed macOS arm64 TDLib bundle and fail closed with NATIVE_RUNTIME_UNAVAILABLE on unshipped targets."
     }
   ]
 }
