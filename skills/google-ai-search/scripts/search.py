@@ -5,13 +5,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
 
-from api_config import AI_STUDIO_KEY_URL, DEFAULT_MODEL, key_path, load_api_key
+from api_config import AI_STUDIO_KEY_URL, key_path, load_api_key, resolve_model
 
 
 API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models"
@@ -150,18 +149,27 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     return parse_response(payload, args)
 
 
-def main() -> int:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Grounded Google web research through Gemini API")
     parser.add_argument("--query", "-q", required=True, type=bounded_query)
     parser.add_argument("--lang", "-l", default="en")
-    parser.add_argument("--model", default=os.environ.get("GOOGLE_AI_SEARCH_MODEL", DEFAULT_MODEL))
+    parser.add_argument("--model", help="Override saved or environment model for this search.")
     parser.add_argument("--max-chars", type=bounded_int(200, 20000), default=5000)
     parser.add_argument("--max-output-tokens", type=bounded_int(128, 8192), default=2048)
     parser.add_argument("--include-sources", "-s", action="store_true")
     parser.add_argument("--max-sources", type=bounded_int(1, 20), default=10)
     parser.add_argument("--include-usage", action="store_true")
     parser.add_argument("--timeout", type=bounded_float(1.0, 180.0), default=60.0)
-    args = parser.parse_args()
+    return parser
+
+
+def main() -> int:
+    args = build_parser().parse_args()
+    try:
+        args.model, _ = resolve_model(args.model)
+    except ValueError as exc:
+        print(json.dumps({"query": args.query, "answer": "", "sources": [], "error": str(exc)}))
+        return 1
 
     result = run(args)
     print(json.dumps(result, ensure_ascii=False, indent=2))

@@ -14,7 +14,10 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from api_config import AI_STUDIO_KEY_URL, DEFAULT_MODEL, key_path, load_api_key, save_api_key
+from api_config import (
+    AI_STUDIO_KEY_URL, DEFAULT_MODEL, key_path, load_api_key,
+    resolve_model, save_api_key, save_model, validate_model,
+)
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -44,22 +47,30 @@ def launcher_status() -> dict[str, Any]:
 def collect_status() -> dict[str, Any]:
     key, source = load_api_key()
     configured = key is not None
+    try:
+        model, model_source = resolve_model()
+        model_error = None
+    except ValueError as exc:
+        model, model_source, model_error = None, None, str(exc)
     result: dict[str, Any] = {
-        "ready": configured,
-        "model": os.environ.get("GOOGLE_AI_SEARCH_MODEL", DEFAULT_MODEL),
+        "ready": configured and model_error is None,
+        "model": model,
+        "model_source": model_source,
         "api_key_configured": configured,
         "api_key_source": source,
         "config_path": str(key_path()),
         "launcher": launcher_status(),
     }
+    if model_error:
+        result["error"] = model_error
     if not configured:
         result["setup_url"] = AI_STUDIO_KEY_URL
         result["next_action"] = setup_command()
     return result
 
 
-def print_json(value: dict[str, Any], *, stream: Any = sys.stdout) -> None:
-    print(json.dumps(value, ensure_ascii=False, indent=2), file=stream)
+def print_json(value: dict[str, Any], *, stream: Any = None) -> None:
+    print(json.dumps(value, ensure_ascii=False, indent=2), file=stream or sys.stdout)
 
 
 def api_error_message(error: urllib.error.HTTPError) -> str:
@@ -124,6 +135,14 @@ def configure(args: argparse.Namespace) -> int:
             )
             return 1
 
+    try:
+        choice = input(f"Gemini model [{DEFAULT_MODEL}]: ").strip()
+        model = validate_model(choice or DEFAULT_MODEL)
+    except (EOFError, ValueError) as exc:
+        print_json({"ready": False, "error": f"Invalid model choice: {exc}"}, stream=sys.stderr)
+        return 1
+
+    save_model(model)
     path = save_api_key(api_key)
     launcher_install = install_launcher()
     result = collect_status()
