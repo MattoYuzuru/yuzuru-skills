@@ -18,7 +18,9 @@ python3 scripts/setup.py check
 
 On Windows, use `py -3 scripts\setup.py check`.
 
-4. If `ready` is `false`, tell the user to:
+4. If `check` reports a model configuration error, show the error and have the
+   user choose a valid model; do not search until it is resolved. If no key is
+   configured, tell the user to:
    - create a key at <https://aistudio.google.com/apikey>;
    - run the `next_action` command in their own terminal;
    - paste the key into the hidden prompt and confirm when complete.
@@ -34,8 +36,14 @@ python3 scripts/search.py \
 ```
 
 Use the installed `google-ai-search` launcher when available. The default model
-is the stable `gemini-3.1-flash-lite`; override it with
-`GOOGLE_AI_SEARCH_MODEL` when Google announces a newer compatible model.
+is the stable `gemini-2.5-flash-lite`. Google currently lists its input/output
+tokens as Free Tier and Search grounding as free up to 500 requests per day,
+shared with `gemini-2.5-flash`. Eligibility and limits depend on the account,
+region, and Google's current pricing; recheck the
+[pricing](https://ai.google.dev/gemini-api/docs/pricing) and
+[grounding](https://ai.google.dev/gemini-api/docs/google-search) docs periodically.
+Model precedence is `--model` > `GOOGLE_AI_SEARCH_MODEL` > saved configuration >
+default. `setup.py check` reports the selected model and source.
 
 ## Result Handling
 
