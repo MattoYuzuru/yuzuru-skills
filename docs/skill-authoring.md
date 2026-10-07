@@ -35,6 +35,8 @@ These are repository defaults. Exceed them only when the extra context is demons
 | Script stdout | Small structured result | Paginate, summarize, and cap collections by default. |
 
 Line counts are proxies, not goals. Remove duplication even when a file is below the limit.
+For descriptions, aim for roughly 150–250 characters when the boundary fits; 1024 is the format
+limit, and DSH's default catalog truncates at 500. Do not pad a short skill to reach a line target.
 
 ## Skill Layout
 
@@ -74,6 +76,15 @@ The description is always visible before activation. Include:
 
 Do not put activation guidance only in a `When to use` body section; the body is unavailable until
 after activation. Avoid marketing language and generic phrases such as "helps with development".
+Describe the specific requested action, not everything the subject might touch. Use a near-neighbor
+negative example to separate local search from web research, implementation from review, and
+general research from product discovery. Keep procedure and safety detail out of the description.
+
+Implicit discovery is normally allowed on all three hosts. Do not add Codex
+`policy.allow_implicit_invocation: false` or Claude/DSH `disable-model-invocation: true` solely because
+some operations need approval: discovering a skill and authorizing a write are separate decisions.
+Preserve user-disabled state and explicit-only preferences. Short descriptions improve selection
+opportunities; they do not guarantee activation or override host budgets and policy.
 
 Repository target metadata belongs in `skill.yaml`:
 
@@ -86,7 +97,7 @@ backward compatibility.
 
 ## Router Pattern
 
-Use a routing table when a skill has more than one distinct capability:
+Use a routing table when multiple substantial modes need different resources:
 
 ```markdown
 ## Routing
@@ -99,6 +110,9 @@ Use a routing table when a skill has more than one distinct capability:
 ```
 
 Read only the selected row's reference. Do not preload every reference "just in case".
+One focused supporting skill can be loaded directly; the primary router is not a prerequisite.
+Within a plugin, link sibling `SKILL.md` files with package-relative Markdown paths instead of
+assuming a host-specific invocation command. Keep simple workflows self-contained.
 
 Keep scripts coarse enough to complete a meaningful operation. Prefer `pipeline-failures` returning
 a compact diagnosis input over separate calls that fetch a pipeline, all jobs, every trace, and raw
@@ -182,10 +196,21 @@ kebab-cased. Confirmation must be `none` for reads, `explicit` for writes, and `
 destructive actions. `yuzuru skill validate` checks this contract; behavioral runners may consume it
 later without changing the installed skill format.
 
+Every skill also needs an entry in `evals/skill-selection.json`: two implicit positive requests,
+two realistic negative requests, and observable workflow expectations. Include user language as
+well as English and avoid naming the skill in prompts. `scripts/run_evals.py` checks coverage and
+contract consistency; it does **not** execute a model. Use `scripts/skill_eval.py` to list cases and
+score observed runs as described in [testing.md](testing.md).
+
 ## Writing Style
 
 Write machine-facing instructions and references in concise English. Preserve official domain and
 API terms. Respond to the user in the user's language unless the task requires another language.
+
+Assume the model understands ordinary software work. Keep domain facts, decision boundaries,
+fragile protocol sequences, exact effects, and completion evidence. A general workflow is guidance,
+not a mandatory itinerary: avoid universal plan files, question banks, reviewer agents, or repeated
+verification. Read [authoring/model-guidance.md](authoring/model-guidance.md) for prompt changes.
 
 Use imperative statements. Document non-obvious decisions and real failure modes; omit general
 knowledge the agent already has. Prefer one representative example over several near-duplicates.
@@ -199,8 +224,8 @@ knowledge the agent already has. Prefer one representative example over several 
 5. Write `SKILL.md` as a router over those capabilities.
 6. Add only the references required by identified tasks.
 7. Run `yuzuru skill validate <name>`.
-8. Run `python3 scripts/smoke_scripts.py`, `python3 scripts/run_tests.py`, and at least one realistic
-   read-only task.
+8. Run affected helper tests, required repository checks, and a realistic permitted workflow.
+   Report an unavailable integration environment rather than inventing a successful smoke test.
 9. Add trigger/effect eval cases for ambiguous or external-system skills.
 10. Install for both target agents and test from a fresh session.
 
@@ -220,7 +245,7 @@ knowledge the agent already has. Prefer one representative example over several 
 
 - Does the description trigger on realistic user language?
 - Can an unrelated request avoid triggering the skill?
-- Does `SKILL.md` route to exactly one relevant reference?
+- Does `SKILL.md` expose only resources needed by this task, without forcing a router?
 - Can scripts run without the agent reading their source?
 - Are outputs bounded and compact?
 - Are writes and destructive actions visibly classified?

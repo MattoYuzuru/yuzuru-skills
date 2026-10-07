@@ -1,6 +1,6 @@
 ---
 name: product-requirements
-description: Model users, jobs, journeys, flows, stories, metrics, glossary, and traceability for a product. Use when product behavior or feature impact needs precise requirements rather than architecture.
+description: Model roles, jobs, journeys, metrics, and traceable requirements. Use when a product workflow or feature impact needs a precise behavior model.
 ---
 
 # Product Requirements

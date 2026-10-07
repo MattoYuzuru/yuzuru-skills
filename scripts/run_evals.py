@@ -7,6 +7,8 @@ import argparse
 import json
 from pathlib import Path
 
+from skill_eval import CONTRACT, validate_contract
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SECTIONS = ("should_trigger", "should_not_trigger", "routing", "safety", "artifact_quality")
@@ -108,11 +110,19 @@ def main() -> int:
     plugin_count, identifiers = plugin_contracts(errors)
     workflow_count = cross_contract(errors, identifiers)
     platform_count = platform_contract(errors)
+    selection = load(CONTRACT, errors)
+    expected_paths = {str(p.relative_to(ROOT))
+                      for pattern in ("skills/*/SKILL.md", "plugins/*/skills/*/SKILL.md")
+                      for p in ROOT.glob(pattern)}
+    errors.extend(validate_contract(selection, expected_paths))
+    selection_count = len(selection.get("skills", [])) if isinstance(selection, dict) else 0
     payload = {
         "ok": not errors,
         "plugin_contracts": plugin_count,
         "cross_workflows": workflow_count,
         "platform_cases": platform_count,
+        "skill_selection_contracts": selection_count,
+        "behavioral_runs": 0,
         "errors": errors,
     }
     if args.json:
@@ -120,7 +130,8 @@ def main() -> int:
     else:
         print(
             f"{'ok' if not errors else 'FAIL'}: {plugin_count} plugin contracts, "
-            f"{workflow_count} cross-plugin workflows, {platform_count} platform cases"
+            f"{workflow_count} cross-plugin workflows, {platform_count} platform cases, "
+            f"{selection_count} skill-selection contracts (no model runs)"
         )
         for error in errors:
             print(f"  error: {error}")

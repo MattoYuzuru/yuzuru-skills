@@ -36,6 +36,12 @@ use a requested ordinary review subagent.
 
 Run `yuzuru plugin validate product-agent`, the traceability unit test, and product eval cases.
 
+## Portable instruction refresh
+
+Version 0.1.1 narrows implicit selection and uses direct package-relative skill routes. Supporting
+skills, templates, and specialist adapters apply only when the task needs them. Required domain
+controls remain in the portable workflow; native host policy and enabled state remain authoritative.
+
 ## Limitations
 
 It does not replace user research, stakeholder approval, architecture design, or actual behavioral

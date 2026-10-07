@@ -1,9 +1,12 @@
 ---
 name: implementation-evidence
-description: Normalize implementation and review evidence into explicit validation states and residual risks. Use when code changes need self-review, regression proof, migration validation, or a completion evidence bundle.
+description: Normalize change evidence, validation states, and residual risks. Use when a handoff, review, or migration needs a structured evidence bundle; exclude routine status replies.
 ---
 
 # Implementation Evidence
+
+Use the evidence detail needed for the handoff. A short completion reply does not need a new JSON
+file or reviewer round; use the helper when a structured bundle is actually required.
 
 Read `references/review-contract.md` before an independent review or a release-readiness claim.
 

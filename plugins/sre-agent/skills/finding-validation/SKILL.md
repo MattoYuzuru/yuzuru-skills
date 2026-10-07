@@ -1,6 +1,6 @@
 ---
 name: finding-validation
-description: Validate suspected defects and risks against requirements, runtime evidence, and reproduction steps. Use when a bug, security concern, or review finding must be confirmed, classified, deduplicated, or rejected.
+description: Confirm, reject, and classify suspected defects with requirements and evidence. Use when a review finding, bug report, or security claim needs validation.
 ---
 
 # Finding Validation

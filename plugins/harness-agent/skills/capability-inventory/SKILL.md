@@ -1,6 +1,6 @@
 ---
 name: capability-inventory
-description: Inventory skills, plugins, MCP servers, hooks, scripts, credentials, effects, and health in machine-readable form. Use when a repository needs a capability catalog or agent-tool health audit.
+description: Inventory declared skills, plugins, tools, hooks, effects, and health. Use when a capability catalog or tool audit is requested; installation alone does not prove usage.
 ---
 
 # Capability Inventory

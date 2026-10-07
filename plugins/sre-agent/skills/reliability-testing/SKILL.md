@@ -1,6 +1,6 @@
 ---
 name: reliability-testing
-description: Design and run authorized behavioral, load, resilience, fault, security, and observability tests within an explicit envelope. Use when a system needs independent reliability or performance evidence.
+description: Run bounded behavioral, resilience, load, or fault tests. Use when independent reliability evidence requires test execution in an explicitly authorized environment.
 ---
 
 # Reliability Testing

@@ -111,26 +111,24 @@ def main() -> int:
     title = title_from_name(args.name)
     body = f"""---
 name: {args.name}
-description: {args.description}
+description: {yaml_string(args.description)}
 ---
 
 # {title}
 
-## Overview
+State the outcome and non-obvious domain context needed to complete the task.
 
-Describe the capability and its scope in one short paragraph.
+## Decisions and resources
 
-## Workflow
+Replace this section with the decisions that change this workflow. Link a supporting reference
+only when a distinct mode needs it; a self-contained skill needs no router. Resolve installed paths
+before executing helpers. Keep exact sequences for fragile protocols and real effect boundaries.
 
-1. Resolve this installed skill directory.
-2. Select the relevant route and load only its required reference.
-3. Run deterministic helpers from `scripts/` when available.
-4. Return a compact result in the user's language.
+## Completion and effects
 
-## Guardrails
-
-- Classify external operations as read, write, or destructive.
-- Require explicit authorization before write or destructive operations.
+Replace this section with observable completion evidence and the actual read, write, or destructive
+operations. Reuse existing authorization within its finite scope. Do not create a universal approval
+gate, mandatory plan, or extra output artifact for ordinary local work.
 """
     (skill_dir / "SKILL.md").write_text(body, encoding="utf-8")
     if set(args.targets) != ALLOWED_TARGETS:
@@ -144,7 +142,7 @@ Describe the capability and its scope in one short paragraph.
                 "interface:",
                 f"  display_name: {yaml_string(title)}",
                 f"  short_description: {yaml_string(short_description(args.description))}",
-                f"  default_prompt: {yaml_string(f'Use ${args.name} to complete this workflow safely.')}",
+                f"  default_prompt: {yaml_string(f'Use ${args.name} for the requested workflow.')}",
                 "",
             ]
         )

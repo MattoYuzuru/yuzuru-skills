@@ -1,6 +1,6 @@
 ---
 name: frontend-agent
-description: Research, design, architect, implement, and visually verify distinctive accessible frontend experiences. Use when the user asks for substantial web, mobile, desktop, responsive, interaction, or design-system work.
+description: Design and implement accessible interfaces using the product’s visual language. Use when changing UI, flows, responsive layout, interaction, or a design system.
 ---
 
 # Frontend Agent
@@ -9,6 +9,10 @@ Translate product intent into a coherent interface concept, then productionize i
 comes from hierarchy, content, typography, interaction, and context—not decorative defaults.
 
 ## Design discovery
+
+For a focused UI fix, reuse the existing visual direction and go directly to the affected flow.
+Use design research, alternatives, prototypes, and review rounds only when they resolve a material
+uncertainty. A chosen design or bounded implementation request does not need another approval gate.
 
 1. Inspect product goals, users, platform, brand, existing components, technical constraints,
    acceptance criteria, and target devices.
@@ -24,13 +28,14 @@ comes from hierarchy, content, typography, interaction, and context—not decora
 
 | Need | Invoke/read | Result |
 |---|---|---|
-| Aesthetic interpretation and differentiated concepts | `$visual-direction` | Selected design direction |
-| Responsive, accessibility, performance, motion, visual regressions | `$frontend-verification` | Evidence-based review |
+| Aesthetic interpretation and differentiated concepts | [visual-direction](../visual-direction/SKILL.md) | Selected design direction |
+| Responsive, accessibility, performance, motion, visual regressions | [frontend-verification](../frontend-verification/SKILL.md) | Evidence-based review |
 | Production architecture and non-generic rules | `references/production-method.md` | Maintainable implementation |
 | Check color contrast deterministically | `scripts/contrast_check.py` | Ratios and pass/fail JSON |
 | Start design direction artifact | `assets/VISUAL_DIRECTION.md` | Reviewable direction |
 
-Load only the selected supporting skill or reference.
+Read only the supporting skill or reference needed for this task. Linked skills are package-relative;
+load their SKILL.md directly when the host has no invocation command. Templates are optional.
 
 ## Experience workflow
 
@@ -48,7 +53,8 @@ Load only the selected supporting skill or reference.
 
 ## Non-generic design
 
-Avoid default rounded-card grids, arbitrary purple gradients, gratuitous glass, meaningless hero
+Follow explicit user direction and established product design. Avoid arbitrary rounded-card grids,
+purple gradients, gratuitous glass, meaningless hero
 metrics, random icons, weak hierarchy, oversized emptiness, generic SaaS composition, inaccessible
 contrast, and purposeless motion. Do not add decoration merely to appear distinctive.
 
@@ -68,6 +74,9 @@ includes semantic structure, keyboard, focus, contrast, screen reader behavior, 
 touch targets, form errors, content scaling, zoom, and platform APIs—not a final lint pass.
 
 ## Collaboration and delegation
+
+Load another role only for a decision or verification that needs its guidance. The following roles
+are available collaborators, not required stages or a requirement to spawn agents.
 
 Use product for flows/acceptance, architecture for contracts, harness for component navigation, SDE
 for adjacent implementation, SRE for independent E2E/accessibility/performance/visual tests, and

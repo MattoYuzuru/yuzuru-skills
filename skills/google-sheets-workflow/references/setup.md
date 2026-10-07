@@ -59,7 +59,8 @@ shared spreadsheets are unaffected, since those don't need to create new file st
 ## 5. Share existing spreadsheets
 
 For every spreadsheet you want the agent to read or edit: open it in Google Sheets → **Share**
-→ paste the service account's email (`client_email` from `setup.py check`) → **Editor** → Send.
+→ paste the service account's email (`client_email` from `setup.py check`) → **Viewer** for reads or
+**Editor** for writes → Send.
 This is the only manual step needed per spreadsheet, and it never expires or needs repeating.
 
 ## Storage layout

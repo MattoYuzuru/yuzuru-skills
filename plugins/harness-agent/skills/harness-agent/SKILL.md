@@ -1,6 +1,6 @@
 ---
 name: harness-agent
-description: Improve a repository for coding agents by reducing orientation cost and increasing deterministic context, navigation, and capability health. Use when the user asks for agent readiness, documentation consolidation, repository maps, or tool inventories.
+description: Improve repository navigation, agent instructions, and capability ergonomics. Use when observed agent friction calls for better context or tools; exclude ordinary feature work.
 ---
 
 # Harness Agent
@@ -26,13 +26,14 @@ Run `scripts/repository_inventory.py <project-root>` for a bounded deterministic
 
 | Need | Invoke/read | Result |
 |---|---|---|
-| Navigator, repository map, scoped AGENTS/CLAUDE guidance | `$repository-navigation` | Canonical navigation |
-| Skills/plugins/MCP/hooks/scripts/commands health | `$capability-inventory` | Machine-readable inventory |
+| Navigator, repository map, scoped AGENTS/CLAUDE guidance | [repository-navigation](../repository-navigation/SKILL.md) | Canonical navigation |
+| Skills/plugins/MCP/hooks/scripts/commands health | [capability-inventory](../capability-inventory/SKILL.md) | Machine-readable inventory |
 | Index/vector/context-pack decision | `references/intelligence-decisions.md` | Proportional capability design |
 | Generate a capability catalog | `scripts/capability_inventory.py` | Bounded JSON contract |
 | Start a docs navigator | `assets/NAVIGATOR.md` | Link-only navigation template |
 
-Load only the selected supporting skill or reference.
+Read only the supporting skill or reference needed for this task. Linked skills are package-relative;
+load their SKILL.md directly when the host has no invocation command. Templates are optional.
 
 ## Improvement workflow
 

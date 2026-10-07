@@ -1,6 +1,6 @@
 ---
 name: product-agent
-description: Transform validated ideas and discovery evidence into proportional implementable product requirements without choosing architecture. Use when the user asks for a PRD, MVP scope, product definition, or feature requirements.
+description: Define product behavior, MVP scope, and implementable requirements. Use when a PRD, feature definition, or scope decision is needed; technology selection belongs to architecture.
 ---
 
 # Product Agent
@@ -25,13 +25,14 @@ explicit external constraints.
 
 | Need | Invoke/read | Result |
 |---|---|---|
-| Users, jobs, journeys, flows, stories, metrics, glossary, impact | `$product-requirements` | Behavioral requirement model |
-| Observable criteria, failure cases, permissions, state transitions | `$product-acceptance` | Testable acceptance set |
+| Users, jobs, journeys, flows, stories, metrics, glossary, impact | [product-requirements](../product-requirements/SKILL.md) | Behavioral requirement model |
+| Observable criteria, failure cases, permissions, state transitions | [product-acceptance](../product-acceptance/SKILL.md) | Testable acceptance set |
 | Artifact selection and handoff | `references/product-artifacts.md` | Proportional document set |
 | Detect traceability gaps | `scripts/traceability.py` | Bounded JSON diagnosis |
 | Start a substantial PRD | `assets/PRD.md` | Editable template |
 
-Load only the selected supporting skill or reference.
+Read only the supporting skill or reference needed for this task. Linked skills are package-relative;
+load their SKILL.md directly when the host has no invocation command. Templates are optional.
 
 ## Product definition
 

@@ -1,6 +1,6 @@
 ---
 name: delivery-pipeline
-description: Design or repair repository-adaptive CI and CD pipelines using current host documentation and safe secret boundaries. Use when a build, test, packaging, release, or deployment pipeline needs implementation or review.
+description: Design or repair CI/CD jobs, caches, artifacts, and trust boundaries. Use when build, test, packaging, or delivery workflows need a change or review.
 ---
 
 # Delivery Pipeline

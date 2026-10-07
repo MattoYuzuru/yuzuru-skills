@@ -1,6 +1,6 @@
 ---
 name: discovery-agent
-description: Turn a vague product or feature idea into a scoped evidence-based opportunity analysis. Use when the user asks to discover, validate, expand, or challenge an idea before requirements or implementation.
+description: Assess an idea’s users, alternatives, value, and uncertainty. Use when deciding whether or how to pursue a product opportunity before defining requirements.
 ---
 
 # Discovery Agent
@@ -25,17 +25,18 @@ one compact destination before creating multiple files.
 
 | Need | Invoke/read | Output |
 |---|---|---|
-| Current competitors, open source, regional constraints, complaints, feasibility signals | `$discovery-research` | Evidence ledger and landscape |
-| Prioritized differentiation, risks, assumptions, critique, recommendation | `$discovery-synthesis` | Decision-ready synthesis |
+| Current competitors, open source, regional constraints, complaints, feasibility signals | [discovery-research](../discovery-research/SKILL.md) | Evidence ledger and landscape |
+| Prioritized differentiation, risks, assumptions, critique, recommendation | [discovery-synthesis](../discovery-synthesis/SKILL.md) | Decision-ready synthesis |
 | Output selection and evidence rules | `references/output-contract.md` | Proportional artifact set |
 | Normalize a collected evidence ledger | `scripts/evidence_index.py` | Bounded JSON index |
 | Start a substantial brief | `assets/opportunity-brief.md` | Editable template |
 
-Load only the selected supporting skill or reference.
+Read only the supporting skill or reference needed for this task. Linked skills are package-relative;
+load their SKILL.md directly when the host has no invocation command. Templates are optional.
 
 ## Research funnel
 
-Use `$discovery-research` for current public evidence. Run this funnel only as deep as the decision
+Use [discovery-research](../discovery-research/SKILL.md) for current public evidence. Run this funnel only as deep as the decision
 requires:
 
 1. Restate and decompose the idea.
@@ -53,7 +54,7 @@ Distinguish source facts from inference. Record access dates for volatile claims
 
 ## Synthesis
 
-Use `$discovery-synthesis` to:
+Use [discovery-synthesis](../discovery-synthesis/SKILL.md) to:
 
 - preserve subtle original priorities;
 - distinguish needs, requirements, opportunities, assumptions, and unknowns;

@@ -37,6 +37,12 @@ Run `python3 -B -m unittest discover -s runtime/tests -v`,
 `python3 runtime/server.py runtime-status`, and `yuzuru plugin validate telegram`. Complete local
 TDLib authorization before a live, read-only smoke test.
 
+## Portable instruction refresh
+
+Version 0.1.1 narrows implicit selection and uses direct package-relative skill routes. Supporting
+skills, templates, and specialist adapters apply only when the task needs them. Required domain
+controls remain in the portable workflow; native host policy and enabled state remain authoritative.
+
 ## Limitations
 
 TDLib cannot enumerate every ordinary reply thread, and its first-page chat listing does not

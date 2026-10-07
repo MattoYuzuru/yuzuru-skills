@@ -1,6 +1,6 @@
 ---
 name: write-kotlin
-description: Repository-adaptive Kotlin production-code implementation and refactoring with compatible, idiomatic design. Use when the user asks to add, change, fix, migrate, or refactor Kotlin source code; exclude test-only, review-only, explanation-only, and build-configuration-only work.
+description: Implement or refactor Kotlin source in the repository’s dialect. Use when changing Kotlin production behavior; include relevant validation, but exclude explanation-only or build-only work.
 ---
 
 # Write Kotlin
@@ -14,8 +14,8 @@ design that is correct here over an idealized rewrite or a showcase of language 
 
 - Include Kotlin source implementation, bug fixes, migrations, and refactoring needed by the task.
 - Include formatting, linting, compilation, and static analysis that directly validate the edit.
-- Do not own test design, test implementation, or a code-review pass. Hand those off as described
-  below instead of duplicating another skill's workflow.
+- Include targeted tests that establish the requested behavior. Use a separate testing or review
+  skill for deeper independent verification when useful; its absence must not leave the fix unfinished.
 - Do not broaden a source task into dependency, framework, or build-system modernization unless the
   requested behavior requires it.
 
@@ -23,16 +23,15 @@ design that is correct here over an idealized rewrite or a showcase of language 
 
 ### 1. Establish the local contract
 
-Before designing, inspect:
+Inspect the context needed for this change:
 
 1. Repository instructions and the exact requested behavior.
 2. Kotlin/Gradle/Maven configuration: language and API versions, target platforms and source sets,
    compiler options, enabled experimental features, dependencies, and framework versions.
 3. `.editorconfig`, formatter, linter, static-analysis, and explicit-API configuration.
-4. The changed declaration's callers plus two or three nearby representative Kotlin files. Inspect
+4. The changed declaration's callers and representative neighboring Kotlin code. Inspect
    Java or other-language consumers when the boundary is shared.
-5. Existing tests only as evidence of behavior, naming, and seams. Do not turn this step into a
-   testing workflow.
+5. Existing tests as evidence of behavior, naming, and useful validation seams.
 
 Infer a small task-specific profile: required compatibility, local naming and file organization,
 error/null conventions, state and concurrency ownership, abstraction level, and verification
@@ -94,17 +93,12 @@ Read the reference only when one of these conditions applies.
 4. Report which checks ran and which did not. Compilation and static analysis do not substitute for
    tests.
 
-### 6. Hand off testing and review
+### 6. Complete validation
 
-After the implementation is coherent, inspect the skills available in the current session:
-
-- If a dedicated testing skill exists and the user's request authorizes tests, use it next. If tests
-  are outside the current scope, propose that exact skill as the next iteration.
-- Apply the same rule to a dedicated code-review skill after tests.
-- If neither exists, explicitly state the remaining targeted test/review work instead of claiming
-  the change is fully validated.
-
-Do not embed generic test or review checklists in this skill.
+Run relevant existing tests and add regression coverage when it can detect a meaningful failure.
+Use an available specialist only when the verification needs its domain guidance or independence.
+After affected checks and required gates pass, stop; broaden testing only for a new change, failure,
+or unresolved risk. Report unavailable runtime coverage explicitly.
 
 ## Guardrails
 

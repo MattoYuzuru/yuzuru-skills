@@ -37,6 +37,12 @@ both and requires native trust. Claude also includes a read-only release verifie
 Run `yuzuru plugin validate devops-agent`, helper/hook unit tests, hook fixtures, and devops evals.
 Use native workflow validators when available.
 
+## Portable instruction refresh
+
+Version 0.1.1 narrows implicit selection and uses direct package-relative skill routes. Supporting
+skills, templates, and specialist adapters apply only when the task needs them. Required domain
+controls remain in the portable workflow; native host policy and enabled state remain authoritative.
+
 ## Limitations
 
 No cloud, host, or secret-manager connector is bundled. Real deployment and production verification

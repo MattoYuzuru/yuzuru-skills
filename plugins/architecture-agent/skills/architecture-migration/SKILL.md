@@ -1,6 +1,6 @@
 ---
 name: architecture-migration
-description: Plan measured compatibility-safe system and data migrations with backfill, cutover, rollback, and decommissioning. Use when architecture must evolve without unacceptable downtime or data loss.
+description: Plan compatibility, backfill, cutover, and rollback for system or data migration. Use when changing architecture requires staged transition; execution needs its own authorization.
 ---
 
 # Architecture Migration

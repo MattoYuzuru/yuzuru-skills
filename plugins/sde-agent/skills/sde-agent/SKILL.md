@@ -1,6 +1,6 @@
 ---
 name: sde-agent
-description: Execute bounded software implementation and bug-fix work across languages while preserving local architecture and producing test evidence. Use when the user asks to add, change, debug, migrate, optimize, or refactor production code.
+description: Implement features and fix production code in the existing architecture. Use when asked to add, change, debug, optimize, or refactor behavior; use frontend guidance for UI-specific work.
 ---
 
 # SDE Agent
@@ -10,9 +10,8 @@ architecture and user-owned work, and prove what was actually validated.
 
 ## Context acquisition
 
-1. Inspect requirements, acceptance criteria, product/architecture artifacts, ADRs, neighboring
-   tasks, recent related history, code style, module boundaries, tests, build, and current
-   implementation.
+1. Inspect the requested behavior, affected implementation, callers, and relevant checks. Load
+   product/architecture artifacts or history when they resolve a concrete uncertainty.
 2. Identify explicit behavior, assumptions, compatibility, affected modules, data migrations,
    failure cases, and out-of-scope work.
 3. Use current official documentation when an API/library may have changed, an error is unfamiliar,
@@ -23,24 +22,25 @@ architecture and user-owned work, and prove what was actually validated.
 
 | Need | Invoke/read | Result |
 |---|---|---|
-| Nontrivial scope, risks, affected files, tests, commands | `$implementation-planning` | Approved or autonomous plan |
-| Self-review, migration proof, tests, completion report | `$implementation-evidence` | Evidence bundle |
+| Nontrivial scope, risks, affected files, tests, commands | [implementation-planning](../implementation-planning/SKILL.md) | Approved or autonomous plan |
+| Self-review, migration proof, tests, completion report | [implementation-evidence](../implementation-evidence/SKILL.md) | Evidence bundle |
 | Implementation and fix method | `references/execution-workflow.md` | Focused code change |
 | Normalize an evidence JSON document | `scripts/evidence_bundle.py` | Status and gap diagnosis |
 | Start bounded work | `assets/WORK_PACKAGE.md` | Work package |
 | Record final evidence | `assets/EVIDENCE.json` | Machine-valid bundle skeleton |
 
-Load only the selected supporting skill or reference.
+Read only the supporting skill or reference needed for this task. Linked skills are package-relative;
+load their SKILL.md directly when the host has no invocation command. Templates are optional.
 
 ## Planning and authorization
 
-Every nontrivial change needs a plan with objective, context, change, affected areas, tests, risks,
-assumptions, exclusions, and validation commands. In interactive work, wait for approval when the
-plan contains unresolved product semantics, compatibility breaks, broad scope, or material effects.
+For a focused fix, proceed from the local contract. Use an explicit plan when coordination,
+compatibility, data changes, or unresolved decisions justify it; keep it in conversation unless a
+persisted plan is useful. A plan is a decision aid, not a mandatory document or approval gate.
 
-Proceed autonomously without repeated approval when acceptance is clear, scope is bounded, required
-permissions exist, and the user requested direct implementation. An approved plan is not approval
-for external writes such as push, deployment, or publication.
+Carry requested implementation through relevant validation and fix failures caused by the change.
+Ask when a material product choice or effect is outside the user's authorization. An existing
+finite delivery mandate may cover push and PR work; a local implementation request alone does not.
 
 ## Implementation
 
@@ -57,17 +57,18 @@ for external writes such as push, deployment, or publication.
 
 Choose behavior-relevant levels: unit, integration, contract, component, end-to-end, migration,
 concurrency, performance, property, fuzz, snapshot, or visual. Do not add meaningless coverage.
-Run the narrowest checks during iteration and the full relevant set before handoff.
+Run affected checks and repository-required gates. After they pass, add or repeat checks only for
+new changes, failures, or an unresolved risk. Do not add tests that merely restate the implementation.
 
 If hardware or services are unavailable, validate compilation/static behavior where possible and
 name the untested runtime. CUDA code without compatible hardware is not GPU-tested.
 
 ## Self-review
 
-After implementation, run a bounded independent pass for correctness, missed requirements,
-security, concurrency, error handling, compatibility, integrity, test gaps, complexity, and docs.
-Claude may use the bundled implementation reviewer. Other hosts should request an ordinary review
-subagent when available. Validate every finding; do not accept generic comments blindly.
+Review the diff against acceptance and the relevant failure boundaries. Use a separate reviewer
+when risk or complexity warrants one and the host permits delegation. Give it the revision, scope,
+and acceptance criteria; keep findings independent of your preferred answer. The bundled Claude
+reviewer is optional. Validate findings before changing code.
 
 ## Fix workflow
 
@@ -90,5 +91,6 @@ deployed, and production-verified.
 - Inspection and tests are reads except for normal build outputs in approved external cache/temp
   locations.
 - Source and test edits are local writes within the requested scope.
-- External systems, pushes, deployments, and destructive changes require separate authorization.
+- External systems, pushes, deployments, and destructive changes require authorization covering
+  their target and effect; reuse an unchanged finite mandate rather than asking again.
 - Ask before materially expanding scope, breaking compatibility, or choosing unresolved semantics.

@@ -2,11 +2,18 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "time-messenger",
   "displayName": "TiMe Messenger",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Safe TiMe Messenger workflow backed by a semantic API v4 MCP server.",
-  "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
+  "author": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru"
+  },
   "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
-  "keywords": ["messenger", "time", "mcp"],
+  "keywords": [
+    "messenger",
+    "time",
+    "mcp"
+  ],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json"
 }

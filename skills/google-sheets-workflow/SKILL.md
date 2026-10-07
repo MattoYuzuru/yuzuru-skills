@@ -1,6 +1,6 @@
 ---
 name: google-sheets-workflow
-description: Google Sheets read/write workflow via a service account: list spreadsheets shared with it, read and write cell ranges and formulas, create spreadsheets, and edit structure through batchUpdate (formatting, pivot tables, sheet tabs). Use when the user asks to read, write, or summarize data in a Google Sheet, create a new spreadsheet, or build a pivot table/summary from spreadsheet data.
+description: Read and update Google Sheets through a service account. Use when a shared spreadsheet needs ranges, formulas, formatting, or pivots; use an available account connector for other access.
 ---
 
 # Google Sheets Workflow
@@ -16,50 +16,21 @@ it with a colleague — by adding the service account's email in Sheets' own Sha
 Resolve this installed skill directory first; run every command below from there (or address
 `scripts/` relative to it).
 
-## Setup
+## Access and setup
 
-1. Run `python3 scripts/bootstrap.py` once per machine. It creates/reuses an isolated venv and
-   installs `google-auth` (needed only to RSA-sign the token). Use the `python` path from its
-   JSON output for every command below.
-2. Run `<python> scripts/setup.py check`.
-3. If `service_account_key_configured` is `false`, send the user this exact checklist verbatim
-   (don't paraphrase it into a vaguer summary — a vague version reliably produces a
-   clarifying-question round-trip):
+Use this route when the target is shared with a service account or that access mode is requested.
+Prefer an available account connector when it already has the required spreadsheet access; do not
+create a second credential path solely because this skill was selected.
 
-   ```text
-   1. Open https://console.cloud.google.com/projectcreate and create a project (or pick an existing one).
-   2. Open https://console.cloud.google.com/apis/library/sheets.googleapis.com and click Enable.
-   3. Open https://console.cloud.google.com/apis/library/drive.googleapis.com and click Enable.
-   4. Open https://console.cloud.google.com/iam-admin/serviceaccounts, pick the project, click
-      "Create Service Account". Any name works; no roles need to be granted.
-   5. Open the new service account → Keys tab → Add Key → Create new key → JSON. This downloads
-      a file — don't paste its contents anywhere, including this chat.
-   6. Tell me the local path of that downloaded file, and the Google account email you want new
-      spreadsheets shared back to.
-   ```
-4. Once they give you the path, run `<python> scripts/setup.py import-service-account <path>`
-   yourself — it only ever touches a file path, never the file's contents, so it never exposes
-   the key. Never ask the user to paste the key's contents into chat.
-5. Once they give you the email, run `<python> scripts/setup.py set-user-email <address>`
-   yourself — an email address isn't a secret, this is agent-safe too.
-6. Re-run `check`; when `ready` is `true`, note the `client_email` it reports.
-7. Before touching any *existing* spreadsheet, send the user this exact checklist (again,
-   verbatim, with the real `client_email` substituted in) and wait for the link/ID back:
+From the installed skill directory, run `python3 scripts/bootstrap.py` if its isolated runtime is
+not established, then `<python> scripts/setup.py check` with the returned executable. Read
+[references/setup.md](references/setup.md) only when keys, sharing, or creation permissions are missing.
+Import a user-provided key by local path; never request its contents in chat.
 
-   ```text
-   1. Open the spreadsheet in Google Sheets.
-   2. Click "Share" (top-right corner).
-   3. Paste this email: <client_email>
-   4. Set its role to "Editor" (not "Viewer").
-   5. Click "Share" / "Send".
-   6. Send me the spreadsheet's link (or just the ID from the URL, between /d/ and /edit).
-   ```
-
-   This is a one-time action per spreadsheet, done by the user in their own Sheets UI, not by a
-   script. If a command fails with 403/404 on a spreadsheet the user expected to work, this
-   checklist is the fix — send it again for that specific spreadsheet.
-
-Read `references/setup.md` only when the user needs more detail than the checklists above.
+For an existing spreadsheet, resolve its ID and try the smallest requested read before proposing
+sharing changes. If access is missing, ask the user to share it with the reported `client_email`:
+Viewer suffices for reads, Editor is needed for writes. Do not ask to repeat setup for a spreadsheet
+that is already accessible. A 403/404 needs a target/permission diagnosis, not an automatic grant.
 
 ## Routing
 

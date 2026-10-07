@@ -37,6 +37,12 @@ other hosts use a requested bounded subagent.
 Run `yuzuru plugin validate frontend-agent`, contrast tests, frontend evals, and target-project
 visual/accessibility checks.
 
+## Portable instruction refresh
+
+Version 0.1.1 narrows implicit selection and uses direct package-relative skill routes. Supporting
+skills, templates, and specialist adapters apply only when the task needs them. Required domain
+controls remain in the portable workflow; native host policy and enabled state remain authoritative.
+
 ## Limitations
 
 The plugin ships no browser, device farm, font, image generator, or MCP server. Runtime claims

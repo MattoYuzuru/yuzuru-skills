@@ -62,6 +62,25 @@ class NewPluginTests(unittest.TestCase):
             self.assertEqual(version, "0.1.0")
             self.assertEqual(codex["version"], version)
             self.assertEqual(claude["version"], version)
+            package = json.loads((plugin / "package.json").read_text())
+            self.assertEqual(package["name"], "yuzuru-example-plugin")
+            self.assertEqual(package["version"], version)
+            self.assertNotIn("scripts", package)
+            self.assertEqual(package["dsh"]["bundle"]["patch"], "./cordis.patch.yml")
+            self.assertIn("includeDefaultRoots: false", (plugin / "cordis.patch.yml").read_text())
+            self.assertFalse((plugin / "agents").exists())
+            self.assertFalse((plugin / "skills" / "example-plugin" / "references").exists())
+
+    def test_scaffold_dry_run_lists_all_host_adapters(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run([sys.executable, str(ROOT / "scripts/new_plugin.py"),
+                                     "example-plugin", "--description", "A concrete bounded capability for supported hosts.",
+                                     "--trigger", "the user requests this concrete workflow",
+                                     "--plugins-dir", directory, "--dry-run"], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            planned = json.loads(result.stdout)["would_create"]
+            self.assertEqual(len(planned), 7)
+            self.assertTrue(any(p.endswith("cordis.patch.yml") for p in planned))
 
 
 if __name__ == "__main__":

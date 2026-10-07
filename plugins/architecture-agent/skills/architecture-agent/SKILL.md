@@ -1,6 +1,6 @@
 ---
 name: architecture-agent
-description: Design, review, evolve, or migrate software architecture from requirements through coherent component contracts and decisions. Use when a system needs HLD, LLD, technology choices, reliability semantics, or architecture review.
+description: Design or review system architecture and component contracts. Use when system boundaries, technology tradeoffs, HLD/LLD, or architecture evolution need decisions.
 ---
 
 # Architecture Agent
@@ -22,13 +22,14 @@ evidence.
 
 | Need | Invoke/read | Result |
 |---|---|---|
-| Workload, storage, bandwidth, concurrency, availability | `$architecture-capacity` | Explicit formulas and scale boundary |
-| Compatibility-safe evolution, backfill, cutover, rollback | `$architecture-migration` | Migration plan |
+| Workload, storage, bandwidth, concurrency, availability | [architecture-capacity](../architecture-capacity/SKILL.md) | Explicit formulas and scale boundary |
+| Compatibility-safe evolution, backfill, cutover, rollback | [architecture-migration](../architecture-migration/SKILL.md) | Migration plan |
 | Candidate, contract, security, failure, and ADR guidance | `references/design-method.md` | Coherent HLD/LLD |
 | Calculate traffic/storage/availability | `scripts/capacity_model.py` | Bounded JSON |
 | Start a substantial architecture document | `assets/ARCHITECTURE.md` | Reviewable text-native template |
 
-Load only the selected supporting skill or reference.
+Read only the supporting skill or reference needed for this task. Linked skills are package-relative;
+load their SKILL.md directly when the host has no invocation command. Templates are optional.
 
 ## Design workflow
 

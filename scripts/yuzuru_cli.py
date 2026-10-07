@@ -659,6 +659,8 @@ def cmd_plugin_new(args: argparse.Namespace) -> int:
         "--description",
         args.description,
     ]
+    if args.trigger:
+        command += ["--trigger", args.trigger]
     if args.dry_run:
         command.append("--dry-run")
     return run(command).returncode
@@ -980,6 +982,7 @@ def build_parser() -> argparse.ArgumentParser:
     plugin_new = plugin_commands.add_parser("new")
     plugin_new.add_argument("name")
     plugin_new.add_argument("--description", required=True)
+    plugin_new.add_argument("--trigger", help="concrete user intent for primary skill discovery")
     plugin_new.add_argument("--dry-run", action="store_true")
     plugin_new.set_defaults(func=cmd_plugin_new)
     for action in ("install", "uninstall", "enable", "disable"):

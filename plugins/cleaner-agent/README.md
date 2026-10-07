@@ -37,6 +37,12 @@ plugin hook trust.
 
 Run `yuzuru plugin validate cleaner-agent`, its script and hook unit tests, and cleaner evals.
 
+## Portable instruction refresh
+
+Version 0.1.1 narrows implicit selection and uses direct package-relative skill routes. Supporting
+skills, templates, and specialist adapters apply only when the task needs them. Required domain
+controls remain in the portable workflow; native host policy and enabled state remain authoritative.
+
 ## Limitations
 
 The filename inventory is deliberately conservative and cannot prove dead code, external API use,

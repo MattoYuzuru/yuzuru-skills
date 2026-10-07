@@ -1,6 +1,6 @@
 ---
 name: jira-workflow
-description: Jira Data Center and Server issue workflow: read, search, create, link, and transition issues through REST API v2 using a local Personal Access Token. Use when the user asks to inspect a self-managed Jira issue, search via JQL, create an epic/feature/task, link issues, or move an issue's status.
+description: Read and update self-managed Jira issues through REST v2. Use when a Jira Data Center/Server task needs JQL, creation, links, or transitions; exclude Jira Cloud.
 ---
 
 # Jira Workflow
@@ -72,8 +72,8 @@ differs per instance. If you need the Epic Link (or any other custom field), rea
 ## Creating Issues And Epics
 
 1. Determine the issue type (Epic, Feature, Engineering Task, Idea) and, for Epic/Feature, the
-   subtype (Business/Technical). Ask the questions in `references/question-bank.md`, grouped in the
-   blocks it defines, before drafting anything.
+   subtype (Business/Technical). Use `references/question-bank.md` for missing material facts; reuse
+   answers already provided and draft the known scope before asking.
 2. Run `createmeta --project <KEY> --issuetype-name <Name>` to get the real field ids and any
    `allowed_values` for that issue type in that project. Never invent a project-specific custom
    field id — always resolve it from `createmeta`.
@@ -81,7 +81,8 @@ differs per instance. If you need the Epic Link (or any other custom field), rea
    `references/template-feature.md`, `references/template-engineering-task.md`, or
    `references/template-idea.md`. See `references/jira-markup.md` for markup syntax.
 4. Preview the exact payload (project, issue type, summary, description's first ~300 characters, and
-   every custom field) and get explicit user confirmation before creating anything.
+   every custom field). Execute when the existing authorization covers that finite payload; otherwise
+   obtain confirmation before creating it.
 5. Run `create` with `--field KEY=VALUE` repeated for every custom/required field surfaced by
    `createmeta` — plain strings pass through as-is, and JSON object/array syntax is parsed, e.g.:
 
@@ -112,7 +113,8 @@ There is no dedicated subcommand — this is a workflow composed from existing c
    | 2 | Engineering Task | ... | ... | <EPIC_KEY> |
    ```
 
-3. Get explicit user confirmation of the proposed table before creating anything.
+3. Bind authorization to the finite table. An existing exact task mandate may cover its rows;
+   otherwise obtain confirmation before creating them.
 4. For each confirmed row, run `create` once, linking it to the epic through whichever field
    `createmeta` reports for that issue type (native sub-tasks use `parent`, standalone
    Feature/Engineering Task issues typically use the Epic Link custom field instead):
@@ -143,9 +145,9 @@ exact Markdown format the reference specifies — do not invent fields that aren
 | `404` | Issue or project not found | Recheck the key |
 | `400` + `"Field ... is required"` | Missing required field | Add it from the error message |
 | `400` + `"allowedValues"` | Invalid id for a field | Take the id from `createmeta` |
-| `5xx` on `create` / `link` / `move-status` | Not always a true failure — Jira Server can return a gateway timeout after the write already succeeded server-side | Before retrying, search JQL for a possible duplicate (below). Found → report the existing key, do not create again. Not found → retry once; if it fails again, stop and report to the user instead of looping |
+| `5xx` on `create` / `link` / `move-status` | Not always a true failure — Jira Server can return a gateway timeout after the write already succeeded server-side | Read the affected object or search JQL for a possible duplicate (below). Report verified success or ambiguity; a negative search does not prove the write failed. Do not automatically resend |
 
-5xx dedupe check before retrying a `create`:
+Read-only reconciliation after an ambiguous `create`:
 
 ```bash
 python3 scripts/jira_api.py search --jql 'project = LP AND reporter = currentUser() AND summary ~ "<exact summary>" AND created >= -10m'
@@ -159,10 +161,10 @@ python3 scripts/jira_api.py search --jql 'project = LP AND reporter = currentUse
 - `createmeta` uses the Jira 9+ granular per-project/per-issue-type endpoints, not the removed
   aggregate endpoint.
 - Use only an HTTPS Jira origin. Cross-origin redirects are rejected to protect the PAT.
-- Never retry `create` after a `5xx` response without checking JQL for a possible duplicate first —
-  an unconditional retry can create duplicate issues.
-- Prefer forward-only status transitions. A transition that closes or cancels an issue requires a
-  second explicit confirmation naming the exact transition before running `move-status`.
+- After an ambiguous mutation, use reads to reconcile state. Do not infer retry safety from a
+  negative JQL search; Jira may index writes asynchronously.
+- Prefer forward-only status transitions. Before `move-status` closes or cancels an issue, confirm
+  that existing authorization names the exact action and target; otherwise obtain that confirmation.
 - Keep the token outside this repository; never print it.
 - This skill does not fork repositories, review code, or push branches (see `gitlab-workflow`), and
   does not touch Confluence/Wiki or time tracking.

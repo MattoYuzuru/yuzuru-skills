@@ -9,7 +9,7 @@ Every `plugins/<id>/` package contains:
 - `package.json` and `cordis.patch.yml` for DeepSeek Harness;
 - `plugin-version.json`, the canonical version source;
 - `README.md`;
-- one primary orchestration skill and focused supporting skills;
+- one primary skill, with focused supporting skills only for substantial distinct modes;
 - deterministic helpers, references, assets, hooks, and agents only when justified.
 
 The directory name and both manifest names must equal the stable plugin identifier. Component paths
@@ -19,12 +19,16 @@ start with `./`, remain inside the plugin root, and exist.
 
 1. Define triggers, non-triggers, use cases, output evidence, effects, and platform limits.
 2. Create the package with `yuzuru plugin new` or the approved plugin scaffold.
+   Supply `--trigger` with a concrete user intent. The scaffold includes all three host adapters;
+   replace placeholders, register marketplaces, and add eval coverage before validating.
 3. Create each distinct skill with the skill scaffold; remove every placeholder.
 4. Implement deterministic helpers and credential-free unit tests.
 5. Write the primary skill as a proportional router over supporting skills and references.
 6. Add Claude agents only for bounded specialist roles. Keep their source workflow in skills.
    Default `agents/*.md` files are auto-discovered; a manifest `agents` field is for explicit agent
    file paths, not the default directory.
+   A single-skill plugin without a specialist adapter is valid. Do not add an agent or supporting
+   skill merely to satisfy a package shape.
 7. Add hooks only for deterministic invariants and test them with fixture input.
 8. Add matching marketplace entries and eval contracts.
 9. Keep the DSH adapter config-only: one private package, no lifecycle scripts, one uniquely named
@@ -53,3 +57,7 @@ The DSH bundle mounts the existing `skills/` directory; it does not turn each sk
 runtime plugin. Add a Cordis implementation only for a real service, provider, or tool capability.
 Keep `includeDefaultRoots: false` so multiple installed Yuzuru bundles do not rescan host and project
 roots. Full skill bodies remain progressively loaded by the native skill consumer.
+
+Keep model/effort choices in the host or caller. Skill packages should not pin a frontier model or
+equate effort labels across providers. Review [model-guidance.md](model-guidance.md) when changing
+portable instructions, and retain direct package-relative skill routes for hosts without commands.

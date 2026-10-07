@@ -2,10 +2,18 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "sre-agent",
   "displayName": "SRE Agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Independent software verification, reliability, performance, security, and release evidence.",
-  "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
+  "author": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru"
+  },
   "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
-  "keywords": ["sre", "testing", "reliability", "security"],
+  "keywords": [
+    "sre",
+    "testing",
+    "reliability",
+    "security"
+  ],
   "skills": "./skills/"
 }

@@ -37,6 +37,12 @@ Run `python3 -B -m unittest discover -s runtime/tests -v`, then
 `yuzuru plugin validate time-messenger`. Complete setup in a private terminal before a live,
 read-only smoke test.
 
+## Portable instruction refresh
+
+Version 0.1.1 narrows implicit selection and uses direct package-relative skill routes. Supporting
+skills, templates, and specialist adapters apply only when the task needs them. Required domain
+controls remain in the portable workflow; native host policy and enabled state remain authoritative.
+
 ## Limitations
 
 TiMe forum topics are not exposed by the verified API surface. Server-specific permissions and

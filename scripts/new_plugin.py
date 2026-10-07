@@ -24,13 +24,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("name")
     parser.add_argument("--description", required=True)
+    parser.add_argument("--trigger", help="concrete user request that should select the primary skill")
     parser.add_argument("--plugins-dir", type=Path, default=DEFAULT_PLUGINS_DIR, help=argparse.SUPPRESS)
     parser.add_argument("--dry-run", action="store_true", help="validate and list files without writing")
     args = parser.parse_args()
     if not NAME_RE.fullmatch(args.name) or len(args.name) > 64:
         parser.error("name must be kebab-case and at most 64 characters")
-    if len(args.description) < 40 or "\n" in args.description:
+    if len(args.description) < 40 or any(c in args.description for c in "\n\r"):
         parser.error("description must be one line with at least 40 characters")
+    if args.trigger is not None and (not args.trigger.strip() or any(c in args.trigger for c in "\n\r")):
+        parser.error("trigger must be a non-empty single line")
     plugin = args.plugins_dir / args.name
     if plugin.exists():
         parser.error(f"plugin already exists: {plugin}")
@@ -39,6 +42,8 @@ def main() -> int:
         plugin / "plugin-version.json",
         plugin / ".codex-plugin" / "plugin.json",
         plugin / ".claude-plugin" / "plugin.json",
+        plugin / "package.json",
+        plugin / "cordis.patch.yml",
         skill / "SKILL.md",
         plugin / "README.md",
     ]
@@ -55,7 +60,7 @@ def main() -> int:
             )
         )
         return 0
-    (skill / "references").mkdir(parents=True)
+    skill.mkdir(parents=True)
     write_json(plugin / "plugin-version.json", {"version": "0.1.0"})
     base = {
         "name": args.name,
@@ -71,12 +76,25 @@ def main() -> int:
             **base,
         },
     )
+    write_json(plugin / "package.json", {
+        "name": f"yuzuru-{args.name}", "version": "0.1.0", "private": True,
+        "description": f"DeepSeek Harness skill bundle for {args.name}.",
+        "dsh": {"bundle": {"patch": "./cordis.patch.yml"}},
+    })
+    (plugin / "cordis.patch.yml").write_text(
+        f"- insert:\n    - id: yuzuru-skill-filesystem-{args.name}\n"
+        "      name: '@deepseek-ai/dsh-skill-filesystem'\n"
+        f"      config:\n        providerName: yuzuru-{args.name}\n"
+        "        includeDefaultRoots: false\n        customSkillDirs:\n"
+        "          - !!js \"process.getBuiltinModule('node:url').fileURLToPath(new URL('"
+        f"node_modules/yuzuru-{args.name}/skills/', baseUrl))\"\n", encoding="utf-8")
+    trigger = args.trigger or "<describe the concrete user request>"
     (skill / "SKILL.md").write_text(
         "\n".join(
             [
                 "---",
                 f"name: {args.name}",
-                f"description: {args.description} Use when the requested workflow matches this package.",
+                f"description: {json.dumps(args.description + ' Use when ' + trigger + '.', ensure_ascii=False)}",
                 "---",
                 "",
                 f"# {args.name}",
@@ -89,10 +107,16 @@ def main() -> int:
     )
     (plugin / "README.md").write_text(
         f"# {args.name}\n\n{args.description}\n\n"
-        "Complete the required sections from `docs/authoring/plugins.md` before validation.\n",
+        + "\n\n".join(f"## {heading}\n\nReplace this scaffold with package-specific evidence."
+                        for heading in ("Capabilities", "Trigger examples", "Non-trigger examples",
+                                        "External effects", "Platform support", "Local testing", "Limitations"))
+        + "\n",
         encoding="utf-8",
     )
-    print(json.dumps({"created": str(plugin), "next": f"yuzuru plugin validate {args.name}"}))
+    print(json.dumps({"created": str(plugin), "next": [
+        "Replace skill and README placeholders; add only necessary supporting resources.",
+        "Register both marketplaces and add plugin/skill-selection eval contracts.",
+        f"yuzuru plugin validate {args.name}" ]}))
     return 0
 
 

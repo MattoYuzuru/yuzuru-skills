@@ -1,6 +1,6 @@
 ---
 name: fetch-public-docs
-description: Fetch allowlisted public documentation through a configured bridge and save cleaned Markdown locally. Use when direct access to official public documentation fails because of a network block or the user explicitly requests the bridge; do not use for private or authenticated material.
+description: Fetch public documentation through an allowlisted bridge. Use when a normal documentation fetch is network-blocked or the user requests the bridge; exclude private material.
 ---
 
 # Fetch Public Docs

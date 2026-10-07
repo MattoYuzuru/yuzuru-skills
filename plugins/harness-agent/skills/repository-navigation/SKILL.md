@@ -1,6 +1,6 @@
 ---
 name: repository-navigation
-description: Build or refresh concise documentation navigation, repository maps, and scoped agent instructions. Use when agents struggle to locate canonical docs, commands, ownership, or component boundaries.
+description: Update navigators, repository maps, and scoped agent instructions. Use when canonical docs, commands, ownership, or component boundaries are hard to find.
 ---
 
 # Repository Navigation

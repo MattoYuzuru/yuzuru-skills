@@ -1,6 +1,6 @@
 ---
 name: telegram
-description: Read, search, summarize, and safely operate a Telegram user account through pinned TDLib MCP tools. Use when work involves Telegram chats, messages, topics, threads, unread state, files, reactions, pins, membership, or authorized sends.
+description: Read or operate Telegram user chats through TDLib MCP. Use when Telegram messages, topics, files, unread state, or authorized sends need action; exclude Bot API work.
 ---
 
 # Telegram
@@ -8,7 +8,7 @@ description: Read, search, summarize, and safely operate a Telegram user account
 Use `telegram_*` tools for Telegram user workflows, never Bot API behavior. Preserve chat, topic,
 thread, message, user, and file identifiers exactly. Keep every result bounded.
 
-If `telegram_auth_status` is not ready, use `$telegram-setup`; never request credentials, login
+If `telegram_auth_status` is not ready, use [telegram-setup](../telegram-setup/SKILL.md); never request credentials, login
 codes, or 2FA passwords in chat.
 
 ## Read workflow

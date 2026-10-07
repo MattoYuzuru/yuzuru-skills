@@ -2,10 +2,17 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "architecture-agent",
   "displayName": "Architecture Agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "System architecture, component contracts, capacity modeling, and migration planning.",
-  "author": {"name": "MattoYuzuru", "url": "https://github.com/MattoYuzuru"},
+  "author": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru"
+  },
   "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
-  "keywords": ["architecture", "capacity", "migration"],
+  "keywords": [
+    "architecture",
+    "capacity",
+    "migration"
+  ],
   "skills": "./skills/"
 }

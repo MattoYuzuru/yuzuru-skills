@@ -1,6 +1,6 @@
 ---
 name: product-acceptance
-description: Write and review observable acceptance criteria including permissions, state transitions, failures, accessibility, and platform behavior. Use when requirements need testable behavioral acceptance criteria.
+description: Write observable acceptance criteria for product behavior. Use when requirements need testable outcomes, state transitions, permissions, or failure boundaries.
 ---
 
 # Product Acceptance

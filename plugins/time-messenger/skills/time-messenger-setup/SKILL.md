@@ -1,6 +1,6 @@
 ---
 name: time-messenger-setup
-description: Configure or diagnose the TiMe Messenger MCP connection without exposing credentials. Use when TiMe URL, PAT, Keychain storage, authentication, or runtime startup needs setup.
+description: Configure or diagnose TiMe MCP authentication and runtime. Use when workspace origin, PAT, Keychain, or startup blocks access; credentials stay in a private terminal.
 ---
 
 # TiMe Messenger Setup

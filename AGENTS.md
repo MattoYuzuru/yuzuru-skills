@@ -18,16 +18,23 @@ Start at [`docs/NAVIGATOR.md`](docs/NAVIGATOR.md). Load only the standard releva
 
 ## Change workflow
 
-1. Inspect the working tree, history, closest implementation, and relevant official platform docs.
+1. Inspect the working tree and closest implementation. Read history or current official docs
+   when they resolve an uncertainty in the change.
 2. Fetch before branching. Never reset, stash, or overwrite unrelated work.
 3. Keep stable plugin and skill identifiers. Record supported renames in `schemas/migrations.json`.
 4. Implement deterministic capabilities before their model-facing router.
-5. Keep ordinary `SKILL.md` files near 100–250 lines and below the 500-line hard limit.
+5. Keep `SKILL.md` as short as its decisions require; <=200 lines is a target, 500 is a hard limit.
 6. Keep plugin packages self-contained. Do not distribute cross-package symlinks.
 7. Put runtime state in XDG or platform data/cache directories, never in the clone or plugin root.
 8. Validate behavior, manifests, references, help output, evals, and repository cleanliness.
 9. Commit logical milestones without unrelated files. Push only when the user explicitly authorized
    that repository/branch or an end-to-end workflow that necessarily includes the push.
+
+Complete requested local changes and affected checks without routine approval pauses. Run required
+repository gates before delivery; repeat or expand checks only for new changes, failures, or an
+unresolved risk. Use plans, templates, supporting skills, and subagents when the task benefits from
+them, not as a fixed sequence. See [`docs/authoring/model-guidance.md`](docs/authoring/model-guidance.md)
+when changing prompt behavior; do not load model guidance for unrelated edits.
 
 External writes require explicit authorization. One task-scoped authorization may cover a finite,
 unambiguous workflow and its deterministically derived IDs; preview and verify each effect without

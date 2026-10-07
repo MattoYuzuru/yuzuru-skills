@@ -76,7 +76,7 @@ rebase, re-enable plugins, or overwrite unmanaged installations.
 | `telegram` | Telegram user-account workflows through a pinned, packaged TDLib MCP server. |
 
 Each package under `plugins/<id>/` has one logical identity, thin host manifests and a DSH bundle, a primary orchestration
-skill, focused supporting skills, scripts or hooks only where justified, a Claude specialist adapter,
+skill, supporting skills and Claude specialist adapters only where justified, scripts or hooks,
 README, and eval contract. No package relies on symlinks outside its directory.
 
 ## Standalone skill catalog
@@ -126,7 +126,8 @@ yuzuru skill new my-skill \
   --description "Perform a bounded workflow. Use when the user requests that workflow." \
   --resources scripts,references
 yuzuru plugin new my-plugin \
-  --description "Package a bounded capability for supported agents."
+  --description "Package a bounded capability for supported agents." \
+  --trigger "the user requests this concrete workflow"
 
 python3 scripts/smoke_scripts.py
 python3 scripts/run_tests.py
@@ -138,6 +139,13 @@ Runtime state uses XDG configuration/cache/data locations (with platform-appropr
 fallbacks), temporary directories, or native plugin data directories. Normal commands must not
 create environments, dependency caches, logs, reports, indexes, screenshots, or bytecode inside the
 clone.
+
+## Instruction refresh
+
+The [October 2026 review](docs/research/frontier-refresh-2026-10.md) covers every skill and explains
+current model differences, retained domain controls, and measured limits. See
+[model guidance](docs/authoring/model-guidance.md) for authoring and [testing](docs/testing.md) for
+implicit-selection cases, observed-run scoring, and private local usage summaries.
 
 ## Trust model
 

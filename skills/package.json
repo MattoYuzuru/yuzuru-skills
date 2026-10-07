@@ -1,6 +1,6 @@
 {
   "name": "yuzuru-standalone-skills",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Portable standalone Yuzuru skills mounted as a DeepSeek Harness bundle.",
   "dsh": {

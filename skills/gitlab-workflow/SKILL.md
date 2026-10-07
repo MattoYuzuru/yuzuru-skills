@@ -1,6 +1,6 @@
 ---
 name: gitlab-workflow
-description: GitLab repository and merge request workflow. Use when the user asks to inspect a GitLab project, browse its files, read merge requests or discussions, check pipelines or job logs, search code, comment on or resolve an MR discussion, create a fork workflow, push a branch, or prepare a merge request through GitLab REST API using a local Personal Access Token.
+description: Inspect GitLab projects, merge requests, discussions, and pipelines through REST. Use when a task targets GitLab, including authorized branch, MR, or discussion updates.
 ---
 
 # GitLab Workflow
@@ -95,12 +95,14 @@ python3 scripts/gitlab_api.py mr-discussion-resolve group/repo 123 <discussion_i
 python3 scripts/gitlab_api.py mr-discussion-resolve group/repo 123 <discussion_id> --confirm-destructive
 ```
 
-Resolving/unresolving is a state change other reviewers rely on to track review progress — confirm the exact
-discussion (quote the thread you are resolving) before running `mr-discussion-resolve`.
+Resolving/unresolving is a state change other reviewers rely on to track review progress. Bind
+authorization to the exact discussion before running `mr-discussion-resolve`; reuse an unchanged
+authorization that already covers it.
 
 ## Fork-Based Write Workflow
 
-Use write operations only after the user confirms the target project, branch, commit message, and MR title.
+Preview the resolved project, branch, commit, and MR payload. Proceed under an existing finite
+delivery mandate that covers these effects; otherwise obtain authorization before the first write.
 
 1. Read project info and default branch.
 2. Create or reuse a fork.
@@ -129,17 +131,16 @@ python3 scripts/gitlab_api.py mr-create group/repo \
 
 ## Guardrails
 
-- Reads are unrestricted. Every write or destructive action (`fork-create`, `mr-create`, `mr-note-create`,
-  `mr-discussion-reply`, `mr-discussion-resolve`, any `git push`) requires the user to have asked for that
-  specific action first in this conversation — never perform one proactively, even mid-task, even if it looks
-  like the obviously helpful next step.
+- Read relevant GitLab objects within the requested scope. External writes require explicit user
+  authorization, which may cover a finite delivery workflow and its derived IDs. Inspection alone
+  never authorizes comments, discussion resolution, or pushes.
 - Preview API writes with `--dry-run`; execute approved writes with `--confirm-write` and exact
   discussion resolution with `--confirm-destructive`. The helper never retries mutations.
 - Use only an HTTPS GitLab origin. Cross-origin redirects are rejected so the token cannot follow them.
 - Do not push directly to upstream unless the user explicitly asks and has confirmed the exact remote and branch.
 - Do not use `--force` push without a separate explicit confirmation.
-- Do not delete branches, close MRs, approve MRs, or resolve discussions without a separate confirmation of the
-  exact discussion.
+- Branch deletion, MR closing/approval, and discussion resolution require authorization naming the
+  exact action and target; do not infer them from an ordinary review or local code task.
 - Do not create repositories from this skill.
 - Treat 401/403/404 as access or token problems; do not attempt bypasses.
 - Keep the token outside this repository.

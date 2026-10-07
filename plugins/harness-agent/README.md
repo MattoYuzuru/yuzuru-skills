@@ -36,6 +36,12 @@ after trust. Claude includes a read-only readiness auditor.
 
 Run `yuzuru plugin validate harness-agent`, inventory/hook tests, and harness evals.
 
+## Portable instruction refresh
+
+Version 0.1.1 narrows implicit selection and uses direct package-relative skill routes. Supporting
+skills, templates, and specialist adapters apply only when the task needs them. Required domain
+controls remain in the portable workflow; native host policy and enabled state remain authoritative.
+
 ## Limitations
 
 No vector database, AST service, telemetry collector, or MCP server is bundled. Benefits are not

@@ -82,6 +82,8 @@ def parse_response(payload: dict[str, Any], args: argparse.Namespace) -> dict[st
         "query": args.query,
         "answer": clean_text(answer, args.max_chars),
         "model": args.model,
+        "grounding_observed": bool(metadata.get("groundingChunks")),
+        "answer_truncated": len(answer) > args.max_chars or candidate.get("finishReason") == "MAX_TOKENS",
         "search_queries": metadata.get("webSearchQueries", []),
         "sources": parse_sources(metadata, args.max_sources) if args.include_sources else [],
     }
@@ -89,6 +91,8 @@ def parse_response(payload: dict[str, Any], args: argparse.Namespace) -> dict[st
         result["usage"] = payload["usageMetadata"]
     if not answer:
         result["error"] = "Gemini returned an empty answer."
+    elif candidate.get("finishReason") == "MAX_TOKENS":
+        result["error"] = "Gemini exhausted the output budget; the answer is incomplete."
     return result
 
 
