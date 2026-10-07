@@ -22,7 +22,7 @@ class PluginValidationTests(unittest.TestCase):
             shutil.copytree(ROOT / "plugins" / "sde-agent", plugin)
             manifest_path = plugin / ".claude-plugin" / "plugin.json"
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["version"] = "0.1.1"
+            manifest["version"] = "99.0.0"
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
             result = validate_package(plugin)
@@ -38,6 +38,21 @@ class PluginValidationTests(unittest.TestCase):
             result = validate_package(plugin)
 
             self.assertTrue(any("missing skills path" in error for error in result.errors))
+
+    def test_one_authored_skill_without_specialist_agent_is_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            plugin = Path(directory) / "sde-agent"
+            shutil.copytree(ROOT / "plugins" / "sde-agent", plugin)
+            shutil.rmtree(plugin / "agents")
+            for child in (plugin / "skills").iterdir():
+                if child.name != "sde-agent":
+                    shutil.rmtree(child)
+            (plugin / "skills" / "sde-agent" / "SKILL.md").write_text(
+                "---\nname: sde-agent\ndescription: Implement bounded software behavior. "
+                "Use when a concrete source change is requested.\n---\n\n"
+                "Implement the local contract and run relevant checks.\n")
+            result = validate_package(plugin)
+            self.assertEqual(result.errors, [])
 
 
 if __name__ == "__main__":

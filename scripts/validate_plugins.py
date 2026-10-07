@@ -116,12 +116,13 @@ def validate_readme(plugin: Path, result: Result) -> None:
     for heading in README_HEADINGS:
         if heading not in text:
             result.errors.append(f"README.md missing heading: {heading}")
+    if "Replace this scaffold" in text:
+        result.errors.append("README.md contains unfinished scaffold text")
 
 
 def validate_agents(plugin: Path, result: Result) -> None:
     agents = plugin / "agents"
     if not agents.is_dir():
-        result.errors.append("missing Claude adapter agents/")
         return
     files = sorted(agents.glob("*.md"))
     if not files:
@@ -287,8 +288,8 @@ def validate_package(plugin: Path) -> Result:
 
     skill_root = plugin / "skills"
     skills = sorted(skill_root.glob("*/SKILL.md")) if skill_root.is_dir() else []
-    if len(skills) < 2:
-        result.errors.append("plugin needs a primary skill and focused supporting skill")
+    if not skills:
+        result.errors.append("plugin needs a primary skill")
     if not (skill_root / plugin.name / "SKILL.md").is_file():
         result.errors.append(f"missing primary skill skills/{plugin.name}/SKILL.md")
     for skill_file in skills:

@@ -14,6 +14,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PRIVATE_ENV_FRAGMENTS = ("TOKEN", "SECRET", "PASSWORD", "API_KEY", "PRIVATE_KEY", "PAT")
 ROOT_HELPERS = {
+    "skill_usage.py",
+    "skill_eval.py",
     "new_plugin.py",
     "new_skill.py",
     "run_evals.py",

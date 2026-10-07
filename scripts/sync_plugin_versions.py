@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synchronize dual plugin manifests from each canonical plugin-version.json."""
+"""Synchronize Codex, Claude, and DSH manifests from each canonical plugin-version.json."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ def main() -> int:
         if not isinstance(version, str) or not SEMVER_RE.fullmatch(version):
             failures.append({"plugin": plugin.name, "error": f"invalid semantic version: {version!r}"})
             continue
-        for relative in (".codex-plugin/plugin.json", ".claude-plugin/plugin.json"):
+        for relative in (".codex-plugin/plugin.json", ".claude-plugin/plugin.json", "package.json"):
             path = plugin / relative
             try:
                 manifest = json.loads(path.read_text(encoding="utf-8"))

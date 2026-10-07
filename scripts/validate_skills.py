@@ -44,6 +44,11 @@ SECRET_CONTENT_RE = re.compile(
 TEMPLATE_MARKERS = {
     "Describe the capability and its scope in one short paragraph.",
     "Select the relevant route and load only its required reference.",
+    "State the outcome and non-obvious domain context needed to complete the task.",
+    "Replace this section with the decisions that change this workflow.",
+    "Replace this section with observable completion evidence",
+    "Replace this scaffold with",
+    "<describe the concrete user request>",
 }
 
 
@@ -253,6 +258,10 @@ def validate_skill(skill_dir: Path, evals_dir: Path) -> Result:
     if not description:
         result.errors.append("frontmatter is missing description")
     else:
+        if len(description) > 1024:
+            result.errors.append("description exceeds the Agent Skills 1024-character limit")
+        elif len(description) > 500:
+            result.warnings.append("description exceeds the default DSH catalog cap of 500 characters")
         if len(description) < 40:
             result.errors.append("description must be at least 40 characters")
         if "use when" not in description.lower():
