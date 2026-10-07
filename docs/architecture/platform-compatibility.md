@@ -1,7 +1,8 @@
 # Platform Compatibility
 
-Verified against Codex CLI 0.155.1, Claude Code 2.1.278, and DeepSeek Harness 0.1.0-rc.7, plus
-current official platform documentation.
+CLI command surfaces rechecked on 2026-10-07 against Codex CLI 0.160.0 and Claude Code 2.1.287.
+The historical DSH baseline is 0.1.0-rc.7; DSH is unavailable on the current review machine.
+Bundle behavior is checked against official source, without claiming a new native DSH test.
 
 | Capability | Codex / OpenAI | Claude Code | DeepSeek Harness | Repository strategy |
 |---|---|---|---|---|
@@ -21,7 +22,7 @@ current official platform documentation.
 
 ## Material limitations
 
-Codex CLI 0.145.0 exposes no non-interactive plugin enable/disable subcommand and no public plugin
+Codex CLI 0.160.0 exposes no non-interactive plugin enable/disable subcommand and no public plugin
 validation subcommand. The repository does not mutate `~/.codex/config.toml` to imitate them.
 
 Codex custom agents are currently personal or project TOML files, not a documented plugin component.
@@ -45,6 +46,10 @@ DSH bundle paths resolve through the profile's `node_modules`, so local absolute
 in machine-owned pnpm dependencies. Claude/Codex hooks, agents, and MCP declarations are not assumed
 compatible with Cordis events, agent presets, or providers. The TiMe and Telegram DSH packages
 therefore expose portable workflow/setup skills but do not launch the packaged Python MCP runtime.
+
+Claude Code 2.1.287 exposes `plugin eval` with a no-plugin baseline arm and `plugin details`
+with projected token cost. These do not turn repository JSON eval contracts into native behavioral
+runs; see [testing](../testing.md).
 
 ## Official sources
 

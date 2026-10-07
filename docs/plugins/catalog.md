@@ -22,6 +22,12 @@ idea → discovery → product → architecture
      → sre → devops release → cleaner
 ```
 
+Choose SDE for a requested implementation and SRE for an independent review or operational claim.
+Use a focused supporting skill directly when it already matches the question. Discovery, Product,
+and Architecture serve explicit opportunity, behavior, or system-design decisions; DevOps owns
+operational changes, Frontend owns interface work, Harness owns observed agent friction, and Cleaner
+owns requested hygiene. A task does not need every role in the diagram.
+
 This is not a mandatory waterfall. Each plugin can inspect missing context, state assumptions, and
 work independently. Cross-plugin artifacts use `schemas/artifacts/` and the handoff rules in
 `architecture/artifact-contracts.md`.

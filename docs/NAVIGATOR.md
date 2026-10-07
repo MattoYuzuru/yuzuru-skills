@@ -9,6 +9,8 @@ Use this page to choose the smallest relevant context.
 | Cross-plugin artifacts and handoffs | [`architecture/artifact-contracts.md`](architecture/artifact-contracts.md) |
 | Standalone Agent Skills | [`skill-authoring.md`](skill-authoring.md) |
 | Plugin packages and adapters | [`authoring/plugins.md`](authoring/plugins.md) |
+| Prompt behavior and current model differences | [`authoring/model-guidance.md`](authoring/model-guidance.md) |
+| Dated research and full skill review | [`research/frontier-refresh-2026-10.md`](research/frontier-refresh-2026-10.md) |
 | Deterministic script contract | [`authoring/scripts.md`](authoring/scripts.md) |
 | Hook rules | [`authoring/hooks.md`](authoring/hooks.md) |
 | MCP decision rules | [`authoring/mcp.md`](authoring/mcp.md) |
