@@ -37,6 +37,12 @@ Codex uses ordinary requested subagents because plugin-bundled custom agents are
 Run `yuzuru plugin validate discovery-agent`, the evidence-index unit test, and the repository eval
 suite. Current web claims require fresh official or primary-source research during actual use.
 
+## Portable instruction refresh
+
+Version 0.1.1 narrows implicit selection and uses direct package-relative skill routes. Supporting
+skills, templates, and specialist adapters apply only when the task needs them. Required domain
+controls remain in the portable workflow; native host policy and enabled state remain authoritative.
+
 ## Limitations
 
 The plugin simulates user perspective but does not replace interviews, legal advice, measured

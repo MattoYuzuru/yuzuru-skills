@@ -1,6 +1,6 @@
 ---
 name: telegram-setup
-description: Configure, authorize, or diagnose the Telegram TDLib MCP session without exposing credentials. Use when api_id, api_hash, login, 2FA, Keychain, profile locking, or native runtime setup is needed.
+description: Configure or diagnose Telegram TDLib login and runtime. Use when Telegram credentials, 2FA, Keychain, or profile locking blocks access; credentials stay in a private terminal.
 ---
 
 # Telegram Setup

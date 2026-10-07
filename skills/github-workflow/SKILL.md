@@ -1,6 +1,6 @@
 ---
 name: github-workflow
-description: GitHub repository, issue, Projects V2, pull request, review, merge, and Actions workflow through local Git plus GitHub REST and GraphQL APIs without MCP. Use when the user asks to inspect or update GitHub, work with a project board, manage issues or pull requests, review or merge a PR, push a feature branch, check or retry Actions, or carry a local change to a verified GitHub PR.
+description: Inspect and update GitHub repositories, issues, Projects, PRs, and Actions using Git and REST/GraphQL. Use when a task targets GitHub or carries a local change through a GitHub PR.
 ---
 
 # GitHub Workflow

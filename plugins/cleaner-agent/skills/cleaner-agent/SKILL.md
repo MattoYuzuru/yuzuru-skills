@@ -1,6 +1,6 @@
 ---
 name: cleaner-agent
-description: Conservatively audit and improve code, documentation, and repository hygiene without losing rationale or unresolved evidence. Use when the user asks to remove stale artifacts, reconcile docs with code, find dead code, compact documentation, or refresh indexes after cleanup.
+description: Improve repository code, docs, and artifact hygiene while preserving rationale. Use when asked to clean up, find dead code, or reconcile stale material; deletion requires exact scope.
 ---
 
 # Cleaner Agent
@@ -18,13 +18,14 @@ configuration, documentation, tests, dynamic loading, and current indexes before
 
 | Need | Invoke/read | Result |
 |---|---|---|
-| Inventory temporary, generated, duplicated, or apparently unused files | `$cleanup-audit` | Evidence-ranked candidates |
-| Resolve disagreement between code and documentation | `$documentation-reconciliation` | Canonical correction |
+| Inventory temporary, generated, duplicated, or apparently unused files | [cleanup-audit](../cleanup-audit/SKILL.md) | Evidence-ranked candidates |
+| Resolve disagreement between code and documentation | [documentation-reconciliation](../documentation-reconciliation/SKILL.md) | Canonical correction |
 | Select an appropriate cleanup sequence | `references/cleanup-method.md` | Scoped plan |
 | Generate a bounded filesystem inventory | `scripts/cleanup_candidates.py` | Candidate JSON |
 | Record a reviewable proposal | `assets/CLEANUP_PLAN.md` | Deletion/change plan |
 
-Load only the selected supporting skill or reference.
+Read only the supporting skill or reference needed for this task. Linked skills are package-relative;
+load their SKILL.md directly when the host has no invocation command. Templates are optional.
 
 ## Workflow
 

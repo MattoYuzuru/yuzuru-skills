@@ -1,13 +1,14 @@
 ---
 name: google-ai-search
-description: Token-efficient public-web research through Gemini API with Google Search grounding and source links. Use when the user asks to search the web, google something, verify current public information, compare options, or get a compact research summary with citations.
+description: Research the public web through Gemini with Google Search grounding. Use when current facts, comparisons, or source-backed answers require web search; open primary sources to verify claims.
 ---
 
 # Google AI Search
 
 ## Workflow
 
-1. Rewrite the request into a precise search query.
+1. Turn one decision or unknown into a precise query. Split a broad research assignment into
+   focused queries; include the relevant provider, topic, date, or official domain.
 2. Pick the answer language: English for broad technical topics, Russian for
    Russia-specific topics, or the user's requested source language.
 3. Resolve this skill directory and run the configuration check:
@@ -47,7 +48,10 @@ default. `setup.py check` reports the selected model and source.
 
 ## Result Handling
 
-- Summarize the JSON `answer` rather than pasting it blindly.
+- Treat `answer` as a research lead. Open the original primary pages before relying on technical
+  claims; grounding links can be redirects, and a cited page may not support the claim.
+- Check `grounding_observed` and `answer_truncated`. Missing grounding or an incomplete answer
+  needs a narrower query or another source path, not a confident sourced conclusion.
 - Cite URLs from `sources` near the claims they support.
 - Keep the default 10-source bound; raise `--max-sources` only when comparison breadth requires it.
 - Request `--include-usage` only when diagnosing cost or quota behavior.

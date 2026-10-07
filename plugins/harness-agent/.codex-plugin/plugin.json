@@ -1,13 +1,17 @@
 {
   "name": "harness-agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Repository navigation, capability inventory, and agent-readiness improvements.",
   "author": {
     "name": "MattoYuzuru",
     "url": "https://github.com/MattoYuzuru"
   },
   "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
-  "keywords": ["agents", "documentation", "repository-map"],
+  "keywords": [
+    "agents",
+    "documentation",
+    "repository-map"
+  ],
   "skills": "./skills/",
   "hooks": "./hooks/hooks.json",
   "interface": {
@@ -16,7 +20,12 @@
     "longDescription": "Reduce repeated exploration with navigators, repository maps, capability health, context packs, and grounded measurements.",
     "developerName": "MattoYuzuru",
     "category": "Developer Tools",
-    "capabilities": ["Read", "Write"],
-    "defaultPrompt": ["Use Harness Agent to audit and improve this repository's agent readiness."]
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use Harness Agent to audit and improve this repository's agent readiness."
+    ]
   }
 }

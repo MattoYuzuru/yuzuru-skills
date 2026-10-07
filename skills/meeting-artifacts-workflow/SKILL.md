@@ -1,6 +1,6 @@
 ---
 name: meeting-artifacts-workflow
-description: Find and synthesize meeting recordings, transcripts, summaries, minutes, and chat through a user-configured meeting connector. Use when the user asks about past meetings or needs evidence and follow-ups from meeting artifacts.
+description: Find and synthesize past meeting transcripts, minutes, recordings, and chat. Use when meeting evidence or follow-ups are needed through an available meeting connector.
 ---
 
 # Meeting Artifacts Workflow

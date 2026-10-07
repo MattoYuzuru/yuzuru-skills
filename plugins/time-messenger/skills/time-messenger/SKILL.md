@@ -1,12 +1,12 @@
 ---
 name: time-messenger
-description: Read, search, summarize, and safely operate a TiMe Messenger account through semantic MCP tools. Use when work involves TiMe chats, messages, threads, unread state, files, reactions, pins, membership, or authorized sends.
+description: Read or operate TiMe Messenger through semantic MCP tools. Use when TiMe messages, threads, files, unread state, or authorized sends need action.
 ---
 
 # TiMe Messenger
 
 Use `time_messenger_*` tools for TiMe only. Preserve provider IDs and keep every result bounded.
-If setup or authentication is missing, use `$time-messenger-setup`; never request a token in chat.
+If setup or authentication is missing, use [time-messenger-setup](../time-messenger-setup/SKILL.md); never request a token in chat.
 
 ## Read workflow
 

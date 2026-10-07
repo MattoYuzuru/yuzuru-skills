@@ -1,5 +1,8 @@
 # Deep Verification Method
 
+Use this full method for an end-to-end or release claim. A focused finding or small PR review needs
+only the affected path and its evidence; do not expand it into every section below.
+
 ## End-to-end path
 
 Trace entry, authentication, authorization, validation, domain logic, persistence, event

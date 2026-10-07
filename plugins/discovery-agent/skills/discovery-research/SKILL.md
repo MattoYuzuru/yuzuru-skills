@@ -1,6 +1,6 @@
 ---
 name: discovery-research
-description: Plan and synthesize product, competitor, open-source, regional, adoption, and feasibility research. Use when discovery needs current external evidence rather than product requirements or implementation.
+description: Research alternatives, competitors, regional fit, and feasibility. Use when a product opportunity decision needs current external evidence; exclude general documentation lookup.
 ---
 
 # Discovery Research

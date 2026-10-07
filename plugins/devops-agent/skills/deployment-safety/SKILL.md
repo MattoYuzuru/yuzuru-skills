@@ -1,6 +1,6 @@
 ---
 name: deployment-safety
-description: Prepare, preview, execute, and verify an authorized deployment with target, rollback, health, and evidence controls. Use when a concrete environment change or rollout strategy is requested.
+description: Preview, execute, and verify an authorized rollout with rollback and health gates. Use when deploying to a concrete environment or defining its rollout procedure.
 ---
 
 # Deployment Safety

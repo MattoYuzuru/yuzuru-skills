@@ -1,6 +1,6 @@
 ---
 name: verification-strategy
-description: Reconstruct requirements and design a proportional independent verification scope, behavioral model, evidence plan, and test matrix. Use when a feature, subsystem, pull request, or release needs a rigorous plan before tests run.
+description: Design a verification scope, behavioral model, and evidence matrix. Use when a subsystem, release, or multi-environment claim needs an explicit test strategy.
 ---
 
 # Verification Strategy

@@ -1,9 +1,12 @@
 ---
 name: implementation-planning
-description: Acquire engineering context and create an actionable implementation plan with scope, risks, tests, and validation commands. Use when a nontrivial coding task needs a plan before edits or an approved autonomous implementation.
+description: Plan coordinated or risky implementation with behavior, scope, and checks. Use when a multi-module, compatibility, data, or unfamiliar change benefits from an explicit plan.
 ---
 
 # Implementation Planning
+
+Keep a focused plan in conversation unless coordination or persistence needs a file. This skill
+does not add an approval gate to a bounded change already authorized by the user.
 
 Read `references/plan-contract.md` for a multi-module, compatibility-sensitive, data, concurrency,
 performance, or unfamiliar-technology change.

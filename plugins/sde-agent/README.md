@@ -7,7 +7,7 @@ performance work, and supported GPU environments.
 
 - Acquires local product, architecture, code, build, test, and history context.
 - Plans and implements focused features, fixes, migrations, and refactors.
-- Selects behavior-relevant tests and performs bounded independent self-review.
+- Runs relevant checks and uses an independent reviewer when risk warrants it.
 - Produces explicit completion evidence and residual risk.
 
 ## Trigger examples
@@ -26,16 +26,22 @@ performance work, and supported GPU environments.
 ## External effects
 
 Inspection and tests are reads; code/tests/docs are local writes. Pushes, external trackers,
-deployments, and destructive changes require separate authorization.
+deployments, and destructive changes require authorization covering their target and effect.
 
 ## Platform support
 
 Portable skills/scripts run on Codex and Claude Code. Claude includes an implementation reviewer;
-other hosts use a requested ordinary review subagent.
+reviewers are optional on every host and follow host delegation policy.
 
 ## Local testing
 
 Run `yuzuru plugin validate sde-agent`, evidence-bundle tests, and SDE evals.
+
+## Portable instruction refresh
+
+Version 0.1.1 narrows implicit selection and uses direct package-relative skill routes. Supporting
+skills, templates, and specialist adapters apply only when the task needs them. Required domain
+controls remain in the portable workflow; native host policy and enabled state remain authoritative.
 
 ## Limitations
 

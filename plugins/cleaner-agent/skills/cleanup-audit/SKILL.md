@@ -1,6 +1,6 @@
 ---
 name: cleanup-audit
-description: Build an evidence-backed inventory of stale, generated, unused, duplicated, or temporary repository artifacts before cleanup. Use when the user requests a repository hygiene audit or deletion-candidate review, not ordinary feature work.
+description: Assess stale, generated, unused, or duplicate repository artifacts. Use when asked for cleanup candidates or deletion evidence; an audit does not delete files.
 ---
 
 # Cleanup Audit

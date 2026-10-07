@@ -1,6 +1,6 @@
 ---
 name: architecture-capacity
-description: Model workload, storage, bandwidth, concurrency, partitions, availability, and cost assumptions. Use when architecture decisions need explicit capacity calculations or scale boundaries.
+description: Calculate workload, storage, concurrency, availability, and scale limits. Use when an architecture decision needs quantified capacity with explicit assumptions.
 ---
 
 # Architecture Capacity

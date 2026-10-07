@@ -1,6 +1,6 @@
 ---
 name: visual-direction
-description: Translate product goals and aesthetic language into differentiated visual and interaction directions with tradeoffs. Use when a substantial interface needs design discovery before implementation.
+description: Define visual and interaction direction with concrete tradeoffs. Use when a new interface or ambiguous aesthetic needs design choices before substantial implementation.
 ---
 
 # Visual Direction
@@ -15,7 +15,7 @@ motion/graphics.
 2. Translate aesthetic words into hierarchy, density, grid, typography, shape, surface, depth,
    interaction, motion, color, performance, and fallback.
 3. Research relevant current patterns and competitors without copying them.
-4. Create two or three meaningfully different directions.
+4. Create meaningfully different directions only when alternatives clarify an unresolved choice.
 5. Compare user fit, navigation, content expression, technical cost, accessibility, performance,
    risks, and maintenance.
 6. Recommend one direction and identify prototype questions.

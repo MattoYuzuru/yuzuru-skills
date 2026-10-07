@@ -1,13 +1,17 @@
 {
   "name": "architecture-agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "System architecture, component contracts, capacity modeling, and migration planning.",
   "author": {
     "name": "MattoYuzuru",
     "url": "https://github.com/MattoYuzuru"
   },
   "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
-  "keywords": ["architecture", "capacity", "migration"],
+  "keywords": [
+    "architecture",
+    "capacity",
+    "migration"
+  ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Architecture Agent",
@@ -15,7 +19,12 @@
     "longDescription": "Move from requirements and workload through candidates, contracts, decisions, failure behavior, capacity, and migration.",
     "developerName": "MattoYuzuru",
     "category": "Developer Tools",
-    "capabilities": ["Read", "Write"],
-    "defaultPrompt": ["Use Architecture Agent to design the smallest coherent architecture for these requirements."]
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use Architecture Agent to design the smallest coherent architecture for these requirements."
+    ]
   }
 }

@@ -1,6 +1,6 @@
 ---
 name: release-readiness
-description: Decide whether a release candidate is ready using requirements, end-to-end behavior, migrations, rollback, observability, and residual-risk evidence. Use when the user asks for an independent go/no-go assessment.
+description: Assess a pinned release candidate and issue go, conditional-go, or no-go. Use when an independent release decision is requested; a focused code review is a separate scope.
 ---
 
 # Release Readiness

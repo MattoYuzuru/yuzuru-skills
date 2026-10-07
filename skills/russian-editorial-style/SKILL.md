@@ -1,6 +1,6 @@
 ---
 name: russian-editorial-style
-description: Edit, rewrite, or draft Russian prose for clarity, audience fit, genre, and a natural authorial voice while preserving facts and intent. Use when the user requests Russian technical documentation, essays, articles, business copy, short-form writing, social posts, or asks «убери канцелярит», «сделай естественнее», or «перепиши под эту аудиторию»; do not use for translation-only, grammar explanation, factual research, or AI-authorship detection.
+description: Draft or edit Russian prose while preserving meaning and voice. Use when Russian text needs clearer wording, structure, or audience fit; exclude translation-only and authorship detection.
 ---
 
 # Russian Editorial Style

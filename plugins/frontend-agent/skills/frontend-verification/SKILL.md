@@ -1,6 +1,6 @@
 ---
 name: frontend-verification
-description: Review responsive behavior, accessibility, performance, motion fallbacks, and visual regressions for an interface. Use when frontend implementation needs production-focused verification.
+description: Verify an interface’s responsive, accessible, visual, and performance behavior. Use when a UI review or handoff needs evidence from actual flows and supported devices.
 ---
 
 # Frontend Verification

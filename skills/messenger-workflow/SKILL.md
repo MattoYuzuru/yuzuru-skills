@@ -1,6 +1,6 @@
 ---
 name: messenger-workflow
-description: Work with a user-configured messenger through an available semantic connector. Use when the user asks to read, search, summarize, or safely change chats, messages, topics, reactions, pins, membership, files, or read state.
+description: Read or operate a messenger through an available semantic connector. Use when a chat, message, thread, file, or read-state task has no dedicated provider skill.
 ---
 
 # Messenger Workflow

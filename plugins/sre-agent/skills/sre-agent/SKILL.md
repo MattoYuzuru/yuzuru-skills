@@ -1,6 +1,6 @@
 ---
 name: sre-agent
-description: Independently verify software behavior, reliability, performance, security, observability, and release readiness with evidence. Use when the user asks for deep testing, incident investigation, load analysis, code review, or release verification.
+description: Independently review software behavior and operational evidence. Use when asked for code review, deeper testing, incident investigation, reliability, or release verification.
 ---
 
 # SRE Agent
@@ -14,29 +14,31 @@ Select focused feature, pull request/changed files, subsystem, full project, rel
 staging, authorized production, performance, reliability, defensive security, architecture
 bottleneck, incident, or test-strategy mode. State the exact target and authorization boundary.
 
-Before calling anything a bug, inspect product requirements, acceptance, architecture, ADRs, domain
-terms, states, permissions, fixtures, deployment, and actual runtime behavior.
+Before calling anything a bug, establish the intended behavior and evidence for the affected path.
+Load requirements, architecture, deployment, or runtime detail only where it resolves that claim.
+For a small PR, start with its diff, callers, and affected checks; a release audit needs wider context.
 
 ## Routing
 
 | Need | Invoke/read | Result |
 |---|---|---|
-| Define scope, behavioral model, evidence, and test matrix | `$verification-strategy` | Proportional plan |
-| Confirm/reject a defect, security claim, or review finding | `$finding-validation` | Classified finding |
-| Behavioral/E2E/load/resilience/security/observability test | `$reliability-testing` | Authorized test evidence |
-| Diagnose workload, latency, database, queue, or resource limits | `$performance-analysis` | Evidence-backed bottleneck |
-| Review defensive security and trust boundaries | `$defensive-security-review` | Validated security findings |
-| Decide release readiness from end-to-end evidence | `$release-readiness` | Go/no-go and residual risk |
+| Define scope, behavioral model, evidence, and test matrix | [verification-strategy](../verification-strategy/SKILL.md) | Proportional plan |
+| Confirm/reject a defect, security claim, or review finding | [finding-validation](../finding-validation/SKILL.md) | Classified finding |
+| Behavioral/E2E/load/resilience/security/observability test | [reliability-testing](../reliability-testing/SKILL.md) | Authorized test evidence |
+| Diagnose workload, latency, database, queue, or resource limits | [performance-analysis](../performance-analysis/SKILL.md) | Evidence-backed bottleneck |
+| Review defensive security and trust boundaries | [defensive-security-review](../defensive-security-review/SKILL.md) | Validated security findings |
+| Decide release readiness from end-to-end evidence | [release-readiness](../release-readiness/SKILL.md) | Go/no-go and residual risk |
 | Full review sequence and edge-case selection | `references/verification-method.md` | Verification plan |
 | Validate a finding report | `scripts/finding_report.py` | Evidence gap diagnosis |
 | Start a verification plan | `assets/VERIFICATION_PLAN.md` | Scoped test plan |
 | Record findings | `assets/FINDINGS.json` | Machine-readable report skeleton |
 
-Load only the selected supporting skill or reference.
+Read only the supporting skill or reference needed for this task. Linked skills are package-relative;
+load their SKILL.md directly when the host has no invocation command. Templates are optional.
 
 ## Verification workflow
 
-1. Reconstruct requirements, state/permission model, architecture, workload, and claimed evidence.
+1. Identify the claim or decision, exact revision, expected behavior, and existing evidence.
 2. Define scope, environment, test data, isolation, side effects, stop conditions, and expected
    observability.
 3. Review code and configuration for correctness, compatibility, concurrency, transactions,
@@ -44,13 +46,14 @@ Load only the selected supporting skill or reference.
 4. Select domain-specific edge cases: state, roles, duplicates, retries, concurrency, staleness,
    boundaries, malformed/large input, partial failure, cancellation, timeout, rollback, replay,
    clocks, localization, deletion/recovery, ordering, idempotency, and precision as applicable.
-5. Execute appropriate unit, integration, contract, API, component, browser/mobile, E2E, migration,
-   integrity, property, fuzz, concurrency, chaos, load, stress, spike, soak, failover, recovery,
-   security, visual, and accessibility tests.
+5. Run the smallest checks that can resolve the claim, plus required repository gates. Expand into
+   integration, E2E, load, fault, security, or device tests when the changed boundary needs them.
 6. Observe logs, metrics, traces, correlation IDs, persistence, queues, downstream effects, cleanup,
    and deployment markers.
 7. Validate every finding, deduplicate, resolve contradictions, and identify the exact broken point.
-8. Assess release readiness and residual risk against actual evidence.
+8. Report the result for the requested scope. Issue a release-readiness decision only when asked
+   for one and when the release evidence is available. Stop once the claim is resolved; repeat
+   checks only after new changes, failures, or an unresolved concern.
 
 ## Finding classes
 
@@ -94,10 +97,10 @@ database/events, dashboards, alerts, SLOs, error budgets, and runbooks.
 
 ## Delegation
 
-Delegate exact isolated scenarios to user-input, browser, API misuse, permission, code, database,
-concurrency, security, performance, or documentation specialists. The parent defines environment,
-collects evidence, validates findings, deduplicates, and owns the report. Claude may use the bundled
-test actor; other hosts use requested ordinary subagents.
+Use a separate specialist for an independent scenario when it adds evidence and the host permits
+delegation. Bound its revision, environment, side effects, and result; do not pass an intended
+verdict. The parent validates and deduplicates findings. The bundled Claude test actor is optional;
+the review remains usable without subagents.
 
 ## Output and effects
 

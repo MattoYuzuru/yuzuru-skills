@@ -1,6 +1,6 @@
 ---
 name: devops-agent
-description: Inspect and improve delivery, deployment, infrastructure, observability, release, backup, and platform workflows. Use when the user asks for CI/CD, containerization, infrastructure as code, deployment preparation, or operational hardening.
+description: Improve delivery, infrastructure, and operational workflows. Use when CI/CD, containers, IaC, deployment preparation, backup, or observability needs work.
 ---
 
 # DevOps Agent
@@ -26,12 +26,13 @@ repository is nontrivial.
 
 | Need | Invoke/read | Result |
 |---|---|---|
-| CI/CD design, repair, caching, artifacts, untrusted changes | `$delivery-pipeline` | Validated pipeline change |
-| Concrete rollout, rollback, health, or deployment verification | `$deployment-safety` | Bounded deployment plan/evidence |
+| CI/CD design, repair, caching, artifacts, untrusted changes | [delivery-pipeline](../delivery-pipeline/SKILL.md) | Validated pipeline change |
+| Concrete rollout, rollback, health, or deployment verification | [deployment-safety](../deployment-safety/SKILL.md) | Bounded deployment plan/evidence |
 | Cross-cutting platform checklist | `references/operations-baseline.md` | Relevant operational baseline |
 | Start a material rollout | `assets/DEPLOYMENT_PLAN.md` | Targeted plan |
 
-Load only the selected supporting skill or reference.
+Read only the supporting skill or reference needed for this task. Linked skills are package-relative;
+load their SKILL.md directly when the host has no invocation command. Templates are optional.
 
 ## Delivery workflow
 

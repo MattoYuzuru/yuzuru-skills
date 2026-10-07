@@ -1,6 +1,6 @@
 ---
 name: defensive-security-review
-description: Perform an authorized defensive security review and validate suspected vulnerabilities against project-specific trust boundaries. Use when code, configuration, dependencies, or behavior needs security-focused verification.
+description: Review software against its trust boundaries and validate vulnerabilities. Use when a defensive security assessment or specific security claim is requested.
 ---
 
 # Defensive Security Review

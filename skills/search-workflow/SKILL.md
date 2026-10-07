@@ -1,6 +1,6 @@
 ---
 name: search-workflow
-description: Token-efficient local search routing for files, source code, structured data, archives, and documents. Use when the user asks to locate local files, symbols, annotations, code patterns, configuration values, or content in PDFs and other workspace artifacts.
+description: Find local files, code, and document content with bounded lexical or structural search. Use when locating workspace content; exclude public-web and remote-service search.
 ---
 
 # Search Workflow

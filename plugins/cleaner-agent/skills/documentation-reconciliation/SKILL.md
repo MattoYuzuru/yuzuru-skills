@@ -1,6 +1,6 @@
 ---
 name: documentation-reconciliation
-description: Resolve contradictions and drift between documentation, code, tests, and runtime behavior while preserving decisions and history. Use when setup, architecture, API, runbook, diagram, or example documentation may be stale.
+description: Resolve documented behavior that disagrees with code, tests, or runtime evidence. Use when a concrete setup, API, architecture, or runbook claim may be stale.
 ---
 
 # Documentation Reconciliation

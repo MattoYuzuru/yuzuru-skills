@@ -1,6 +1,6 @@
 ---
 name: performance-analysis
-description: Diagnose workload, latency, throughput, database, queue, cache, concurrency, and resource bottlenecks against measured or expected demand. Use when the user asks why a system is slow, where capacity fails, or whether it survives growth.
+description: Diagnose latency, throughput, resource, database, or queue bottlenecks. Use when slowness or growth limits need measured explanation; exclude unrequested load testing.
 ---
 
 # Performance Analysis

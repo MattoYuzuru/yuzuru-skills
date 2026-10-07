@@ -1,6 +1,6 @@
 ---
 name: discovery-synthesis
-description: Reconcile discovery evidence into prioritized opportunities, assumptions, risks, and an honest recommendation. Use when raw discovery findings need a decision-ready synthesis or critique.
+description: Turn discovery evidence into prioritized opportunities and a recommendation. Use when findings need a decision with explicit assumptions, risks, and uncertainty.
 ---
 
 # Discovery Synthesis

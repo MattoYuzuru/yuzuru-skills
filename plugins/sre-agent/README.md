@@ -37,6 +37,14 @@ includes a bounded test actor; other hosts use requested ordinary subagents.
 
 Run `yuzuru plugin validate sre-agent`, finding and hook tests, hook fixtures, and SRE evals.
 
+Focused review stays within the requested claim; it does not force a release audit or test actor.
+
+## Portable instruction refresh
+
+Version 0.1.1 narrows implicit selection and uses direct package-relative skill routes. Supporting
+skills, templates, and specialist adapters apply only when the task needs them. Required domain
+controls remain in the portable workflow; native host policy and enabled state remain authoritative.
+
 ## Limitations
 
 No browser, load generator, monitoring connector, credential, test environment, or MCP server is

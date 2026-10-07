@@ -61,6 +61,25 @@ class SearchTests(unittest.TestCase):
         self.assertEqual(result["sources"], [])
         self.assertIn("SAFETY", result["error"])
 
+    def test_ungrounded_and_truncated_answers_are_visible(self) -> None:
+        args = argparse.Namespace(query="q", max_chars=5, model="model",
+                                  include_sources=True, max_sources=10, include_usage=False)
+        result = search.parse_response({"candidates": [{
+            "content": {"parts": [{"text": "a longer answer"}]}, "finishReason": "MAX_TOKENS",
+            "groundingMetadata": {"webSearchQueries": ["q"]}}]}, args)
+        self.assertFalse(result["grounding_observed"])
+        self.assertTrue(result["answer_truncated"])
+        self.assertIn("incomplete", result["error"])
+
+    def test_grounding_is_observed_even_when_links_are_not_requested(self) -> None:
+        args = argparse.Namespace(query="q", max_chars=100, model="model",
+                                  include_sources=False, max_sources=10, include_usage=False)
+        result = search.parse_response({"candidates": [{"content": {"parts": [{"text": "answer"}]},
+            "groundingMetadata": {"groundingChunks": [{"web": {"uri": "https://example.com"}}]}}]}, args)
+        self.assertTrue(result["grounding_observed"])
+        self.assertFalse(result["answer_truncated"])
+        self.assertEqual(result["sources"], [])
+
 
 if __name__ == "__main__":
     unittest.main()
