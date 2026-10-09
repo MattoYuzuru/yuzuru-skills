@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workstation Dev"
+  short_description: "Diagnose local builds and preserve reliable check evidence"
+  default_prompt: "Use $workstation-dev to diagnose this local development failure and verify the fix while preserving existing stack data."

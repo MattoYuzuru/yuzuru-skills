@@ -95,6 +95,7 @@ README, and eval contract. No package relies on symlinks outside its directory.
 | `search-workflow` | Fast routing across local source, files, structured data, documents, and archives. |
 | `messenger-workflow` | Read, search, summarize, and safely update a user-configured messenger. |
 | `write-kotlin` | Repository-adaptive Kotlin implementation and refactoring. |
+| `workstation-dev` | Local Docker/toolchain diagnosis, coordinated checks and fresh test evidence. |
 
 Existing skill paths are unchanged. Managed stale links caused by moving the clone can be diagnosed
 and repaired with `yuzuru doctor --repair`; unmanaged files and symlinks are never replaced.
