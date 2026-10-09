@@ -753,6 +753,23 @@
       "expectations": [
         "Use exact HTTPS origin and private credential entry; login does not authorize message writes."
       ]
+    },
+    {
+      "skill": "workstation-dev",
+      "path": "skills/workstation-dev/SKILL.md",
+      "status": "active",
+      "should_trigger": [
+        "Docker CLI works on this Mac but tests fail to discover the daemon; diagnose it without deleting volumes.",
+        "Сверь Linux и Mac окружения для упавшего CI и запусти проверку с настоящим exit code."
+      ],
+      "should_not_trigger": [
+        "Design the application database schema without operating local infrastructure.",
+        "Разверни production-релиз на сервере по SSH."
+      ],
+      "expectations": [
+        "Inspect effective Docker endpoint, source and runtime labels before changing the stack.",
+        "Run only the authorized check, preserve volumes and reject failed or stale evidence."
+      ]
     }
   ]
 }
