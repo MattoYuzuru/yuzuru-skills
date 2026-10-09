@@ -290,6 +290,35 @@ class DevTests(unittest.TestCase):
                 self.assertEqual(Path(env["JAVA_HOME"]), real_home)
                 self.assertEqual(Path(dev.shutil.which("java", path=env["PATH"])), real_bin / "java")
 
+    def test_version_manager_probes_resolve_java_and_node_from_target_project_cwd(self):
+        shim = self.root / "project-shims"
+        real_home = self.root / "project-jdk"
+        real_bin = real_home / "bin"
+        shim.mkdir()
+        real_bin.mkdir(parents=True)
+        for executable in (shim / "java", shim / "node", real_bin / "java"):
+            executable.write_text("#!/bin/sh\nexit 0\n")
+            executable.chmod(0o755)
+        calls = []
+        def fake(argv, **kwargs):
+            calls.append((argv, kwargs))
+            self.assertEqual(Path(kwargs.get("cwd") or "").resolve(), self.cwd)
+            if argv[0] == str(shim / "node"):
+                return 0, "v22.8.0\n", ""
+            if argv[0] in (str(shim / "java"), str(real_bin / "java")):
+                output = 'java version "17.0.12"\n'
+                if "-XshowSettings:properties" in argv:
+                    output = f"Property settings:\n    java.home = {real_home}\n" + output
+                return 0, "", output
+            return 127, "", ""
+        with patch.dict(os.environ, {"PATH": str(shim)}, clear=True), patch.object(dev, "probe", side_effect=fake):
+            env = dev.prepared_environment(self.args("pass", java="17", node="22"))
+        self.assertEqual(Path(env["JAVA_HOME"]), real_home)
+        self.assertEqual(Path(dev.shutil.which("java", path=env["PATH"])), real_bin / "java")
+        self.assertEqual(Path(dev.shutil.which("node", path=env["PATH"])), shim / "node")
+        self.assertTrue(any("-XshowSettings:properties" in argv for argv, _ in calls))
+        self.assertTrue(any(Path(argv[0]).name == "node" for argv, _ in calls))
+
     def test_changed_source_invalidates_a_receipt_even_with_same_dirty_paths(self):
         def git(*argv):
             subprocess.run(["git", *argv], cwd=self.cwd, check=True, capture_output=True)
@@ -381,6 +410,69 @@ class DevTests(unittest.TestCase):
                 finally:
                     link.unlink()
 
+    def test_tracked_symlinks_to_external_ignored_or_dotenv_state_are_not_reusable(self):
+        self.init_git({".gitignore": "ignored.txt\n", "source.txt": "one"})
+        targets = {"external": self.root / "outside.txt", "ignored": self.cwd / "ignored.txt",
+                   "dotenv": self.cwd / ".env.fixture"}
+        link = self.cwd / "source-link"
+        for label, target in targets.items():
+            with self.subTest(target=label):
+                target.write_text("fixture-value")
+                if link.is_symlink():
+                    link.unlink()
+                link.symlink_to(target)
+                self.git("add", "source-link")
+                self.git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                         "commit", "-qm", "fixture symlink")
+                rc, result = self.invoke(self.args("pass"))
+                self.assertEqual(rc, 0)
+                self.assertFalse(result["source_verifiable"])
+                self.assertFalse(result["reusable"])
+                self.assertEqual(self.verify_result(result)[0], 3)
+
+    def test_tracked_symlink_internal_tracked_and_untracked_target_changes_invalidate_receipt(self):
+        self.init_git({"tracked-target.txt": "one"})
+        link = self.cwd / "source-link"
+        link.symlink_to("tracked-target.txt")
+        self.git("add", "source-link")
+        self.git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                 "commit", "-qm", "fixture symlink")
+        for name in ("tracked-target.txt", "untracked-target.txt"):
+            with self.subTest(target=name):
+                target = self.cwd / name
+                target.write_text("one")
+                link.unlink()
+                link.symlink_to(name)
+                rc, result = self.invoke(self.args("pass"))
+                self.assertEqual(rc, 0)
+                self.assertTrue(result["source_verifiable"])
+                self.assertTrue(result["reusable"])
+                self.assertEqual(self.verify_result(result)[0], 0)
+                target.write_text("two")
+                self.assertEqual(self.verify_result(result)[0], 3)
+
+    def test_dirty_submodule_content_changes_cannot_reuse_parent_receipt(self):
+        self.init_git()
+        origin = self.root / "fixture-submodule-origin"
+        origin.mkdir()
+        (origin / "source.txt").write_text("one")
+        for argv in (("init", "-q"), ("add", "source.txt"),
+                     ("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                      "commit", "-qm", "fixture")):
+            subprocess.run(["git", *argv], cwd=origin, check=True, capture_output=True)
+        self.git("-c", "protocol.file.allow=always", "submodule", "add", "-q", str(origin), "module")
+        self.git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                 "commit", "-qm", "fixture submodule")
+        source = self.cwd / "module/source.txt"
+        source.write_text("two")
+        rc, result = self.invoke(self.args("pass"))
+        self.assertEqual(rc, 0)
+        self.assertFalse(result["source_verifiable"])
+        self.assertFalse(result["reusable"])
+        self.assertTrue(result["source"]["unsupported_submodules"])
+        source.write_text("three")
+        self.assertEqual(self.verify_result(result)[0], 3)
+
     def test_mutating_source_during_check_cannot_pass(self):
         with patch.object(dev, "source_state", side_effect=[None, {"head": "before"}, {"head": "after"}]):
             rc, result = self.invoke(self.args("pass"))
@@ -456,6 +548,24 @@ class DevTests(unittest.TestCase):
         log = Path(result["log"]).read_text()
         for value in ("fixture-first", "fixture-last", "fixture-start", "fixture-end",
                       "fixture-json-start", "fixture-json-end"):
+            self.assertNotIn(value, log)
+        self.assertIn("[REDACTED]", log)
+
+    def test_persisted_logs_redact_passwd_authorization_private_key_and_multiline_values(self):
+        lines = ("PASSWD=fixture-passwd-unquoted\n"
+                 "PASSWD='fixture-passwd-start\nfixture-passwd-end'\n"
+                 "AUTHORIZATION: Bearer fixture-auth-token\n"
+                 '{"private_key": "fixture-private-first fixture-private-last"}\n'
+                 '{"private_key": "fixture-private-start\nfixture-private-end"}\n'
+                 "fixture-inherited-first\nfixture-inherited-last\n")
+        with patch.dict(os.environ, {"FIXTURE_PRIVATE": "fixture-inherited-first\nfixture-inherited-last"}):
+            rc, result = self.invoke(self.args(f"print({lines!r}, end='')"))
+        self.assertEqual(rc, 0)
+        log = Path(result["log"]).read_text()
+        for value in ("fixture-passwd-unquoted", "fixture-passwd-start", "fixture-passwd-end",
+                      "Bearer", "fixture-auth-token", "fixture-private-first", "fixture-private-last",
+                      "fixture-private-start", "fixture-private-end", "fixture-inherited-first",
+                      "fixture-inherited-last"):
             self.assertNotIn(value, log)
         self.assertIn("[REDACTED]", log)
 

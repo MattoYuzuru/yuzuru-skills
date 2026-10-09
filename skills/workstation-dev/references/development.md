@@ -149,8 +149,10 @@ an explicitly required live/integration scope that must execute every declared t
 tests by the project's opt-in rules. A green unit gate does not prove a live provider ran.
 
 Source verification binds the Git checkout, HEAD, tracked changes and supported untracked files.
-It includes untracked symlink paths and eligible targets inside the checkout; external, ignored
-or dotenv targets make source reuse unverifiable. Ignored build artifacts and dotenv values are
+It includes tracked/untracked symlink paths and eligible targets inside the checkout; external,
+ignored or dotenv targets and Git submodules make source reuse unverifiable. Submodule dirty
+markers cannot bind their actual file contents; this helper does not recursively certify them.
+Ignored build artifacts and dotenv values are
 not part of this fingerprint, so it cannot prove that an external dependency or runtime stayed the
 same. Declare and inspect those separately when the claim depends on them.
 

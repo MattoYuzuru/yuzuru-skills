@@ -1,12 +1,13 @@
 ---
 name: workstation-dev
-description: "Diagnose local macOS/Linux build/test environment failures, coordinate shared Docker stacks and run checks with fresh evidence. Use when workstation setup or runtime fails; exclude product design and remote deployment."
+description: "Diagnose local build/test environment failures: Docker discovery, Java/Node mismatches, Mac/Linux differences, shared checks and stale results. Use when these block development or subagents; exclude product bugs and remote deployment."
 ---
 
 # Workstation Development
 
 Use for local macOS/Linux development environment failures and shared Docker stacks. Project
 versions, gates and product behavior still come from that project's instructions.
+Target the current machine. A local failure does not expand the task to SSH or other hosts.
 
 Resolve this installed skill directory before calling `scripts/dev.py`. Read the
 [development runbook](references/development.md) for Docker/Colima failures, retained stack
@@ -14,8 +15,8 @@ restarts, parallel sessions or evidence limitations; load only its relevant sect
 
 ## Start from observed state
 
-Run `python3 -B scripts/dev.py inspect --cwd /absolute/project --docker`, adding `--java MAJOR`,
-`--node MAJOR`, `--require TOOL` and `--image EXACT_PIN` only when the task requires them.
+Run `python3 -B scripts/dev.py inspect --cwd /absolute/project`. Add `--docker` for container/SDK
+checks, and `--java MAJOR`, `--node MAJOR`, `--require TOOL` or `--image EXACT_PIN` as required.
 It discovers Docker's effective context/endpoint and returns selected tool versions, source
 revision, bounded container labels and mounts. It never starts Docker, pulls images or resets data.
 

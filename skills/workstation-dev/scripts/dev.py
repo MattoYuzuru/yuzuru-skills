@@ -68,9 +68,9 @@ def java_major(version):
     return match[1] if match else None
 
 
-def java_home(executable, env):
+def java_home(executable, env, cwd=None):
     # PATH entries can be alternatives or version-manager shims, not JDK bin directories.
-    rc, out, err = probe([str(executable), "-XshowSettings:properties", "-version"], env=env)
+    rc, out, err = probe([str(executable), "-XshowSettings:properties", "-version"], env=env, cwd=cwd)
     match = re.search(r"^\s*java\.home\s*=\s*(.+)$", out + err, re.M)
     if rc or not match:
         raise Failure("java_home_unavailable")
@@ -101,12 +101,12 @@ def prepared_environment(args):
         selected = None
         for directory in choices:
             executable = directory / name
-            rc, out, err = probe([str(executable), "-version" if name == "java" else "--version"], env=env)
+            rc, out, err = probe([str(executable), "-version" if name == "java" else "--version"], env=env, cwd=args.cwd)
             version = out + err
             match = re.search(r"v(\d+)", version) if name == "node" else None
             major = java_major(version) if name == "java" else (match[1] if match else None)
             if rc == 0 and major == wanted:
-                selected = java_home(executable, env) / "bin" if name == "java" else directory
+                selected = java_home(executable, env, args.cwd) / "bin" if name == "java" else directory
                 break
         if selected is None:
             raise Failure(name + "_major_unavailable")
@@ -152,8 +152,14 @@ def source_state(cwd):
     rc, untracked, _ = probe(["git", "ls-files", "--others", "--exclude-standard", "-z"], cwd=root)
     if rc:
         raise Failure("git_untracked_unavailable")
+    rc, tracked, _ = probe(["git", "ls-files", "--stage", "-z"], cwd=root)
+    if rc:
+        raise Failure("git_tracked_unavailable")
+    entries = [entry.split("\t", 1) for entry in tracked.split("\0") if entry]
+    submodules = [name for metadata, name in entries if metadata.startswith("160000 ")]
+    names = untracked.split("\0") + [name for _, name in entries if (Path(root) / name).is_symlink()]
     unsupported = []
-    for name in untracked.split("\0"):
+    for name in names:
         if not name or Path(name).name.startswith(".env"):
             continue
         path = Path(root) / name
@@ -178,7 +184,8 @@ def source_state(cwd):
                 while chunk := handle.read(65536):
                     digest.update(chunk)
     return {"root": root, "head": sha.strip(), "dirty": bool(status), "fingerprint": digest.hexdigest(),
-            "verifiable": not unsupported, "unsupported_symlinks": unsupported[:10]}
+            "verifiable": not (unsupported or submodules), "unsupported_symlinks": unsupported[:10],
+            "unsupported_submodules": submodules[:10]}
 
 
 INSPECT = ('{"name":{{json .Name}},"image":{{json .Config.Image}},'
@@ -286,7 +293,7 @@ def report_summary(patterns, cwd, started, before=None, finished=None):
     return result
 
 
-SECRET_ASSIGNMENT = re.compile(r'(?i)([\w-]*(?:token|secret|password|credential|api[_-]?key)[\w-]*["\']?\s*[:=]\s*)')
+SECRET_ASSIGNMENT = re.compile(r'(?i)([\w-]*(?:key|secret|token|password|passwd|credential|private|auth)[\w-]*["\']?\s*[:=]\s*)')
 
 
 def closing_quote(text, start, quote):
@@ -322,14 +329,15 @@ def redact_assignments(text, continuation=None):
             result.append(quote)
             offset = end + 1
         else:
-            value = re.match(r'[^\s,"\'}]*', text[start:])
+            # An unquoted log assignment has no reliable word boundary for a passphrase.
+            value = re.match(r'[^\r\n]*', text[start:])
             result.append("[REDACTED]")
             offset = start + len(value[0])
     result.append(text[offset:])
     return "".join(result), None
 
 
-def redact(text, env):
+def redact_tokens(text, env):
     secrets = {v for k, v in env.items() if SECRET.search(k) and v}
     # Streamed logs may split an inherited multiline value across several lines.
     secrets.update(part for value in tuple(secrets) for part in value.splitlines() if part)
@@ -337,7 +345,11 @@ def redact(text, env):
         text = text.replace(value, "[REDACTED]")
     text = re.sub(r"(?i)(bearer\s+)\S+", r"\1[REDACTED]", text)
     text = re.sub(r"\b(?:gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+)\b", "[REDACTED]", text)
-    return redact_assignments(text)[0]
+    return text
+
+
+def redact(text, env):
+    return redact_assignments(redact_tokens(text, env))[0]
 
 
 @contextlib.contextmanager
@@ -431,11 +443,8 @@ def run(args):
                 try:
                     for line in process.stdout:
                         # Carry quoted assignments across lines without retaining their values.
-                        if secret_quote:
-                            line, secret_quote = redact_assignments(line, secret_quote)
-                        else:
-                            line, secret_quote = redact_assignments(line)
-                        safe = redact(line, env)
+                        line = redact_tokens(line, env)
+                        safe, secret_quote = redact_assignments(line, secret_quote)
                         if size < MAX_LOG:
                             remaining = MAX_LOG - size
                             if len(safe) > remaining:
