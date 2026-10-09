@@ -760,15 +760,27 @@
       "status": "active",
       "should_trigger": [
         "Docker CLI works on this Mac but tests fail to discover the daemon; diagnose it without deleting volumes.",
-        "Сверь Linux и Mac окружения для упавшего CI и запусти проверку с настоящим exit code."
+        "Сверь Linux и Mac окружения для упавшего CI и запусти проверку с настоящим exit code.",
+        "Два сабагента меняют один checkout и конкурируют за локальный стек; согласуй их окружение и запусти нужные проверки.",
+        "Check this local project's required OAuth key presence without showing values; empty quoted values with comments must fail readiness.",
+        "Тесты завершились с кодом ноль, но JUnit повреждён или остался с прошлого запуска; проверь достоверность локального gate.",
+        "Preview this project's check with its required Java version and Docker target before execution; preserve the existing shared runtime."
       ],
       "should_not_trigger": [
         "Design the application database schema without operating local infrastructure.",
-        "Разверни production-релиз на сервере по SSH."
+        "Разверни production-релиз на сервере по SSH.",
+        "Explain the supplied Docker context example without inspecting my computer.",
+        "Проверь архитектуру OAuth в приложении, без доступа к локальному окружению."
       ],
       "expectations": [
         "Inspect effective Docker endpoint, source and runtime labels before changing the stack.",
-        "Run only the authorized check, preserve volumes and reject failed or stale evidence."
+        "Run only the authorized check, preserve volumes and reject failed or stale evidence.",
+        "When delegating, pass the resolved skill/project paths, checkout/HEAD, tool requirements, Docker target, common lock state directory/resource, runtime owner, authorized operations and report scope.",
+        "Use separate worktrees or a quiet validation phase for shared checkout edits; treat locks as coordination only for callers with the same state directory and resource.",
+        "Preview the selected command/runtime/source/report scope without executing the child, taking a lock, creating evidence or exposing argument values.",
+        "Check required dotenv key presence/nonempty status as data; fail missing/empty or unsupported syntax without exposing or executing values, then distinguish presence from provider readiness.",
+        "Reject malformed/stale/failing JUnit evidence even after child exit zero; preserve the original child status in a failed receipt and refuse source reuse outside a verifiable Git checkout.",
+        "After an environment repair, run affected project gates and maintain the existing project instructions/runbook with the verified requirements, launcher and remaining limitation."
       ]
     }
   ]

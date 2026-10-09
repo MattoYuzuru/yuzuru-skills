@@ -4,13 +4,19 @@
     "Docker works in my terminal but the Python backup test cannot connect on this Mac.",
     "Проверь окружение и перезапусти локальный стек, сохранив существующие volumes.",
     "Two development sessions are competing for Docker build resources; coordinate these checks.",
-    "Linux CI failed although the Mac gate was green; investigate the environment difference."
+    "Linux CI failed although the Mac gate was green; investigate the environment difference.",
+    "Два сабагента правят один checkout, а проверка говорит source changed; помоги согласовать окружение и проверку.",
+    "Check whether this local project's required OAuth keys are nonempty without displaying their values.",
+    "Тесты вернули ноль, но JUnit повреждён и остался с прошлого запуска; проверь, можно ли считать gate зелёным.",
+    "Java is found through jenv but Gradle rejects JAVA_HOME; repair the local check using the project's required version."
   ],
   "should_not_trigger": [
     "Explain virtual machines without operating my workstation.",
     "Design the product's onboarding screens.",
     "Deploy this release to production.",
-    "Summarize the already supplied compiler error without running local tools."
+    "Summarize the already supplied compiler error without running local tools.",
+    "Объясни Docker contexts на предоставленном примере, без проверки моего компьютера.",
+    "Audit the application's OAuth threat model without accessing my workstation."
   ],
   "capabilities": [
     {"name": "inspect-workstation", "effect": "read", "confirmation": "none"},
