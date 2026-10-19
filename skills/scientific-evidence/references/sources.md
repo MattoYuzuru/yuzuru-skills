@@ -40,6 +40,8 @@ superiority. A linked journal DOI may refer to a different revision from the ori
   narrower section rather than treating the first excerpt as the whole paper.
 - For DOI/PMID text, use the resolved PMCID/arXiv identifier if present. The helper does not bypass
   publisher restrictions or automatically follow arbitrary metadata URLs.
+  For a biomedical DOI without a PMCID, search Europe PMC with `DOI:the-resolved-doi` and verify
+  the returned identity; do not guess a PMCID from memory.
 - Tables, abstracts and methods have different roles: retain units, denominators, population,
   comparator, time window and uncertainty when reporting an effect. Never subtract unlike outcomes
   into an invented net benefit. Do not infer no independent evidence anywhere from a failed search.
@@ -50,6 +52,9 @@ The helper needs Python 3.10+ and its standard library. Core sources need no reg
 Requests have size/time limits, at most three GET attempts, conservative serial provider gates and
 an arXiv interval of at least 3.1 seconds held through retrieval. These are local client limits,
 not new claims about provider quotas; other clients still share upstream limits.
+Nonsecret request timestamps use a private per-user directory under the host's platform temp
+directory, which remains writable in common agent sandboxes. Clients with different temp roots
+have separate gates; do not assume coordination across different hosts or sandbox temp roots.
 
 [arXiv API terms](https://info.arxiv.org/help/api/tou.html) require one connection and no more than
 one request per three seconds. [PMC automated content rules](https://pmc.ncbi.nlm.nih.gov/tools/oai/)

@@ -17,7 +17,7 @@ import _runtime as runtime
 
 class RuntimeTests(unittest.TestCase):
     def test_concurrent_first_use_preserves_arxiv_interval(self):
-        with tempfile.TemporaryDirectory() as root, patch.dict(os.environ, {"XDG_CACHE_HOME": root}, clear=True):
+        with tempfile.TemporaryDirectory() as root, patch.object(runtime.tempfile, "gettempdir", return_value=root):
             ready = threading.Barrier(2)
             starts, errors = [], []
             def worker():
@@ -36,6 +36,17 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(errors, [])
             self.assertEqual(len(starts), 2)
             self.assertGreaterEqual(starts[1] - starts[0], 3.0)
+
+    def test_nonsecret_request_state_uses_private_host_temp_not_home_cache(self):
+        with tempfile.TemporaryDirectory() as root, patch.object(runtime.tempfile, "gettempdir", return_value=root), \
+             patch.dict(os.environ, {"XDG_CACHE_HOME": "/not-a-writable-home-cache"}):
+            path = runtime.request_state_dir()
+            self.assertEqual(path.parent, Path(root))
+            if os.name != "nt":
+                self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o700)
+            with runtime.request_slot("epmc"):
+                pass
+            self.assertTrue((path / "requests/epmc.lock").is_file())
 
     def test_private_key_is_complete_and_cannot_be_overwritten(self):
         with tempfile.TemporaryDirectory() as root, patch.dict(os.environ, {"XDG_CONFIG_HOME": root}, clear=True):

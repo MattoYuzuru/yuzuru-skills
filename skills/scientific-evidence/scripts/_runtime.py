@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -121,13 +122,26 @@ class SameOriginRedirect(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
+def request_state_dir() -> Path:
+    """Nonsecret rate timestamps belong in the host's permitted platform temp directory."""
+    owner = str(os.getuid()) if hasattr(os, "getuid") else hashlib.sha256(str(Path.home()).encode()).hexdigest()[:16]
+    root = Path(tempfile.gettempdir()) / ("scientific-evidence-" + owner)
+    root.mkdir(mode=0o700, exist_ok=True)
+    mode = root.stat()
+    if root.is_symlink() or not stat.S_ISDIR(mode.st_mode):
+        raise EvidenceError("unsafe_request_state_directory")
+    if os.name != "nt" and (mode.st_uid != os.getuid() or mode.st_mode & 0o077):
+        raise EvidenceError("unsafe_request_state_directory")
+    return root
+
+
 @contextmanager
 def request_slot(provider: str, *, wait_limit: float = 60):
     """Cross-process one-request-at-a-time gate, held through the entire response."""
     provider = "arxiv" if provider == "arxiv-html" else provider
     interval = 3.1 if provider == "arxiv" else 1.05
-    root = data_dir("cache") / "requests"
-    root.mkdir(parents=True, exist_ok=True)
+    root = request_state_dir() / "requests"
+    root.mkdir(mode=0o700, exist_ok=True)
     path = root / (provider + ".lock")
     flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0)
     fd = os.open(path, flags, 0o600)
