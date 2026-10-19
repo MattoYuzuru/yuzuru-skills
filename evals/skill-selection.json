@@ -163,6 +163,25 @@
       ]
     },
     {
+      "skill": "scientific-evidence",
+      "path": "skills/scientific-evidence/SKILL.md",
+      "status": "active",
+      "should_trigger": [
+        "Find the original paper behind this psychology claim and check whether it was retracted.",
+        "Проверь исследования о сне и обучении: найди подходящие источники, их версии и ограничения."
+      ],
+      "should_not_trigger": [
+        "Fix this Python syntax error without literature research.",
+        "Докажи простое тождество матриц без поиска публикаций."
+      ],
+      "expectations": [
+        "Choose a source appropriate to the claim; distinguish study, review, preprint, dataset, scenario and software documentation.",
+        "Resolve stable identifiers and versions; inspect scoped correction/retraction notices rather than treating absent flags as certification.",
+        "Use bounded section/table excerpts and disclose abstract-only, unavailable or truncated evidence.",
+        "Continue keyless core retrieval without optional-account setup; never ask for keys in chat."
+      ]
+    },
+    {
       "skill": "search-workflow",
       "path": "skills/search-workflow/SKILL.md",
       "status": "active",

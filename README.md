@@ -92,6 +92,7 @@ README, and eval contract. No package relies on symlinks outside its directory.
 | `jira-workflow` | Jira issue discovery, creation, linking, quality checks, and transitions. |
 | `meeting-artifacts-workflow` | Find evidence, decisions, and follow-ups in meeting artifacts through a compatible connector. |
 | `russian-editorial-style` | Evidence-aware Russian editing across technical, long-form, business, and short-form genres. |
+| `scientific-evidence` | Keyless paper search, version/notice checks, and bounded scientific section/table retrieval. |
 | `search-workflow` | Fast routing across local source, files, structured data, documents, and archives. |
 | `messenger-workflow` | Read, search, summarize, and safely update a user-configured messenger. |
 | `write-kotlin` | Repository-adaptive Kotlin implementation and refactoring. |

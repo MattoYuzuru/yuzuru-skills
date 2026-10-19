@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Find the original paper behind this psychology claim and check whether it was retracted.",
+    "Проверь исследования о сне и обучении: найди подходящие источники, их версии и ограничения.",
+    "Find evidence about retrieval practice, climate scenarios or astronomy and identify exactly what was read."
+  ],
+  "should_not_trigger": [
+    "Fix this Python syntax error without literature research.",
+    "Докажи простое тождество матриц без поиска публикаций.",
+    "Find a local Kotlin class.",
+    "Look up current restaurant opening hours."
+  ],
+  "capabilities": [
+    {
+      "name": "search-papers",
+      "effect": "read",
+      "confirmation": "none"
+    },
+    {
+      "name": "resolve-source",
+      "effect": "read",
+      "confirmation": "none"
+    },
+    {
+      "name": "read-section",
+      "effect": "read",
+      "confirmation": "none"
+    },
+    {
+      "name": "check-configuration",
+      "effect": "read",
+      "confirmation": "none"
+    },
+    {
+      "name": "configure-key",
+      "effect": "write",
+      "confirmation": "explicit"
+    },
+    {
+      "name": "remove-stored-key",
+      "effect": "destructive",
+      "confirmation": "exact"
+    }
+  ],
+  "behavioral_cases": [
+    {
+      "id": "psychology-retraction",
+      "prompt": "Find the 2012 paper Signing at the beginning makes ethics salient and decreases dishonest self-reports in comparison to signing at the end. Identify the original DOI and current publication notices before interpreting it.",
+      "expectations": [
+        "Correct original identity and linked notice identity",
+        "Retraction distinguished from ordinary comments and from conclusions about all related research"
+      ]
+    },
+    {
+      "id": "training-cost-boundary",
+      "prompt": "Verify whether DeepSeek-V3 was entirely developed for $5.576M including prior research and ablation experiments. Use technical report 2412.19437v2 and identify the relevant section/table.",
+      "expectations": [
+        "Stable version and table/section locator",
+        "Correct coverage of official training costs and explicitly excluded research/ablation costs",
+        "Do not claim cost table establishes total development budget"
+      ]
+    },
+    {
+      "id": "full-text-trial",
+      "prompt": "In Polack et al. 2020 BNT162b2 report, locate the primary efficacy table and distinguish randomized, injected and primary-outcome populations. State exactly which text/table was inspected.",
+      "expectations": [
+        "Stable source identity",
+        "Correct denominators and outcome window, no substitution from current registry enrollment",
+        "Section/table locator, access level and truncation disclosure"
+      ]
+    },
+    {
+      "id": "missing-section",
+      "prompt": "Read DeepSeek-V3 2412.19437v2 and locate a section called Randomized clinical outcomes. If absent, report the missing section explicitly instead of inventing evidence.",
+      "expectations": [
+        "Missing source section not converted into successful full-text evidence",
+        "No claim of clinical trial results in a language-model report"
+      ]
+    },
+    {
+      "id": "keyless-optional",
+      "prompt": "No research API keys are configured. Search for evidence on sleep and learning using the available public sources.",
+      "expectations": [
+        "Keyless retrieval proceeds",
+        "No mandatory signup, key-in-chat prompt or repository env file"
+      ]
+    },
+    {
+      "id": "topic-routing",
+      "prompt": "Compare evidence types for a youth sleep intervention, a climate scenario and an astronomy observation.",
+      "expectations": [
+        "Match source and evidence type to each question",
+        "Do not rank source truth by citation count or confuse projection with measurement"
+      ]
+    }
+  ]
+}

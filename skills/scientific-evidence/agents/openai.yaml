@@ -1,0 +1,4 @@
+interface:
+  display_name: "Scientific Evidence"
+  short_description: "Retrieve and check research sources, versions and retractions"
+  default_prompt: "Use $scientific-evidence for the requested workflow."
