@@ -1,0 +1,11 @@
+{
+  "name": "yuzuru-agent-orchestration",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DeepSeek Harness skill bundle for agent-orchestration.",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

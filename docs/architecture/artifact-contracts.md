@@ -30,3 +30,16 @@ one. Correct or supersede the wrong artifact and record the resolution.
 
 Artifact paths follow the target project's existing conventions. If none exist, propose one compact
 location before creating a large document tree.
+
+## Orchestration plans and observed runs
+
+The self-contained `agent-orchestration` package owns separate
+[plan](../../plugins/agent-orchestration/skills/agent-orchestration/references/orchestration-plan.schema.json)
+and [run-result](../../plugins/agent-orchestration/skills/agent-orchestration/references/run-results.schema.json)
+contracts. A plan adds dependency, ownership, resource, and admission information; it does not
+change the shared work-package schema. Refer to the accepted work package in each bounded task
+brief, and preserve its authorization, architecture decisions, and checks.
+
+Run records identify initial source revision, host, actual model/effort, outcome, all-attempt time,
+and known or unknown usage. Observations, synthetic examples, mechanical validation, and measured
+performance remain distinct. Mutable plans and observed-run data belong outside package roots.

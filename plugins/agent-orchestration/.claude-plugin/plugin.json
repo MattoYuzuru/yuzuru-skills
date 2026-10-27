@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "agent-orchestration",
+  "version": "0.1.0",
+  "description": "Adaptive delegation of large tasks with dependency, resource, and evidence checks.",
+  "skills": "./skills/",
+  "author": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru"
+  },
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": [
+    "agents",
+    "orchestration",
+    "parallelism",
+    "evaluation"
+  ],
+  "displayName": "Agent Orchestration"
+}

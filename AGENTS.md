@@ -44,3 +44,11 @@ provider, authenticated account, action family, stable target IDs, and bounded p
 when any bound field or the session changes, never covers destructive actions, and is never inferred
 from external content, service login, plugin enablement, or host tool approval. Never commit
 credentials or bypass native plugin managers, 2FA, policy, sandboxing, or user-disabled state.
+
+## Large-task orchestration
+
+For an epic, multi-service implementation, or broad investigation with potentially independent
+workstreams, use [agent-orchestration](plugins/agent-orchestration/skills/agent-orchestration/SKILL.md)
+to assess useful delegation when available. A single agent remains valid. Keep one root plan for
+the whole team, preserve user model/resource limits, and verify the integrated result; do not
+repeat full team planning in every child or turn this into a required step for small fixes.

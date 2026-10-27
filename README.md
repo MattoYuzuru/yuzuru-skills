@@ -1,7 +1,7 @@
 # Yuzuru Engineering Extensions
 
 Yuzuru is a cross-agent extension monorepo for Codex, Claude Code, and DeepSeek Harness. It ships portable standalone
-Agent Skills, eleven independently installable plugins, thin vendor adapters, deterministic
+Agent Skills, twelve independently installable plugins, thin vendor adapters, deterministic
 helpers, repository marketplaces, schemas, hooks, eval contracts, and a safe local CLI.
 
 Canonical behavior lives in each skill package. Claude agents and hooks, Codex UI metadata, dual
@@ -68,6 +68,7 @@ rebase, re-enable plugins, or overwrite unmanaged installations.
 | `architecture-agent` | HLD/LLD, contracts, capacity, security boundaries, failure semantics, and migrations. |
 | `devops-agent` | Repository-adaptive CI/CD, delivery, infrastructure, rollback, observability, and operations. |
 | `harness-agent` | Agent readiness, documentation navigation, capability inventory, and code-intelligence decisions. |
+| `agent-orchestration` | Adaptive delegation of large tasks with dependency, resource, budget, and evidence checks. |
 | `sde-agent` | Focused implementation, debugging, testing, self-review, migrations, and completion evidence. |
 | `frontend-agent` | UX direction, distinctive design, frontend architecture, implementation, accessibility, and visuals. |
 | `sre-agent` | Independent behavioral, reliability, performance, security, E2E, and release verification. |

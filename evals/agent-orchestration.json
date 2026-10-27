@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "should_trigger": [
+    "Coordinate independent implementation workstreams for this epic.",
+    "Распредели большую задачу между агентами с общим лимитом ресурсов."
+  ],
+  "should_not_trigger": [
+    "Fix one spelling mistake.",
+    "Объясни значение одной переменной."
+  ],
+  "capabilities": [
+    {
+      "name": "plan-validate",
+      "effect": "read",
+      "confirmation": "none"
+    },
+    {
+      "name": "plan-analyze",
+      "effect": "read",
+      "confirmation": "none"
+    },
+    {
+      "name": "runs-validate",
+      "effect": "read",
+      "confirmation": "none"
+    },
+    {
+      "name": "runs-summarize",
+      "effect": "read",
+      "confirmation": "none"
+    }
+  ]
+}
