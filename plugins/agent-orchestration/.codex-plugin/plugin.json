@@ -1,0 +1,31 @@
+{
+  "name": "agent-orchestration",
+  "version": "0.1.0",
+  "description": "Adaptive delegation of large tasks with dependency, resource, and evidence checks.",
+  "skills": "./skills/",
+  "author": {
+    "name": "MattoYuzuru",
+    "url": "https://github.com/MattoYuzuru"
+  },
+  "repository": "https://github.com/MattoYuzuru/yuzuru-skills",
+  "keywords": [
+    "agents",
+    "orchestration",
+    "parallelism",
+    "evaluation"
+  ],
+  "interface": {
+    "displayName": "Agent Orchestration",
+    "shortDescription": "Coordinate independent work with explicit constraints",
+    "longDescription": "Assess task dependencies, delegate independent work through native agents, check declared resources and evidence, and evaluate measured outcomes.",
+    "developerName": "MattoYuzuru",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Coordinate this large task using useful parallelism and verify the integrated result."
+    ]
+  }
+}

@@ -42,6 +42,13 @@
       "tags": ["agents", "documentation", "navigation"]
     },
     {
+      "name": "agent-orchestration",
+      "source": "./plugins/agent-orchestration",
+      "description": "Adaptive delegation with dependency, resource, and completion-evidence checks.",
+      "category": "development",
+      "tags": ["agents", "orchestration", "parallelism"]
+    },
+    {
       "name": "sde-agent",
       "source": "./plugins/sde-agent",
       "description": "Repository-adaptive software implementation, testing, debugging, and evidence.",

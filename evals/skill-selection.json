@@ -801,6 +801,25 @@
         "Reject malformed/stale/failing JUnit evidence even after child exit zero; preserve the original child status in a failed receipt and refuse source reuse outside a verifiable Git checkout.",
         "After an environment repair, run affected project gates and maintain the existing project instructions/runbook with the verified requirements, launcher and remaining limitation."
       ]
+    },
+    {
+      "skill": "agent-orchestration",
+      "path": "plugins/agent-orchestration/skills/agent-orchestration/SKILL.md",
+      "status": "active",
+      "should_trigger": [
+        "Complete a multi-service epic by coordinating independent workstreams and validating integration.",
+        "Возьми большую задачу целиком: согласуй интерфейсы, делегируй независимые части и проверь общий результат."
+      ],
+      "should_not_trigger": [
+        "Correct one typo in a comment.",
+        "Последовательно выполни две заданные команды без анализа или делегирования."
+      ],
+      "expectations": [
+        "Assess decomposability before delegation; one agent is an allowed decision.",
+        "Preserve user model, effort, permission, concurrency, and budget limits across the whole tree.",
+        "Validate declared dependencies/resources and integrated completion evidence without claiming runtime enforcement.",
+        "Separate static checks, observed client behavior, synthetic data, and measured improvement."
+      ]
     }
   ]
 }

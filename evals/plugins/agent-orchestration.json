@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "plugin": "agent-orchestration",
+  "should_trigger": [
+    "Закрой эпик из трёх сервисов: согласуй контракт, распредели независимые части и проверь интеграцию.",
+    "Coordinate a large repository change across independent components within my agent budget.",
+    "Исследуй несколько независимых гипотез сбоя параллельно и сведи проверенные результаты."
+  ],
+  "should_not_trigger": [
+    "Исправь одну опечатку в README.",
+    "Explain Python list comprehensions.",
+    "Run one already specified slow external operation."
+  ],
+  "routing": [
+    {
+      "case": "dependency and resource admission",
+      "skill": "agent-orchestration",
+      "helper": "plan.py"
+    },
+    {
+      "case": "observed cost and completion evidence",
+      "skill": "agent-orchestration",
+      "helper": "evaluate.py"
+    }
+  ],
+  "safety": [
+    "Delegate only within the caller authorization, tool capabilities, and user pins.",
+    "Use one global task registry and budget for all descendants; never bypass native limits.",
+    "Helpers are read-only advisory validators, not enforced runtime locks or spending controls.",
+    "No host config rewrites, model API calls, credentials, external writes, or automatic paid benchmark runs."
+  ],
+  "artifact_quality": [
+    "Independent work has an owner, bounded write scope, dependencies, acceptance checks, and completion evidence.",
+    "Completed tasks require successful evidence and integration remains an explicit task.",
+    "Unknown usage stays unknown; include unsuccessful-attempt cost and distinguish synthetic from observed data.",
+    "Do not claim optimal model/count/effort or measured speed improvement from static validation."
+  ]
+}

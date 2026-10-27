@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "objective": "Implement two services against a shared contract and verify their integrated behavior.",
+  "limits": {
+    "max_concurrent": 2,
+    "max_depth": 1,
+    "token_budget": 30000
+  },
+  "spent_tokens": 2000,
+  "tasks": [
+    {
+      "id": "contract",
+      "objective": "Agree the API, data and error contract.",
+      "dependencies": [],
+      "status": "completed",
+      "owner": "contract-owner",
+      "write_paths": [
+        "contracts"
+      ],
+      "exclusive_resources": [],
+      "acceptance_checks": [
+        "Run the task-specific checks and attach results."
+      ],
+      "estimated_seconds": 10,
+      "estimated_tokens": 2000,
+      "evidence": {
+        "summary": "Versioned API and error contracts accepted.",
+        "revision": "example-revision",
+        "environment": "disposable example fixture",
+        "checks": [
+          {
+            "command": "contract compatibility checks",
+            "outcome": "passed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "service-a",
+      "objective": "Implement the producer.",
+      "dependencies": [
+        "contract"
+      ],
+      "status": "pending",
+      "owner": "service-a-owner",
+      "write_paths": [
+        "services/a"
+      ],
+      "exclusive_resources": [],
+      "acceptance_checks": [
+        "Run the task-specific checks and attach results."
+      ],
+      "estimated_seconds": 60,
+      "estimated_tokens": 8000
+    },
+    {
+      "id": "service-b",
+      "objective": "Implement the consumer.",
+      "dependencies": [
+        "contract"
+      ],
+      "status": "pending",
+      "owner": "service-b-owner",
+      "write_paths": [
+        "services/b"
+      ],
+      "exclusive_resources": [],
+      "acceptance_checks": [
+        "Run the task-specific checks and attach results."
+      ],
+      "estimated_seconds": 90,
+      "estimated_tokens": 9000
+    },
+    {
+      "id": "integration",
+      "objective": "Verify producer to consumer behavior on the integrated revision.",
+      "dependencies": [
+        "service-a",
+        "service-b"
+      ],
+      "status": "pending",
+      "owner": "integration-owner",
+      "write_paths": [
+        "tests/integration"
+      ],
+      "exclusive_resources": [],
+      "acceptance_checks": [
+        "Run the task-specific checks and attach results."
+      ],
+      "estimated_seconds": 30,
+      "estimated_tokens": 4000
+    }
+  ]
+}

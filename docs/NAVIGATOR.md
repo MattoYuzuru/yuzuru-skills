@@ -7,6 +7,7 @@ Use this page to choose the smallest relevant context.
 | Repository boundaries and ownership | [`architecture/repository.md`](architecture/repository.md) |
 | Claude Code vs Codex capabilities | [`architecture/platform-compatibility.md`](architecture/platform-compatibility.md) |
 | Cross-plugin artifacts and handoffs | [`architecture/artifact-contracts.md`](architecture/artifact-contracts.md) |
+| Large-task delegation and agent-team constraints | [`agent-orchestration`](../plugins/agent-orchestration/skills/agent-orchestration/SKILL.md) |
 | Standalone Agent Skills | [`skill-authoring.md`](skill-authoring.md) |
 | Plugin packages and adapters | [`authoring/plugins.md`](authoring/plugins.md) |
 | Prompt behavior and current model differences | [`authoring/model-guidance.md`](authoring/model-guidance.md) |

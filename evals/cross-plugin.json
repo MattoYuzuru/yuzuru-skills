@@ -77,6 +77,18 @@
       "expected_plugins": ["telegram"],
       "handoff": "TDLib capability evidence preserves chat, forum topic, root message, and ordinary thread distinctions.",
       "completion_evidence": "The reply uses the exact native target, waits for final send state, and does not retry ambiguity."
+    },
+    {
+      "id": "parallel-service-epic",
+      "prompt": "Agree a producer-consumer API contract, implement independent services within a global agent limit, and verify the integrated epic.",
+      "expected_plugins": [
+        "agent-orchestration",
+        "architecture-agent",
+        "sde-agent",
+        "sre-agent"
+      ],
+      "handoff": "Accepted contracts and work packages become owned dependency tasks with disjoint writes or exclusive resources, followed by evidence on the integrated revision.",
+      "completion_evidence": "Domain owners retain decisions; no duplicate recursive planner or mandatory agent count; passing local tests alone does not close integration."
     }
   ]
 }
