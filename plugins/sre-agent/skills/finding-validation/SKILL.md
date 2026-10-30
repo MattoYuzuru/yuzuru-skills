@@ -18,7 +18,13 @@ Read `references/finding-contract.md` before escalating a high-severity or secur
    inconsistency, intentional behavior, or unverified hypothesis.
 6. Deduplicate findings by root cause and impact.
 7. Recommend correction direction and a regression test only after validation.
-8. Use the primary skill's report validator before finalizing a machine-readable report.
+8. For a machine-readable report, follow the repository's existing report schema and validator
+   when required. If using the bundled [findings shape](../sre-agent/assets/FINDINGS.json), run
+   the compatible [report helper](../sre-agent/scripts/finding_report.py) against the report;
+   resolve its path from this installed skill, not the current project directory. If no
+   compatible validator is available, check the fields in `references/finding-contract.md`
+   manually and state that automated validation was unavailable. Do not invent a validator
+   solely to complete this step.
 
 ## Guardrails
 
