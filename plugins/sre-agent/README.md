@@ -38,6 +38,9 @@ includes a bounded test actor; other hosts use requested ordinary subagents.
 Run `yuzuru plugin validate sre-agent`, finding and hook tests, hook fixtures, and SRE evals.
 
 Focused review stays within the requested claim; it does not force a release audit or test actor.
+Report validation follows the repository's existing contract; the bundled findings helper applies
+to its own findings shape. Without a compatible validator, check contract fields manually and
+report the automation gap instead of creating a new validation framework.
 
 ## Portable instruction refresh
 
