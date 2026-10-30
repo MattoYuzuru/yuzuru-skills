@@ -49,3 +49,11 @@ controls remain in the portable workflow; native host policy and enabled state r
 
 No browser, load generator, monitoring connector, credential, test environment, or MCP server is
 bundled. Production verification cannot be inferred from local evidence.
+
+The 0.1.2 load guard checks URLs belonging to an actual load-tool command. Quoted documentation,
+comments, and URLs in unrelated commands no longer trigger it. Explicit shell payloads and
+substitutions remain checked; every non-loopback target still needs the exact approved host.
+The guard does not discover URLs computed inside scripts, tool configuration, aliases or arbitrary
+programs. It is a bounded POSIX-shell heuristic, not authorization or isolation. Parse/size/depth
+failures stop with a diagnostic. The canonical `scripts/hook_shell.py` is vendored by
+`scripts/sync_hook_runtime.py` so each installed plugin stays self-contained.

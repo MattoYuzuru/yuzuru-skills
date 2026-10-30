@@ -47,3 +47,16 @@ controls remain in the portable workflow; native host policy and enabled state r
 
 No cloud, host, or secret-manager connector is bundled. Real deployment and production verification
 are impossible without an explicitly authorized target and credentials.
+
+The 0.1.2 command guard inspects command positions instead of matching deletion examples anywhere
+in the tool text. Quoted arguments, comments, and literal data here-documents do not trigger it.
+Explicit shell payloads, substitutions, pipelines, and shell-input here-documents remain checked.
+Recursive deletion of the root or a home directory is blocked; an explicitly scoped descendant
+is not treated as the whole home. Authorization for that descendant still comes from the task.
+
+This bounded POSIX-shell inspector is an accidental-operation guard, not a shell sandbox or an
+authorization engine. It does not resolve aliases, computed commands, sourced files, or arbitrary
+program semantics. Parse/size/depth failures stop with a diagnostic. PowerShell grammar is not
+implemented; only common explicit command forms are recognized. The shared canonical inspector is
+`scripts/hook_shell.py` in the source repository; `scripts/sync_hook_runtime.py` vendors a tested,
+self-contained copy into each consuming plugin.

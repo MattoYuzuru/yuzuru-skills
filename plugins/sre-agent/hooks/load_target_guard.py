@@ -11,8 +11,9 @@ import re
 import sys
 from urllib.parse import urlparse
 
+from hook_shell import AnalysisLimit, basename, commands
 
-LOAD_TOOL_RE = re.compile(r"(?:^|[;&|]\s*|\s)(k6|wrk|wrk2|hey|ab|locust)(?:\s|$)")
+LOAD_TOOLS = {"k6", "wrk", "wrk2", "hey", "ab", "locust"}
 URL_RE = re.compile(r"https?://[^\s'\"<>]+")
 
 
@@ -37,14 +38,14 @@ def local_host(host: str) -> bool:
 
 
 def blocked(command: str, allowlist: str | None) -> tuple[bool, str | None]:
-    if not LOAD_TOOL_RE.search(command):
-        return False, None
-    hosts = [urlparse(value).hostname for value in URL_RE.findall(command)]
-    hosts = [host for host in hosts if host]
-    for host in hosts:
-        if local_host(host) or host == allowlist:
+    for words in commands(command):
+        if basename(words[0]) not in LOAD_TOOLS:
             continue
-        return True, host
+        for argument in words[1:]:
+            for value in URL_RE.findall(argument):
+                host = urlparse(value).hostname
+                if host and not local_host(host) and host != allowlist:
+                    return True, host
     return False, None
 
 
@@ -62,7 +63,11 @@ def main() -> int:
             print("invalid hook input", file=sys.stderr)
             return 1
     allowlist = args.authorized_host or os.environ.get("YUZURU_LOAD_TEST_AUTHORIZED_TARGET")
-    is_blocked, host = blocked(command, allowlist)
+    try:
+        is_blocked, host = blocked(command, allowlist)
+    except (AnalysisLimit, ValueError) as exc:
+        print(f"load-target guard: {exc}", file=sys.stderr)
+        return 2
     if is_blocked:
         print(
             f"blocked load-test command for non-local host {host}; "
