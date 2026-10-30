@@ -21,6 +21,16 @@ class LoadTargetGuardTests(unittest.TestCase):
             (False, None),
         )
 
+    def test_allows_examples_and_unrelated_urls(self) -> None:
+        for command in ["printf '%s' 'Example: ab https://example.com/'", "echo hey https://example.com", "hey http://localhost/; curl https://example.com/", "python3 - <<'PY'\nfixtures=['hey https://example.com/']\nPY\n"]:
+            with self.subTest(command=command):
+                self.assertEqual(blocked(command, None), (False, None))
+
+    def test_checks_wrapped_nested_and_chained_loads(self) -> None:
+        for command in ["sudo /usr/local/bin/hey https://example.com", "env X=1 hey https://example.com", "true; hey https://example.com", "sh -c 'hey https://example.com'", "echo $(hey https://example.com)", "bash <<'SH'\nhey https://example.com\nSH\n"]:
+            with self.subTest(command=command):
+                self.assertEqual(blocked(command, None), (True, "example.com"))
+
 
 if __name__ == "__main__":
     unittest.main()

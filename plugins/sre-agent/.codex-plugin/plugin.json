@@ -1,6 +1,6 @@
 {
   "name": "sre-agent",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Independent software verification, reliability, performance, security, and release evidence.",
   "author": {
     "name": "MattoYuzuru",
